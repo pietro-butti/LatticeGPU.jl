@@ -18,7 +18,7 @@ struct SpaceParm{N,M}
     npls::Int64
     plidx::NTuple{M, Tuple{Int64, Int64}}
 
-    function SpaceParm{N}(x, bt, c=(0.0,0.0)) where {N}
+    function SpaceParm{N}(x) where {N}
         M = convert(Int64, round(N*(N-1)/2))
         N == length(x) || throw(ArgumentError("Tuple of incorrect length for dimension $N"))
 
@@ -28,7 +28,7 @@ struct SpaceParm{N,M}
                 push!(pls, (i,j))
             end
         end
-        return new{N,M}(N, bt, c, x, M, tuple(pls...))
+        return new{N,M}(N, x, M, tuple(pls...))
     end
 end
 export SpaceParm
@@ -87,7 +87,7 @@ end
     return s
 end
 
-@inline function up(p::CartesianIndex{4}, id, lp::SpaceParm{4})
+@inline function up(p::CartesianIndex{4}, id::Int64, lp::SpaceParm{4})
 
     if (id == 1)
         s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2], p[3], p[4])
@@ -102,7 +102,7 @@ end
     return s
 end
 
-@inline function up(p::CartesianIndex{3}, id, lp::SpaceParm{3})
+@inline function up(p::CartesianIndex{3}, id::Int64, lp::SpaceParm{3})
 
     if (id == 1)
         s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2], p[3])
@@ -115,7 +115,7 @@ end
     return s
 end
 
-@inline function up(p::CartesianIndex{2}, id, lp::SpaceParm{2})
+@inline function up(p::CartesianIndex{2}, id::Int64, lp::SpaceParm{2})
 
     if (id == 1)
         s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2])

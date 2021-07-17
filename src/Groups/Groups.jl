@@ -17,7 +17,8 @@ abstract type Algebra end
 
 include("GroupSU2.jl")
 
-export SU2, SU2alg, dag, normalize, inverse, tr, projalg, norm
+export Group, Algebra
+export SU2, SU2alg, dag, normalize, inverse, tr, projalg, norm, norm2
 export dot, expm, exp
 
 include("GroupSU3.jl")

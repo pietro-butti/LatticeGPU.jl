@@ -1,6 +1,16 @@
-module LatticeGPU
+###
+### "THE BEER-WARE LICENSE":
+### Alberto Ramos wrote this file. As long as you retain this 
+### notice you can do whatever you want with this stuff. If we meet some 
+### day, and you think this stuff is worth it, you can buy me a beer in 
+### return. <alberto.ramos@cern.ch>
+###
+### file:    LatticeGPU.jl
+### created: Sat Jul 17 17:19:58 2021
+###                               
 
-using CUDA
+
+module LatticeGPU
 
 include("Groups/Groups.jl")
 
@@ -19,6 +29,7 @@ export map2latt, up, dw, shift
 include("YM/YM.jl")
 
 using .YM
-
+export YMworkspace, GaugeParm, force0_wilson!, field, randomn!, zero!, norm2
+export gauge_action, hamiltonian, HMC!, OMF4!
 
 end # module

@@ -11,12 +11,12 @@
 
 function krnl_plaq!(plx, U, ipl, lp::SpaceParm)
 
-    id1, id2 = lp.plidx(ipl)
+    id1, id2 = lp.plidx[ipl]
     X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
                  (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
-    Xu1 = up(X, id1)
-    Xu2 = up(X, id2)
-    
+    Xu1 = up(X, id1, lp)
+    Xu2 = up(X, id2, lp)
+
     plx[X] = tr(U[X, id1]*U[Xu1, id2] / (U[X, id2]*U[Xu2, id1]))
 
     return nothing
@@ -27,15 +27,51 @@ function krnl_plaq!(plx, U, lp::SpaceParm)
     X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
                  (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
 
-    plx[X] = 0.0
+    plx[X] = complex(0.0)
     for ipl in 1:lp.npls
-        id1, id2 = lp.plidx(ipl)
-        Xu1 = up(X, id1)
-        Xu2 = up(X, id2)
+        id1, id2 = lp.plidx[ipl]
+        Xu1 = up(X, id1, lp)
+        Xu2 = up(X, id2, lp)
         
         plx[X] += tr(U[X, id1]*U[Xu1, id2] / (U[X, id2]*U[Xu2, id1]))
     end
-    plx[X] = plx[X]/lp.npls
     
+    return nothing
+end
+
+function krnl_force_wilson_pln!(frc1, frc2, U, ipl, lp::SpaceParm, gp::GaugeParm)
+
+    X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
+                 (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
+
+    id1, id2 = lp.plidx[ipl]
+    Xu1 = up(X, id1, lp)
+    Xu2 = up(X, id2, lp)
+    
+    a = U[Xu1,id2]/U[Xu2,id1]
+    b = U[X  ,id2]\U[X  ,id1]
+    
+    F1 = projalg(U[X,id1]*a/U[X,id2])
+    F2 = projalg(a*b)
+    F3 = projalg(b*a)
+    
+    frc1[X  ,id1] -= F1
+    frc1[X  ,id2] += F1
+    frc2[Xu1,id2] -= F2
+    frc2[Xu2,id1] += F3
+
+    return nothing
+end
+
+function force0_wilson!(frc1, frc2, U, lp::SpaceParm, gp::GaugeParm, kp::KernelParm)
+
+    zero!(frc1)
+    zero!(frc2)
+    for ipl in 1:lp.npls
+        CUDA.@sync begin
+            CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_force_wilson_pln!(frc1,frc2,U,ipl,lp,gp)
+        end
+    end
+
     return nothing
 end

@@ -13,8 +13,9 @@
 # SU(2) group elements represented trough Cayley-Dickson
 #       construction
 # https://en.wikipedia.org/wiki/Cayley%E2%80%93Dickson_construction
+using CUDA
 
-import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\
+import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp
 struct SU2 <: Group
     t1::ComplexF64
     t2::ComplexF64
@@ -23,7 +24,8 @@ SU2()           = SU2(1.0, 0.0)
 inverse(b::SU2) = SU2(conj(b.t1), -b.t2)
 dag(a::SU2)     = inverse(a)
 norm(a::SU2)    = sqrt(abs2(a.t1) + abs2(a.t2))
-tr(g::SU2)      = 2.0*real(a.t1)
+norm2(a::SU2)   = abs2(a.t1) + abs2(a.t2)
+tr(g::SU2)      = complex(2.0*real(g.t1), 0.0)
 
 """
     function normalize(a::SU2)
@@ -55,14 +57,16 @@ SU2alg(x::Real)              = SU2alg(x,0.0,0.0)
 SU2alg(v::Vector)            = SU2alg(v[1],v[2],v[3])
 projalg(g::SU2)              = SU2alg(imag(g.t1), real(g.t2), imag(g.t2))
 dot(a::SU2alg, b::SU2alg)    = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3
+norm(a::SU2alg)              = sqrt(a.t1^2 + a.t2^2 + a.t3^2)
+norm2(a::SU2alg)             = a.t1^2 + a.t2^2 + a.t3^2
 Base.:+(a::SU2alg)           = SU2alg(a.t1,a.t2,a.t3)
 Base.:-(a::SU2alg)           = SU2alg(-a.t1,-a.t2,-a.t3)
 Base.:+(a::SU2alg,b::SU2alg) = SU2alg(a.t1+b.t1,a.t2+b.t2,a.t3+b.t3)
 Base.:-(a::SU2alg,b::SU2alg) = SU2alg(a.t1-b.t1,a.t2-b.t2,a.t3-b.t3)
 
-Base.:*(a::SU2alg,b::Real)   = SU2alg(a.t1*b,a.t2*b,a.t3*b)
-Base.:*(b::Real,a::SU2alg)   = SU2alg(a.t1*b,a.t2*b,a.t3*b)
-Base.:/(a::SU2alg,b::Real)   = SU2alg(a.t1/b,a.t2/b,a.t3/b)
+Base.:*(a::SU2alg,b::Number) = SU2alg(a.t1*b,a.t2*b,a.t3*b)
+Base.:*(b::Number,a::SU2alg) = SU2alg(a.t1*b,a.t2*b,a.t3*b)
+Base.:/(a::SU2alg,b::Number) = SU2alg(a.t1/b,a.t2/b,a.t3/b)
 
 
 """
@@ -78,11 +82,13 @@ function Base.exp(a::SU2alg)
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = 0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0))
     else
-        ca = cos(rm)
-	sa = sin(rm)/(2.0*rm)
+        ca = CUDA.cos(rm)
+	sa = CUDA.sin(rm)/(2.0*rm)
     end
 
-    return SU2(complex(ca,sa*a.t1),complex(sa*a.t2,sa*a.t3))
+    t1 = complex(ca,sa*a.t1)
+    t2 = complex(sa*a.t2,sa*a.t3)
+    return SU2(t1,t2)
 end
 
 function Base.exp(a::SU2alg, t::Number)
@@ -93,11 +99,13 @@ function Base.exp(a::SU2alg, t::Number)
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = t*(0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0)))
     else
-        ca = cos(rm)
-	sa = t*sin(rm)/(2.0*rm)
+        ca = CUDA.cos(rm)
+	sa = t*CUDA.sin(rm)/(2.0*rm)
     end
 
-    return SU2(complex(ca,sa*a.t1),complex(sa*a.t2,sa*a.t3))
+    t1 = complex(ca,sa*a.t1)
+    t2 = complex(sa*a.t2,sa*a.t3)
+    return SU2(t1,t2)
 end
 
 
@@ -115,12 +123,13 @@ function expm(g::SU2, a::SU2alg)
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = 0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0))
     else
-        ca = cos(rm)
-	sa = sin(rm)/(2.0*rm)
+        ca = CUDA.cos(rm)
+	sa = CUDA.sin(rm)/(2.0*rm)
     end
 
-    return SU2(complex(ca,sa*a.t1)*g.t1-complex(sa*a.t2,sa*a.t3)*conj(g.t2),
-               complex(ca,sa*a.t1)*g.t2+complex(sa*a.t2,sa*a.t3)*conj(g.t1))
+    t1 = complex(ca,sa*a.t1)*g.t1-complex(sa*a.t2,sa*a.t3)*conj(g.t2)
+    t2 = complex(ca,sa*a.t1)*g.t2+complex(sa*a.t2,sa*a.t3)*conj(g.t1)
+    return SU2(t1,t2)
 end
 
 """
@@ -137,10 +146,12 @@ function expm(g::SU2, a::SU2alg, t::Float64)
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = t*(0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0)))
     else
-        ca = cos(rm)
-	sa = t*sin(rm)/(2.0*rm)
+        ca = CUDA.cos(rm)
+	sa = t*CUDA.sin(rm)/(2.0*rm)
     end
-     
-    return SU2(complex(ca,sa*a.t1)*g.t1-complex(sa*a.t2,sa*a.t3)*conj(g.t2),
-               complex(ca,sa*a.t1)*g.t2+complex(sa*a.t2,sa*a.t3)*conj(g.t1))
+
+    t1 = complex(ca,sa*a.t1)*g.t1-complex(sa*a.t2,sa*a.t3)*conj(g.t2)
+    t2 = complex(ca,sa*a.t1)*g.t2+complex(sa*a.t2,sa*a.t3)*conj(g.t1)
+    return SU2(t1,t2)
+               
 end
