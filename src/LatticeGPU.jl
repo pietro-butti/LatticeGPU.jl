@@ -16,8 +16,8 @@ include("Groups/Groups.jl")
 
 using .Groups
 export Group, Algebra
-export SU2, SU2alg, dag, normalize, inverse, tr, projalg, norm
-export dot, expm, exp
+export SU2, SU2alg, SU3, SU3alg
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2
 
 include("Space/Space.jl")
 
@@ -30,6 +30,6 @@ include("YM/YM.jl")
 
 using .YM
 export YMworkspace, GaugeParm, force0_wilson!, field, randomn!, zero!, norm2
-export gauge_action, hamiltonian, HMC!, OMF4!
+export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 
 end # module

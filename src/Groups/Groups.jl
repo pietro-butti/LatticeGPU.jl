@@ -15,15 +15,15 @@ module Groups
 abstract type Group end
 abstract type Algebra end
 
-include("GroupSU2.jl")
-
 export Group, Algebra
-export SU2, SU2alg, dag, normalize, inverse, tr, projalg, norm, norm2
-export dot, expm, exp
+
+include("GroupSU2.jl")
+export SU2, SU2alg
 
 include("GroupSU3.jl")
+export SU3, SU3alg
 
-
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2
 
 
 end # module

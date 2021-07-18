@@ -52,6 +52,6 @@ include("YMact.jl")
 export krnl_plaq!, force0_wilson!
 
 include("YMhmc.jl")
-export gauge_action, hamiltonian, HMC!, OMF4!
+export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 
 end

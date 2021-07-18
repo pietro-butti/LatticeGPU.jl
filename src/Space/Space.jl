@@ -126,7 +126,7 @@ end
     return s
 end
 
-@inline map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}) = CartesianIndex(th[1],bl[1],bl[2],bl[2])
+@inline map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}) = CartesianIndex(th[1],bl[1],bl[2],bl[3])
 
 export map2latt, up, dw, shift
 
