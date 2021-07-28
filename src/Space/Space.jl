@@ -126,8 +126,22 @@ end
     return s
 end
 
-@inline map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}) = CartesianIndex(th[1],bl[1],bl[2],bl[3])
+@inline map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}) = CartesianIndex(th[1],bl[3],bl[1],bl[2])
 
+
+
+@inline function map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}, lp)
+
+    i1 = mod1(th[1],  lp.lblock[1]) +     mod(bl[1],   div(lp.iL[1],lp.lblock[1]))*lp.lblock[1]
+    i2 = div(th[1]-1, lp.lblock[1]) + 1 + div(bl[1]-1, div(lp.iL[1],lp.lblock[1]))*lp.lblock[2]
+    i3 = (bl[2] - 1) * lp.lblock[3] + th[2]
+    i4 = (bl[3] - 1) * lp.lblock[4] + th[3]
+
+
+    return CartesianIndex(i1,i2,i3,i4)
+end
+
+    
 export map2latt, up, dw, shift
 
 end

@@ -17,7 +17,7 @@ function krnl_plaq!(plx, U, ipl, lp::SpaceParm)
     Xu1 = up(X, id1, lp)
     Xu2 = up(X, id2, lp)
 
-    plx[X] = tr(U[X, id1]*U[Xu1, id2] / (U[X, id2]*U[Xu2, id1]))
+    @inbounds plx[X] = tr(U[X, id1]*U[Xu1, id2] / (U[X, id2]*U[Xu2, id1]))
 
     return nothing
 end
@@ -27,8 +27,8 @@ function krnl_plaq!(plx, U, lp::SpaceParm)
     X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
                  (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
 
-    plx[X] = complex(0.0)
-    for ipl in 1:lp.npls
+    @inbounds plx[X] = complex(0.0)
+    @inbounds for ipl in 1:lp.npls
         id1, id2 = lp.plidx[ipl]
         Xu1 = up(X, id1, lp)
         Xu2 = up(X, id2, lp)
@@ -55,11 +55,13 @@ function krnl_force_wilson_pln!(frc1, frc2, U, ipl, lp::SpaceParm, gp::GaugeParm
     F2 = projalg(a*b)
     F3 = projalg(b*a)
     
-    frc1[X  ,id1] -= F1
-    frc1[X  ,id2] += F1
-    frc2[Xu1,id2] -= F2
-    frc2[Xu2,id1] += F3
-
+    @inbounds begin
+        frc1[X  ,id1] -= F1
+        frc1[X  ,id2] += F1
+        frc2[Xu1,id2] -= F2
+        frc2[Xu2,id1] += F3
+    end
+        
     return nothing
 end
 

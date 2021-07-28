@@ -15,7 +15,7 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm, kp::KernelParm, ymws::YMw
         CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_plaq!(ymws.cm, U, lp)
     end
     S = gp.beta*( prod(lp.iL)*lp.npls -
-                  CUDA.mapreduce(real, +, real.(ymws.cm))/gp.ng )
+                  CUDA.mapreduce(real, +, ymws.cm)/gp.ng )
 
     return S
 end
@@ -29,8 +29,12 @@ function plaquette(U, lp::SpaceParm, gp::GaugeParm, kp::KernelParm, ymws::YMwork
     return CUDA.mapreduce(real, +, real.(ymws.cm))/(prod(lp.iL)*lp.npls)
 end
     
-hamiltonian(mom, U, lp, gp, kp, ymws) = norm2(mom)/2.0 +
-    gauge_action(U, lp, gp, kp, ymws)
+function hamiltonian(mom, U, lp, gp, kp, ymws)
+    K = norm2(mom)/2.0 
+    V = gauge_action(U, lp, gp, kp, ymws)
+    println("K: ", K, " V: ", V)
+    return K+V
+end
 
 function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, kp::KernelParm, ymws::YMworkspace; noacc=false)
 
@@ -65,9 +69,9 @@ function krnl_updt!(mom, frc1, frc2, eps1, U, eps2, lp::SpaceParm)
     X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
                  (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
 
-    for id in 1:lp.ndim
+    @inbounds for id in 1:lp.ndim
         mom[X,id]  = mom[X,id] + eps1 * (frc1[X,id]+frc2[X,id])
-        U[X,id]    = expm(U[X,id], mom[X,id], eps2)
+        U[X,id]    = expm(U[X,id],mom[X,id], eps2)
     end
 
     return nothing

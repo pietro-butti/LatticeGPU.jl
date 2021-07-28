@@ -21,6 +21,10 @@ function field(::Type{T}, lp::SpaceParm) where {T <: Union{Group, Algebra}}
                                   zeros(Float64, sz)))
     elseif (T == SU3)
         As = StructArray{SU3}((ones(ComplexF64, sz), zeros(ComplexF64, sz), zeros(ComplexF64, sz), zeros(ComplexF64, sz), ones(ComplexF64, sz), zeros(ComplexF64, sz)))
+#        As = Array{SU3, lp.ndim+1}(undef, sz)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_SU3_zero!(As, lp)
+#        end
     elseif (T == SU3alg)
         As = StructArray{SU3alg}((zeros(Float64, sz),
                                   zeros(Float64, sz), 
@@ -30,6 +34,11 @@ function field(::Type{T}, lp::SpaceParm) where {T <: Union{Group, Algebra}}
                                   zeros(Float64, sz), 
                                   zeros(Float64, sz), 
                                   zeros(Float64, sz)))
+
+#        As = Array{SU3alg, lp.ndim+1}(undef, sz)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_SU3alg_zero!(As, lp)
+#        end
     end
         
     return replace_storage(CuArray, As)
@@ -71,6 +80,9 @@ function zero!(X)
         fill!(LazyRows(X).t6, 0.0)
         fill!(LazyRows(X).t7, 0.0)
         fill!(LazyRows(X).t8, 0.0)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_SU3alg_zero!(X, lp)
+#        end
     end
 
     if (eltype(X) == SU2)
@@ -85,6 +97,9 @@ function zero!(X)
         fill!(LazyRows(X).u21, complex(0.0))
         fill!(LazyRows(X).u22, complex(1.0))
         fill!(LazyRows(X).u23, complex(0.0))
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=kp.threads blocks=kp.blocks krnl_SU3_zero!(X, lp)
+#        end
     end
     
     return nothing
@@ -97,7 +112,7 @@ function norm2(X)
         d = CUDA.mapreduce(x->x^2, +, LazyRows(X).t1) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t2) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t3)
-    elseif (eltype(X) == SU2alg)
+    elseif (eltype(X) == SU3alg)
         d = CUDA.mapreduce(x->x^2, +, LazyRows(X).t1) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t2) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t3) +
@@ -106,7 +121,42 @@ function norm2(X)
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t6) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t7) +
             CUDA.mapreduce(x->x^2, +, LazyRows(X).t8)
+#        d = CUDA.mapreduce(norm2, +, X)
     end
     
     return d
+end
+
+function krnl_SU3_zero!(G, lp::SpaceParm)
+
+    X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
+                 (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
+
+    for id in 1:lp.ndim
+        G[X,id].u11 = complex(1.0)
+        G[X,id].u12 = complex(0.0)
+        G[X,id].u13 = complex(0.0)
+        G[X,id].u21 = complex(0.0)
+        G[X,id].u22 = complex(1.0)
+        G[X,id].u23 = complex(0.0)
+    end
+    return nothing
+end
+
+function krnl_SU3alg_zero!(G, lp::SpaceParm)
+
+    X = map2latt((CUDA.threadIdx().x,CUDA.threadIdx().y,CUDA.threadIdx().z),
+                 (CUDA.blockIdx().x,CUDA.blockIdx().y,CUDA.blockIdx().z))
+
+    for id in 1:lp.ndim
+        G[X,id].t1 = 0.0
+        G[X,id].t2 = 0.0
+        G[X,id].t3 = 0.0
+        G[X,id].t4 = 0.0
+        G[X,id].t5 = 0.0
+        G[X,id].t6 = 0.0
+        G[X,id].t7 = 0.0
+        G[X,id].t8 = 0.0
+    end
+    return nothing
 end

@@ -43,6 +43,16 @@ struct YMworkspace
             rs = zeros(Float64,   lp.iL...)
             return new(f1, f2, mm, u1, replace_storage(CuArray, cs))
         end
+
+        if (T == SU3)
+            f1 = field(SU3alg, lp)
+            f2 = field(SU3alg, lp)
+            mm = field(SU3alg, lp)
+            u1 = field(SU3,    lp)
+            cs = zeros(ComplexF64,lp.iL...)
+            rs = zeros(Float64,   lp.iL...)
+            return new(f1, f2, mm, u1, replace_storage(CuArray, cs))
+        end
         return nothing
     end
 end

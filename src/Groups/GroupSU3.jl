@@ -31,7 +31,7 @@ SU3() = SU3(1.0,0.0,0.0,0.0,1.0,0.0)
 inverse(a::SU3) = SU3(conj(a.u11),conj(a.u21),(a.u12*a.u23 - a.u13*a.u22),
                       conj(a.u12),conj(a.u22),(a.u13*a.u21 - a.u11*a.u23))
 dag(a::SU3)  = inverse(a)
-tr(g::SU3)   = a.u11+a.u22+a.u11*conj(a.u22)-a.u12*conj(a.u21)
+tr(a::SU3)   = a.u11+a.u22+conj(a.u11*a.u22 - a.u12*a.u21)
 
 function Base.:*(a::SU3,b::SU3) 
 
@@ -49,33 +49,33 @@ end
 
 function Base.:/(a::SU3,b::SU3)
 
-    bu31 = conj(b.u12*a.u23 - b.u13*b.u22)
-    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
-    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+    bu31 = (b.u12*b.u23 - b.u13*b.u22)
+    bu32 = (b.u13*b.u21 - b.u11*b.u23)
+    bu33 = (b.u11*b.u22 - b.u12*b.u21)
 
     return SU3(a.u11*conj(b.u11) + a.u12*conj(b.u12) + a.u13*conj(b.u13),
                a.u11*conj(b.u21) + a.u12*conj(b.u22) + a.u13*conj(b.u23), 
-               a.u11*conj(bu31)  + a.u12*conj(bu32)  + a.u13*conj(bu33), 
+               a.u11*(bu31)      + a.u12*(bu32)      + a.u13*(bu33), 
                a.u21*conj(b.u11) + a.u22*conj(b.u12) + a.u23*conj(b.u13), 
                a.u21*conj(b.u21) + a.u22*conj(b.u22) + a.u23*conj(b.u23),
-               a.u21*conj(bu31)  + a.u22*conj(bu32)  + a.u23*conj(bu33))
+               a.u21*(bu31)      + a.u22*(bu32)      + a.u23*(bu33))
     
 end
 
 function Base.:\(a::SU3,b::SU3)
 
-    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
-    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
-    bu31 = conj(b.u12*a.u23 - b.u13*b.u22)
+    au31 = (a.u12*a.u23 - a.u13*a.u22)
+    au32 = (a.u13*a.u21 - a.u11*a.u23)
+    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
     bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
     bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
 
-    return SU3(conj(a.u11)*b.u11 + conj(a.u21)*b.u21 + conj(au31)*bu31,
-               conj(a.u11)*b.u12 + conj(a.u21)*b.u22 + conj(au31)*bu32, 
-               conj(a.u11)*b.u13 + conj(a.u21)*b.u23 + conj(au31)*bu33, 
-               conj(a.u12)*b.u11 + conj(a.u22)*b.u21 + conj(au32)*bu31, 
-               conj(a.u12)*b.u12 + conj(a.u22)*b.u22 + conj(au32)*bu32,
-               conj(a.u12)*b.u13 + conj(a.u22)*b.u23 + conj(au32)*bu33)
+    return SU3(conj(a.u11)*b.u11 + conj(a.u21)*b.u21 + (au31)*bu31,
+               conj(a.u11)*b.u12 + conj(a.u21)*b.u22 + (au31)*bu32, 
+               conj(a.u11)*b.u13 + conj(a.u21)*b.u23 + (au31)*bu33, 
+               conj(a.u12)*b.u11 + conj(a.u22)*b.u21 + (au32)*bu31, 
+               conj(a.u12)*b.u12 + conj(a.u22)*b.u22 + (au32)*bu32,
+               conj(a.u12)*b.u13 + conj(a.u22)*b.u23 + (au32)*bu33)
 
 end
 
@@ -97,9 +97,7 @@ function projalg(a::SU3)
 
     sr3ov2::Float64 = 0.866025403784438646763723170752
 
-    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
-
-    ditr = ( imag(a.u11) + imag(a.u22) + imag(au33) )/3.0
+    ditr = ( imag(a.u11) + imag(a.u22) + 2.0*imag(a.u11*a.u22 - a.u12*a.u21) )/3.0
     m12 = (a.u12 - conj(a.u21))/2.0
     m13 = (a.u13 - (a.u12*a.u23 - a.u13*a.u22) )/2.0
     m23 = (a.u23 - (a.u13*a.u21 - a.u11*a.u23) )/2.0
@@ -107,8 +105,9 @@ function projalg(a::SU3)
     return SU3alg(imag( m12 ), imag( m13 ), imag( m23 ),
                   real( m12 ), real( m13 ), real( m23 ),
                   (imag(a.u11)-imag(a.u22))/2.0,
-                  -sr3ov2*(imag(au33)-ditr))
+                  sr3ov2*(ditr))
 end
+
 dot(a::SU3alg,b::SU3alg) = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3 + a.t4*b.t4 +
     a.t5*b.t5 + a.t6*b.t6 + a.t7*b.t7 + a.t8*b.t8
 norm2(a::SU3alg) = a.t1^2 + a.t2^2 + a.t3^2 + a.t4^2 + a.t5^2 + a.t6^2 + a.t7^2 + a.t8^2
@@ -184,19 +183,19 @@ end
 
 function Base.:/(a::M3x3,b::SU3)
 
-    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
-    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
-    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+    bu31 = (b.u12*b.u23 - b.u13*b.u22)
+    bu32 = (b.u13*b.u21 - b.u11*b.u23)
+    bu33 = (b.u11*b.u22 - b.u12*b.u21)
 
     return M3x3(a.u11*conj(b.u11) + a.u12*conj(b.u12) + a.u13*conj(b.u13),
                 a.u11*conj(b.u21) + a.u12*conj(b.u22) + a.u13*conj(b.u23), 
-                a.u11*conj(bu31) + a.u12*conj(bu32) + a.u13*conj(bu33), 
+                a.u11*(bu31) + a.u12*(bu32) + a.u13*(bu33), 
                 a.u21*conj(b.u11) + a.u22*conj(b.u12) + a.u23*conj(b.u13), 
                 a.u21*conj(b.u21) + a.u22*conj(b.u22) + a.u23*conj(b.u23),
-                a.u21*conj(bu31) + a.u22*conj(bu32) + a.u23*conj(bu33),
+                a.u21*(bu31) + a.u22*(bu32) + a.u23*(bu33),
                 a.u31*conj(b.u11) + a.u32*conj(b.u12) + a.u33*conj(b.u13), 
                 a.u31*conj(b.u21) + a.u32*conj(b.u22) + a.u33*conj(b.u23),
-                a.u31*conj(bu31) + a.u32*conj(bu32) + a.u33*conj(bu33))
+                a.u31*(bu31) + a.u32*(bu32) + a.u33*(bu33))
 end
 
 Base.:*(a::Number,b::M3x3) = M3x3(a*b.u11, a*b.u12, a*bu13,
