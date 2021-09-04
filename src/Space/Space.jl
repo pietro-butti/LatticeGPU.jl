@@ -16,11 +16,20 @@ struct SpaceParm{N,M}
     ndim::Int64
     iL::NTuple{N,Int64}
     npls::Int64
-    plidx::NTuple{M, Tuple{Int64, Int64}}
+    plidx::NTuple{M,Tuple{Int64, Int64}}
 
-    function SpaceParm{N}(x) where {N}
+    blk::NTuple{N,Int64}
+    blkS::NTuple{N,Int64}
+    rbk::NTuple{N,Int64}
+    rbkS::NTuple{N,Int64}
+
+    bsz::Int64
+    rsz::Int64
+    
+    function SpaceParm{N}(x, y) where {N}
         M = convert(Int64, round(N*(N-1)/2))
-        N == length(x) || throw(ArgumentError("Tuple of incorrect length for dimension $N"))
+        N == length(x) || throw(ArgumentError("Lattice size incorrect length for dimension $N"))
+        N == length(y) || throw(ArgumentError("Block   size incorrect length for dimension $N"))
 
         pls = Vector{Tuple{Int64, Int64}}()
         for i in 1:N
@@ -28,120 +37,100 @@ struct SpaceParm{N,M}
                 push!(pls, (i,j))
             end
         end
-        return new{N,M}(N, x, M, tuple(pls...))
+
+        r  = div.(x, y)
+        rS = ones(N)
+        yS = ones(N)
+        for i in 2:N
+            for j in 1:i-1
+                rS[i] = rS[i]*r[j]
+                yS[i] = yS[i]*y[j]
+            end
+        end
+
+        return new{N,M}(N, x, M, tuple(pls...), y,
+                        tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
     end
 end
 export SpaceParm
 
-struct KernelParm
-    threads::Tuple{Int64,Int64,Int64}
-    blocks::Tuple{Int64,Int64,Int64}
-end
-export KernelParm
+@inline function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
-@inline shift(p::CartesianIndex{4}, sh::CartesianIndex{4}, lp::SpaceParm{4}) = CartesianIndex(mod1(p[1]+sh[1], lp.iL[1]),
-                                                                                          mod1(p[2]+sh[2], lp.iL[2]),
-                                                                                          mod1(p[3]+sh[3], lp.iL[3]),
-                                                                                          mod1(p[4]+sh[4], lp.iL[4]))
-@inline shift(p::CartesianIndex{3}, sh::CartesianIndex{3}, lp::SpaceParm{3}) = CartesianIndex(mod1(p[1]+sh[1], lp.iL[1]),
-                                                                                          mod1(p[2]+sh[2], lp.iL[2]),
-                                                                                          mod1(p[3]+sh[3], lp.iL[3]))
-@inline shift(p::CartesianIndex{2}, sh::CartesianIndex{2}, lp::SpaceParm{2}) = CartesianIndex(mod1(p[1]+sh[1], lp.iL[1]),
-                                                                                          mod1(p[2]+sh[2], lp.iL[2]))
-@inline function dw(p::CartesianIndex{4}, id, lp::SpaceParm{4})
+    ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
+    if (ic == lp.blk[id]-1)
+        b = p[1] - (lp.blk[id]-1)*lp.blkS[id]
 
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]-1, lp.iL[1]), p[2], p[3], p[4])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]-1, lp.iL[2]), p[3], p[4])
-    elseif (id == 3)
-        s = CartesianIndex(p[1], p[2], mod1(p[3]-1, lp.iL[3]), p[4])
-    elseif (id == 4)
-        s = CartesianIndex(p[1], p[2], p[3], mod1(p[4]-1, lp.iL[4]))
-    end
-    
-    return s
-end
-
-@inline function dw(p::CartesianIndex{3}, id, lp::SpaceParm{3})
-
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]-1, lp.iL[1]), p[2], p[3])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]-1, lp.iL[2]), p[3])
-    elseif (id == 3)
-        s = CartesianIndex(p[1], p[2], mod1(p[3]-1, lp.iL[3]))
-    end
-    
-    return s
-end
-
-@inline function dw(p::CartesianIndex{2}, id, lp::SpaceParm{2})
-
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]-1, lp.iL[1]), p[2])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]-1, lp.iL[2]))
-    end
-    
-    return s
-end
-
-@inline function up(p::CartesianIndex{4}, id::Int64, lp::SpaceParm{4})
-
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2], p[3], p[4])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]+1, lp.iL[2]), p[3], p[4])
-    elseif (id == 3)
-        s = CartesianIndex(p[1], p[2], mod1(p[3]+1, lp.iL[3]), p[4])
-    elseif (id == 4)
-        s = CartesianIndex(p[1], p[2], p[3], mod1(p[4]+1, lp.iL[4]))
+        ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
+        if (ic == lp.rbk[id]-1)
+            r = p[2] - (lp.rbk[id]-1)*lp.rbkS[id]
+        else
+            r = p[2] + lp.rbkS[id]
+        end
+    else
+        b = p[1] + lp.blkS[id]
+        r = p[2]
     end
 
-    return s
+        
+    return b, r
 end
 
-@inline function up(p::CartesianIndex{3}, id::Int64, lp::SpaceParm{3})
+@inline function dw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2], p[3])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]+1, lp.iL[2]), p[3])
-    elseif (id == 3)
-        s = CartesianIndex(p[1], p[2], mod1(p[3]+1, lp.iL[3]))
+    ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
+    if (ic == 0)
+        b = p[1] + (lp.blk[id]-1)*lp.blkS[id]
+        ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
+        if (ic == 0)
+            r = p[2] + (lp.rbk[id]-1)*lp.rbkS[id]
+        else
+            r = p[2] - lp.rbkS[id]
+        end
+    else
+        b = p[1] - lp.blkS[id]
+        r = p[2]
     end
 
-    return s
+        
+    return b, r
 end
 
-@inline function up(p::CartesianIndex{2}, id::Int64, lp::SpaceParm{2})
+@inline function updw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
-    if (id == 1)
-        s = CartesianIndex(mod1(p[1]+1, lp.iL[1]), p[2])
-    elseif (id == 2)
-        s = CartesianIndex(p[1], mod1(p[2]+1, lp.iL[2]))
+    ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
+    if (ic == lp.blk[id]-1)
+        bu = p[1] - (lp.blk[id]-1)*lp.blkS[id]
+        bd = p[1] - lp.blkS[id]
+
+        ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
+        if (ic == lp.rbk[id]-1)
+            ru = p[2] - (lp.rbk[id]-1)*lp.rbkS[id]
+        else
+            ru = p[2] + lp.rbkS[id]
+        end
+        rd = p[2]
+    elseif (ic == 0)
+        bu = p[1] + lp.blkS[id]
+        bd = p[1] + (lp.blk[id]-1)*lp.blkS[id]
+
+        ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
+        if (ic == 0)
+            rd = p[2] + (lp.rbk[id]-1)*lp.rbkS[id]
+        else
+            rd = p[2] - lp.rbkS[id]
+        end
+        ru = p[2]
+    else
+        bu = p[1] + lp.blkS[id]
+        bd = p[1] - lp.blkS[id]
+        rd = p[2]
+        ru = p[2]
     end
 
-    return s
+        
+    return bu, ru, bd, rd
 end
 
-@inline map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}) = CartesianIndex(th[1],bl[3],bl[1],bl[2])
-
-
-
-@inline function map2latt(th::NTuple{3,Int64},bl::NTuple{3,Int64}, lp)
-
-    i1 = mod1(th[1],  lp.lblock[1]) +     mod(bl[1],   div(lp.iL[1],lp.lblock[1]))*lp.lblock[1]
-    i2 = div(th[1]-1, lp.lblock[1]) + 1 + div(bl[1]-1, div(lp.iL[1],lp.lblock[1]))*lp.lblock[2]
-    i3 = (bl[2] - 1) * lp.lblock[3] + th[2]
-    i4 = (bl[3] - 1) * lp.lblock[4] + th[3]
-
-
-    return CartesianIndex(i1,i2,i3,i4)
-end
-
-    
-export map2latt, up, dw, shift
+export up, dw, updw
 
 end

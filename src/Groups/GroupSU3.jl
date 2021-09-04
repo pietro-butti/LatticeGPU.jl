@@ -79,8 +79,21 @@ function Base.:\(a::SU3,b::SU3)
 
 end
 
+function isgroup(a::SU3)
 
-
+    tol = 1.0E-10
+    g = a/a
+    if ( (abs(g.u11 - 1.0) < tol) &&
+         (abs(g.u12) < tol) &&
+         (abs(g.u13) < tol) &&
+         (abs(g.u21) < tol) &&
+         (abs(g.u22 - 1.0) < tol) &&
+         (abs(g.u23) < tol) )
+        return true
+    else
+        return false
+    end
+end
 
 struct SU3alg <: Algebra
     t1::Float64
@@ -122,7 +135,7 @@ Base.:/(a::SU3alg,b::Number) = SU3alg(a.t1/b,a.t2/b,a.t3/b,a.t4/b,a.t5/b,a.t6/b,
 
 
 
-export SU3, SU3alg, inverse, dag, tr, projalg, expm, exp, norm, norm2
+export SU3, SU3alg, inverse, dag, tr, projalg, expm, exp, norm, norm2, isgroup
 
 struct M3x3 
     u11::ComplexF64

@@ -17,19 +17,19 @@ include("Groups/Groups.jl")
 using .Groups
 export Group, Algebra
 export SU2, SU2alg, SU3, SU3alg
-export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup
 
 include("Space/Space.jl")
 
 using .Space
-export SpaceParm, KernelParm
-export map2latt, up, dw, shift
+export SpaceParm
+export up, dw, updw
 
 
 include("YM/YM.jl")
 
 using .YM
-export YMworkspace, GaugeParm, force0_wilson!, field, randomn!, zero!, norm2
+export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomn!, zero!, norm2
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 
 end # module

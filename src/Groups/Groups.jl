@@ -23,7 +23,7 @@ export SU2, SU2alg
 include("GroupSU3.jl")
 export SU3, SU3alg
 
-export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup
 
 
 end # module

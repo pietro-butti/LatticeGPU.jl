@@ -68,6 +68,14 @@ Base.:*(a::SU2alg,b::Number) = SU2alg(a.t1*b,a.t2*b,a.t3*b)
 Base.:*(b::Number,a::SU2alg) = SU2alg(a.t1*b,a.t2*b,a.t3*b)
 Base.:/(a::SU2alg,b::Number) = SU2alg(a.t1/b,a.t2/b,a.t3/b)
 
+function isgroup(a::SU2)
+    tol = 1.0E-10
+    if (abs2(a.t1) + abs2(a.t2) - 1.0 < 1.0E-10)
+        return true
+    else
+        return false
+    end
+end
 
 """
     function Base.exp(a::SU2alg, t::Number=1)
@@ -155,3 +163,5 @@ function expm(g::SU2, a::SU2alg, t::Float64)
     return SU2(t1,t2)
                
 end
+
+export SU2, SU2alg, inverse, dag, tr, projalg, expm, exp, norm, norm2, isgroup

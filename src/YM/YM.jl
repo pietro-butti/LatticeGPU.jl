@@ -24,7 +24,7 @@ end
 export GaugeParm
 
 include("YMfields.jl")
-export field, randomn!, zero!, norm2
+export field, field_pln, randomn!, zero!, norm2
 
 struct YMworkspace
     frc1
@@ -32,6 +32,7 @@ struct YMworkspace
     mom
     U1
     cm # complex of volume
+    rm # float   of volume
     function YMworkspace(::Type{T}, lp::SpaceParm) where {T <: Union{Group,Algebra}}
         
         if (T == SU2)
@@ -39,9 +40,6 @@ struct YMworkspace
             f2 = field(SU2alg, lp)
             mm = field(SU2alg, lp)
             u1 = field(SU2,    lp)
-            cs = zeros(ComplexF64,lp.iL...)
-            rs = zeros(Float64,   lp.iL...)
-            return new(f1, f2, mm, u1, replace_storage(CuArray, cs))
         end
 
         if (T == SU3)
@@ -49,11 +47,11 @@ struct YMworkspace
             f2 = field(SU3alg, lp)
             mm = field(SU3alg, lp)
             u1 = field(SU3,    lp)
-            cs = zeros(ComplexF64,lp.iL...)
-            rs = zeros(Float64,   lp.iL...)
-            return new(f1, f2, mm, u1, replace_storage(CuArray, cs))
         end
-        return nothing
+        cs = CuArray{ComplexF64, 2}(undef, lp.bsz,lp.rsz)
+        rs = CuArray{Float64, 2}(undef, lp.bsz,lp.rsz)
+
+        return new(f1, f2, mm, u1, cs, rs)
     end
 end
 export YMworkspace
