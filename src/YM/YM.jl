@@ -16,45 +16,52 @@ using CUDA, Random, StructArrays
 using ..Space
 using ..Groups
 
-struct GaugeParm
-    beta::Float64
-    cG::Tuple{Float64,Float64}
-    ng::Int32
+struct GaugeParm{T}
+    beta::T
+    cG::NTuple{2,T}
+    ng::Int64
 end
 export GaugeParm
 
-include("YMfields.jl")
-export field, field_pln, randomn!, zero!, norm2
-
-struct YMworkspace
+struct YMworkspace{T}
+    GRP
+    ALG
+    PRC
     frc1
     frc2
     mom
     U1
     cm # complex of volume
     rm # float   of volume
-    function YMworkspace(::Type{T}, lp::SpaceParm) where {T <: Union{Group,Algebra}}
+    function YMworkspace(::Type{G}, ::Type{T}, lp::SpaceParm) where {G <: Group, T <: AbstractFloat}
         
-        if (T == SU2)
-            f1 = field(SU2alg, lp)
-            f2 = field(SU2alg, lp)
-            mm = field(SU2alg, lp)
-            u1 = field(SU2,    lp)
+        if (G == SU2)
+            GRP = SU2
+            ALG = SU2alg
+            f1 = field(SU2alg, T, lp)
+            f2 = field(SU2alg, T, lp)
+            mm = field(SU2alg, T, lp)
+            u1 = field(SU2, T,    lp)
         end
 
-        if (T == SU3)
-            f1 = field(SU3alg, lp)
-            f2 = field(SU3alg, lp)
-            mm = field(SU3alg, lp)
-            u1 = field(SU3,    lp)
+        if (G == SU3)
+            GRP = SU3
+            ALG = SU3alg
+            f1 = field(SU3alg, T, lp)
+            f2 = field(SU3alg, T, lp)
+            mm = field(SU3alg, T, lp)
+            u1 = field(SU3, T,    lp)
         end
-        cs = CuArray{ComplexF64, 2}(undef, lp.bsz,lp.rsz)
-        rs = CuArray{Float64, 2}(undef, lp.bsz,lp.rsz)
+        cs = CuArray{Complex{T}, 2}(undef, lp.bsz,lp.rsz)
+        rs = CuArray{T, 2}(undef, lp.bsz,lp.rsz)
 
-        return new(f1, f2, mm, u1, cs, rs)
+        return new{T}(GRP,ALG,T,f1, f2, mm, u1, cs, rs)
     end
 end
 export YMworkspace
+
+include("YMfields.jl")
+export field, field_pln, randomize!, zero!, norm2
 
 include("YMact.jl")
 export krnl_plaq!, force0_wilson!

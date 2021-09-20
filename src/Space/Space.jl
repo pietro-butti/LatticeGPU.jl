@@ -12,6 +12,8 @@
 
 module Space
 
+import Base.show
+
 struct SpaceParm{N,M}
     ndim::Int64
     iL::NTuple{N,Int64}
@@ -53,6 +55,24 @@ struct SpaceParm{N,M}
     end
 end
 export SpaceParm
+function Base.show(io::IO, lp::SpaceParm)
+    println(io, "Lattice dimensions: ", lp.ndim)
+
+    print(io, "Lattice size:       ")
+    for i in 1:lp.ndim-1
+        print(io, lp.iL[i], " x ")
+    end
+    println(io,lp.iL[end])
+    
+    print(io, "Thread block size:  ")
+    for i in 1:lp.ndim-1
+        print(io, lp.blk[i], " x ")
+    end
+    println(io,lp.blk[end], "     [", lp.bsz,
+            "] (Number of blocks: [", lp.rsz,"])")
+    return
+end
+    
 
 @inline function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
@@ -131,6 +151,22 @@ end
     return bu, ru, bd, rd
 end
 
-export up, dw, updw
+@inline function global_point(p::NTuple{2,Int64}, lp::SpaceParm)
+
+    @inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
+    @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
+
+    @inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
+    
+    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return pt
+end
+
+@inline function point_idx(pt::NTuple{4, Int64}, lp::SpaceParm)
+
+    
+end
+    
+export up, dw, updw, global_point, point_idx
 
 end

@@ -17,8 +17,10 @@
 # a.u32 = conj(a.u13*a.u21 - a.u11*a.u23)
 # a.u33 = conj(a.u11*a.u22 - a.u12*a.u21)
 #
+using Random
 
-import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\
+import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.one,Base.zero
+import Random.rand
 struct SU3{T} <: Group
     u11::Complex{T}
     u12::Complex{T}
@@ -27,11 +29,12 @@ struct SU3{T} <: Group
     u22::Complex{T}
     u23::Complex{T}
 end
-SU3() = SU3{Float64}(1.0,0.0,0.0,0.0,1.0,0.0)
-inverse(a::SU3{T}) where T <: AbstractFloat = SU3{T}(conj(a.u11),conj(a.u21),(a.u12*a.u23 - a.u13*a.u22),
-                      conj(a.u12),conj(a.u22),(a.u13*a.u21 - a.u11*a.u23))
-dag(a::SU3{T})     where T <: AbstractFloat = inverse(a)
-tr(a::SU3{T})      where T <: AbstractFloat = a.u11+a.u22+conj(a.u11*a.u22 - a.u12*a.u21)
+inverse(a::SU3{T})       where T <: AbstractFloat = SU3{T}(conj(a.u11),conj(a.u21),(a.u12*a.u23 - a.u13*a.u22), conj(a.u12),conj(a.u22),(a.u13*a.u21 - a.u11*a.u23))
+dag(a::SU3{T})           where T <: AbstractFloat = inverse(a)
+tr(a::SU3{T})            where T <: AbstractFloat = a.u11+a.u22+conj(a.u11*a.u22 - a.u12*a.u21)
+Base.one(::Type{SU3{T}}) where T <: AbstractFloat = SU3{T}(one(T),zero(T),zero(T),zero(T),one(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3{T}}) where T <: AbstractFloat = exp(SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T)))
+
 
 function Base.:*(a::SU3{T},b::SU3{T}) where T <: AbstractFloat
 
@@ -103,7 +106,7 @@ struct SU3alg{T} <: Algebra
     t7::T
     t8::T
 end
-SU3alg() = SU3alg{Float64}(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)
+
 function projalg(a::SU3{T}) where T <: AbstractFloat
 
     sr3ov2::T = 0.866025403784438646763723170752
@@ -122,6 +125,9 @@ end
 dot(a::SU3alg{T},b::SU3alg{T})     where T <: AbstractFloat = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3 + a.t4*b.t4 + a.t5*b.t5 + a.t6*b.t6 + a.t7*b.t7 + a.t8*b.t8
 norm2(a::SU3alg{T})                where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2 + a.t4^2 + a.t5^2 + a.t6^2 + a.t7^2 + a.t8^2
 norm(a::SU3alg{T})                 where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2 + a.t4^2 + a.t5^2 + a.t6^2 + a.t7^2 + a.t8^2)
+Base.zero(::Type{SU3alg{T}})       where T <: AbstractFloat = SU3alg{T}(zero(T),zero(T),zero(T),zero(T),zero(T),zero(T),zero(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3alg{T}}) where T <: AbstractFloat = SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T))
+
 Base.:+(a::SU3alg{T})              where T <: AbstractFloat = SU3alg{T}(a.t1,a.t2,a.t3,a.t4,a.t5,a.t6,a.t7,a.t8)
 Base.:-(a::SU3alg{T})              where T <: AbstractFloat = SU3alg{T}(-a.t1,-a.t2,-a.t3,-a.t4,-a.t5,-a.t6,-a.t7,-a.t8)
 Base.:+(a::SU3alg{T},b::SU3alg{T}) where T <: AbstractFloat = SU3alg{T}(a.t1+b.t1,a.t2+b.t2,a.t3+b.t3,a.t4+b.t4,a.t5+b.t5,a.t6+b.t6,a.t7+b.t7,a.t8+b.t8)

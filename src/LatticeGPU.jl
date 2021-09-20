@@ -23,13 +23,13 @@ include("Space/Space.jl")
 
 using .Space
 export SpaceParm
-export up, dw, updw
+export up, dw, updw, global_point
 
 
 include("YM/YM.jl")
 
 using .YM
-export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomn!, zero!, norm2
+export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 
 end # module

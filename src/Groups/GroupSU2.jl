@@ -13,20 +13,22 @@
 # SU(2) group elements represented trough Cayley-Dickson
 #       construction
 # https://en.wikipedia.org/wiki/Cayley%E2%80%93Dickson_construction
-using CUDA
+using CUDA, Random
 
-import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp
+import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp,Base.zero,Base.one
+import Random.rand
 struct SU2{T} <: Group
     t1::Complex{T}
     t2::Complex{T}
 end
-SU2()                                       = SU2{Float64}(complex(1.0), complex(0.0))
-SU2(a::T, b::T)    where T <: AbstractFloat = SU2{T}(complex(a), complex(b))
-inverse(b::SU2{T}) where T <: AbstractFloat = SU2{T}(conj(b.t1), -b.t2)
-dag(a::SU2{T})     where T <: AbstractFloat = inverse(a)
-norm(a::SU2{T})    where T <: AbstractFloat = sqrt(abs2(a.t1) + abs2(a.t2))
-norm2(a::SU2{T})   where T <: AbstractFloat = abs2(a.t1) + abs2(a.t2)
-tr(g::SU2{T})      where T <: AbstractFloat = complex(2.0*real(g.t1), 0.0)
+SU2(a::T, b::T)          where T <: AbstractFloat = SU2{T}(complex(a), complex(b))
+inverse(b::SU2{T})       where T <: AbstractFloat = SU2{T}(conj(b.t1), -b.t2)
+dag(a::SU2{T})           where T <: AbstractFloat = inverse(a)
+norm(a::SU2{T})          where T <: AbstractFloat = sqrt(abs2(a.t1) + abs2(a.t2))
+norm2(a::SU2{T})         where T <: AbstractFloat = abs2(a.t1) + abs2(a.t2)
+tr(g::SU2{T})            where T <: AbstractFloat = complex(2.0*real(g.t1), 0.0)
+Base.one(::Type{SU2{T}}) where T <: AbstractFloat = SU2{T}(one(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}}) where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
 
 """
     function normalize(a::SU2)
@@ -56,6 +58,9 @@ projalg(g::SU2{T})                 where T <: AbstractFloat = SU2alg{T}(imag(g.t
 dot(a::SU2alg{T}, b::SU2alg{T})    where T <: AbstractFloat = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3
 norm(a::SU2alg{T})             where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2)
 norm2(a::SU2alg{T})            where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2
+Base.zero(::Type{SU2alg{T}})      where T <: AbstractFloat = SU2alg{T}(zero(T),zero(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T))
+
 Base.:+(a::SU2alg{T})              where T <: AbstractFloat = SU2alg{T}(a.t1,a.t2,a.t3)
 Base.:-(a::SU2alg{T})              where T <: AbstractFloat = SU2alg{T}(-a.t1,-a.t2,-a.t3)
 Base.:+(a::SU2alg{T},b::SU2alg{T}) where T <: AbstractFloat = SU2alg{T}(a.t1+b.t1,a.t2+b.t2,a.t3+b.t3)

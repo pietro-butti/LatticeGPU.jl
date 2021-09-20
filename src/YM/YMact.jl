@@ -16,7 +16,7 @@ function krnl_plaq!(plx, U, ipl, lp::SpaceParm)
     bu1, ru1 = up((b, r), id1, lp)
     bu2, ru2 = up((b, r), id2, lp)
 
-    @inbounds plx[b, r] = tr(U[b,r,id1]*U[bu1,ru1,id2] / (U[b,r,id2]*U[bu2,ru2,id1]))
+    @inbounds plx[b, r] = tr(U[b,id1,r]*U[bu1,id2,ru1] / (U[b,id2,r]*U[bu2,id1,ru2]))
 
     return nothing
 end
@@ -24,33 +24,14 @@ end
 function krnl_plaq!(plx, U, lp::SpaceParm)
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
-    if (b < 1) || (b > lp.bsz)
-        @cuprintln("Error b:  %b, %r")
-    end
-    if (r < 1) || (r > lp.rsz)
-        @cuprintln("Error r:  %b, %r")
-    end
-
-     plx[b,r] = complex(0.0)
-     for ipl in 1:lp.npls
-         id1, id2 = lp.plidx[ipl]
-         
-         bu1, ru1 = up((b, r), id1, lp)
-         bu2, ru2 = up((b, r), id2, lp)
-         if (bu1 < 1) || (bu1 > lp.bsz)
-             @cuprintln("Error bu1:  %b, %r, %id1")
-         end
-         if (ru1 < 1) || (ru1 > lp.rsz)
-             @cuprintln("Error ru1:  %b, %r, %id1")
-         end
-         if (bu2 < 1) || (bu2 > lp.bsz)
-             @cuprintln("Error bu2:  %b, %r, %id2")
-         end
-         if (ru2 < 1) || (ru2 > lp.rsz)
-             @cuprintln("Error ru2:  %b, %r, %id2")
-         end
-         
-         plx[b,r] += tr(U[r,id1,b]*U[bu1,id2,ru1] / (U[b,id2,r]*U[bu2,id1,ru2]))
+    plx[b,r] = zero(plx[b,r])
+    @inbounds for ipl in 1:lp.npls
+        id1, id2 = lp.plidx[ipl]
+        
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+                    
+        plx[b,r] += tr(U[b,id1,r]*U[bu1,id2,ru1] / (U[b,id2,r]*U[bu2,id1,ru2]))
     end
     
     return nothing
@@ -72,10 +53,10 @@ function krnl_force_wilson_pln!(frc1, frc2, U, ipl, lp::SpaceParm)
         F2 = projalg(g1*g2)
         F3 = projalg(g2*g1)
         
-        frc1[b  ,r,id1  ] -= F1
-        frc1[b  ,r,id2  ] += F1
-        frc2[bu1,ru1,id2] -= F2
-        frc2[bu2,ru2,id1] += F3
+        frc1[b  ,id1, r ] -= F1
+        frc1[b  ,id2, r ] += F1
+        frc2[bu1,id2,ru1] -= F2
+        frc2[bu2,id1,ru2] += F3
     end
         
     return nothing
@@ -125,8 +106,8 @@ function krnl_force_wilson!(frc, U, lp::SpaceParm)
             F2 = projalg((U[b,id2,r]/(U[bd1,id2,rd1]*U[bdu,id1,rdu]))*U[bd1,id1,rd1])
             F3 = projalg((U[bd2,id2,rd2]\U[bd2,id1,rd2])*(U[bud,id2,rud]/U[b,id1,r]))
             
-            frc[b,r,id1] -= F1 - F3
-            frc[b,r,id2] += F1 - F2
+            frc[b,id1,r] -= F1 - F3
+            frc[b,id2,r] += F1 - F2
         end
     end
         
@@ -138,29 +119,30 @@ function krnl_add_force_plns!(frc, fpl, lp::SpaceParm)
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     @inbounds for ipl in 1:lp.npls
         id1, id2 = lp.plidx[ipl]
-        frc[b,r,id1] += fpl[b,ipl,r,1,1] + fpl[b,ipl,r,1,2]
-        frc[b,r,id2] += fpl[b,ipl,r,2,1] + fpl[b,ipl,r,2,2]
+        frc[b,id1,r] += fpl[b,ipl,r,1,1] + fpl[b,ipl,r,1,2]
+        frc[b,id2,r] += fpl[b,ipl,r,2,1] + fpl[b,ipl,r,2,2]
     end
         
     return nothing
 end
 
-function force0_wilson_pln!(frc1, frc2, U, lp::SpaceParm)
+function force0_wilson_pln!(frc1, ftmp, U, lp::SpaceParm)
 
-    zero!(frc1, lp)
-    zero!(frc2, lp)
+    fill!(frc1, zero(eltype(frc1)))
+    fill!(ftmp, zero(eltype(ftmp)))
     for i in 1:lp.npls
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,frc2,U,i,lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,ftmp,U,i,lp)
         end
     end
-
+    frc1 .= frc1 .+ ftmp
+    
     return nothing
 end
     
 function force0_wilson!(frc1, U, lp::SpaceParm)
 
-    zero!(frc1, lp)
+    fill!(frc1, zero(eltype(frc1)))
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson!(frc1,U,lp)
     end
@@ -173,7 +155,7 @@ function force0_wilson_nw!(frc1, fpln, U, lp::SpaceParm)
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz*lp.npls krnl_force_wilson_nw!(fpln,U,lp)
     end
-    zero!(frc1, lp)
+    fill!(frc1, zero(eltype(frc1)))
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_force_plns!(frc1, fpln,lp)
     end
