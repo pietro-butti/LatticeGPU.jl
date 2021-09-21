@@ -16,7 +16,7 @@ include("Groups/Groups.jl")
 
 using .Groups
 export Group, Algebra
-export SU2, SU2alg, SU3, SU3alg
+export SU2, SU2alg, SU3, SU3alg, U1, U1alg
 export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup
 
 include("Space/Space.jl")
