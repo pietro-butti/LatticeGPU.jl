@@ -11,27 +11,16 @@
 
 un(t) = t <: Union{Group, Complex}
 
-function field(::Type{G}, ::Type{T}, lp::SpaceParm) where {G <: Union{Group, Algebra}, T <: AbstractFloat}
+function field(::Type{T}, lp::SpaceParm) where {T}
 
     sz = lp.bsz, lp.ndim, lp.rsz
-    if (G == SU2)
-#        As = StructArray{SU2}(undef, sz, unwrap=un)
-        return CuArray{SU2{T}, 3}(undef, sz)
-    elseif (G == SU2alg)
-#        As = StructArray{SU2alg}(undef, sz, unwrap=un)
-        return CuArray{SU2alg{T}, 3}(undef, sz)
-    elseif (G == SU3)
-#        As = StructArray{SU3}(undef, sz, unwrap=un)
-        return CuArray{SU3{T}, 3}(undef, sz)
-#        As = Array{SU3, lp.ndim+1}(undef, sz)
-    elseif (G == SU3alg)
-        #        As = StructArray{SU3alg}(undef, sz, unwrap=un)
-        return CuArray{SU3alg{T}, 3}(undef, sz)
-#        As = Array{SU3alg, lp.ndim+1}(undef, sz)
-    end
-    
-    return replace_storage(CuArray, As)
+    return CuArray{T, 3}(undef, sz)
+end
 
+function field_pln(::Type{T}, lp::SpaceParm) where {T}
+
+    sz = lp.bsz, lp.npls, lp.rsz, 3
+    return CuArray{T, 4}(undef, sz)
 end
 
 function randomize!(f, lp::SpaceParm, ymws::YMworkspace) 

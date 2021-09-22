@@ -14,7 +14,7 @@ module Space
 
 import Base.show
 
-struct SpaceParm{N,M}
+struct SpaceParm{N,M,D}
     ndim::Int64
     iL::NTuple{N,Int64}
     npls::Int64
@@ -50,7 +50,8 @@ struct SpaceParm{N,M}
             end
         end
 
-        return new{N,M}(N, x, M, tuple(pls...), y,
+        D = prod(y)
+        return new{N,M,D}(N, x, M, tuple(pls...), y,
                         tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
     end
 end
