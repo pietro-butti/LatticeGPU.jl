@@ -20,13 +20,7 @@ end
 function field_pln(::Type{T}, lp::SpaceParm) where {T}
 
     sz = lp.bsz, lp.npls, lp.rsz, 3
-    try 
-        println("Using fast version")
-        return CuArray{T, 4}(undef, sz)
-    catch
-        println("Using memory efficient version")
-        return nothing
-    end
+    return CuArray{T, 4}(undef, sz)
 end
 
 function randomize!(f, lp::SpaceParm, ymws::YMworkspace) 
