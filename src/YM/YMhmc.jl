@@ -22,11 +22,9 @@ end
 
 function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
-    println("Entro!")
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
     end
-    println("Salgo!")
 
     return CUDA.mapreduce(real, +, ymws.cm)/(prod(lp.iL)*lp.npls)
 end
@@ -34,7 +32,7 @@ end
 function hamiltonian(mom, U, lp, gp, ymws)
     K = CUDA.mapreduce(norm2, +, mom)/2 
     V = gauge_action(U, lp, gp, ymws)
-    println("K: ", K, " V: ", V)
+
     return K+V
 end
 
@@ -66,13 +64,19 @@ function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc
     return dh, acc
 end
 
-function krnl_updt!(mom, frc1, frc2, eps1, U, eps2, lp::SpaceParm)
+function krnl_updt!(mom::AbstractArray{TF}, frc, eps1, U::AbstractArray{TU}, eps2, lp::SpaceParm{N,M,D}) where {TU,TF, N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
+    Ush = @cuStaticSharedMem(TU, D)
+    Fsh = @cuStaticSharedMem(TF, D)
+    
     @inbounds for id in 1:lp.ndim
-        mom[b,id,r]  = mom[b,id,r] + eps1 * (frc1[b,id,r]+frc2[b,id,r])
-        U[b,id,r]    = expm(U[b,id,r], mom[b,id,r], eps2)
+        Ush[b] = U[b,id,r]
+        Fsh[b] = frc[b,id,r]
+
+        mom[b,id,r] = mom[b,id,r] + eps1 * Fsh[b]
+        U[b,id,r] = expm(Ush[b], mom[b,id,r], eps2)
     end
 
     return nothing
@@ -87,76 +91,50 @@ function OMF4!(mom, U, eps, ns, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspa
     r5::T =  0.5-r1-r3
     r6::T =  1.0-2.0*(r2+r4)
 
-#    ee = eps*gp.beta/gp.ng
-#    @device_code_warntype force0_wilson!(ymws.frc1,ymws.frc2, U, lp, gp)
-#    force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#    zero!(ymws.frc2, lp)
-#    for i in 1:ns
-#        # STEP 1
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r1*ee, U, eps*r2, lp)
-#        end
-#
-#        # STEP 2
-#        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r3*ee, U, eps*r4, lp)
-#        end
-#
-#        # STEP 3
-#        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r5*ee, U, eps*r6, lp)
-#        end
-#
-#        # STEP 4
-#        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r5*ee, U, eps*r4, lp)
-#        end
-#
-#        # STEP 5
-#        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r3*ee, U, eps*r2, lp)
-#        end
-#
-#        # STEP 6
-#        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
-#        CUDA.@sync begin
-#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1,ymws.frc2, r1*ee, U, 0.0, lp)
-#        end
-#    end
-
     ee = eps*gp.beta/gp.ng
-    force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+    force_wilson(ymws, U, lp)
     for i in 1:ns
         # STEP 1
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1, r1*ee, U, eps*r2, lp)
+#        end
         mom .= mom .+ (r1*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r2)
     
         # STEP 2
-        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+        force_wilson(ymws, U, lp)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1, r3*ee, U, eps*r4, lp)
+#        end
         mom .= mom .+ (r3*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r4)
 
         # STEP 3
-        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+        force_wilson(ymws, U, lp)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1, r5*ee, U, eps*r6, lp)
+#        end
         mom .= mom .+ (r5*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r6)
 
         # STEP 4
-        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+        force_wilson(ymws, U, lp)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1, r5*ee, U, eps*r4, lp)
+#        end
         mom .= mom .+ (r5*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r4)
 
         # STEP 5
-        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+        force_wilson(ymws, U, lp)
+#        CUDA.@sync begin
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_updt!(ymws.mom, ymws.frc1, r3*ee, U, eps*r2, lp)
+#        end
         mom .= mom .+ (r3*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r2)
 
         # STEP 6
-        force0_wilson_pln!(ymws.frc1, ymws.frc2, U, lp)
+        force_wilson(ymws, U, lp)
         mom .= mom .+ (r1*ee) .* ymws.frc1
     end
 
