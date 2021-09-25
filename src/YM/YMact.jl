@@ -207,7 +207,7 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, ipl, lp::
 
         frc2[bu2,id1,ru2] += c0*projalg(g2*g1) + c1*( projalg((Ush[b,2]\h1)*g1) +
                                                       projalg(g2*h2/gb) +
-                                                      projalg(g2*ga/h3) )
+                                                      projalg(h4*Ush[b,1]*g1) )
     end
         
     return nothing
