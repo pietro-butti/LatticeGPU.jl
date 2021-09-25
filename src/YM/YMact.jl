@@ -9,7 +9,7 @@
 ### created: Mon Jul 12 18:31:19 2021
 ###                               
 
-function krnl_plaq!(plx, U, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -17,25 +17,29 @@ function krnl_plaq!(plx, U, lp::SpaceParm{N,M,D}) where {T,N,M,D}
     
     plx[b,r] = zero(plx[b,r])
     for id1 in 1:N-1
-        if ru2 == r
-            gt2 = Ush[bu2,1]
-        else
-            gt2 = U[bu2,id1,ru2]
-        end
+        bu1, ru1 = up((b, r), id1, lp)
+        Ush[b,1] = U[b,id1,r]
+
         for id2 = id1+1:N
+            bu2, ru2 = up((b, r), id2, lp)
+            Ush[b,2] = U[b,id2,r]
+            sync_threads()
+
             if ru1 == r
                 gt1 = Ush[bu1,2]
             else
                 gt1 = U[bu1,id2,ru1]
             end
-            sync_threads()
-            
-            bu1, ru1 = up((b, r), id1, lp)
-            bu2, ru2 = up((b, r), id2, lp)
+            if ru2 == r
+                gt2 = Ush[bu2,1]
+            else
+                gt2 = U[bu2,id1,ru2]
+            end
             
             plx[b,r] += tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
+        end
     end
-    
+        
     return nothing
 end
 

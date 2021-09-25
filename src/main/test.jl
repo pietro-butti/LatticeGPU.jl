@@ -12,7 +12,7 @@ println(CUDA.device())
 GRP  = SU3
 ALG  = SU3alg
 PREC = Float64
-lp = SpaceParm{4}((64,64,64,64), (4,4,4,4))
+lp = SpaceParm{4}((32,32,32,32), (4,4,4,4))
 gp = GaugeParm{PREC}(6.0, (0.0,0.0), 3)
 
 println("Space  Parameters: ", lp)
@@ -27,6 +27,10 @@ println("Precision: ", PREC)
 println("Allocating gauge field")
 U = field(GRP{PREC}, lp)
 fill!(U, one(GRP{PREC}))
+
+println("Take to take the configuration to memory: ")
+@time Ucpu = Array(U)
+
 
 println("Allocating YM workspace")
 ymws = YMworkspace(GRP, PREC, lp, save_mem = true)
@@ -60,10 +64,12 @@ for i in 1:ntot
     println("# Plaquette: ", pl[end], "\n")
 end
 
-io = open("foo.txt", "w")
-for i in 1:ntot
-    println(io, pl[i])
-end
+@time wfl_rk3(U, 1, 0.01, lp, ymws)
+
+println("Action: ", gauge_action(U, lp, gp, ymws))
+println("Time for 100 steps of RK3 flow integrator: ")
+@time wfl_rk3(U, 100, 0.01, lp, ymws)
+println("Action: ", gauge_action(U, lp, gp, ymws))
 
 
 println("END")

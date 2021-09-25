@@ -13,7 +13,7 @@ function wfl_euler(U, ns, eps, lp::SpaceParm, ymws::YMworkspace)
 
     for i in 1:ns
         force_wilson(ymws, U, lp)
-        U .= expm(U, ymws.frc1, 2*eps)
+        U .= expm.(U, ymws.frc1, 2*eps)
     end
     
     return nothing
@@ -25,18 +25,18 @@ function wfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace)
         c0 = eps/2
         force_wilson(ymws, U, lp)
         ymws.mom .= ymws.frc1
-        U .= expm(U, ymws.mom, c0)
+        U .= expm.(U, ymws.mom, c0)
 
         c0 = -34*eps/36
         c1 = 16*eps/9
         force_wilson(ymws, U, lp)
         ymws.mom .= c0.*ymws.mom .+ c1.*ymws.frc1
-        U .= expm(U, ymws.mom)
+        U .= expm.(U, ymws.mom)
 
         c1 = 6*eps/4
         force_wilson(ymws, U, lp)
         ymws.mom .= c1.*ymws.frc1 .- ymws.mom 
-        U .= expm(U, ymws.mom)
+        U .= expm.(U, ymws.mom)
     end
 
     return nothing

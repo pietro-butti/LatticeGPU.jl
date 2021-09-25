@@ -31,5 +31,6 @@ include("YM/YM.jl")
 using .YM
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
+export wfl_euler, wfl_rk3
 
 end # module
