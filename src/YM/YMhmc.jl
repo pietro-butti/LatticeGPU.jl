@@ -16,11 +16,17 @@
 Returns the value of the Wilson plaquette action for the configuration U. 
 """
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
-    
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+
+    if abs(gp.c0-1) < 1.0E-10
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+        end
+    else
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, lp)
+        end
     end
-    S = gp.beta*( prod(lp.iL)*lp.npls -
+    S = gp.beta*( prod(lp.iL)*lp.npls*(gp.c0 + (1-gp.c0)/8) -
                   CUDA.mapreduce(real, +, ymws.cm)/gp.ng )
 
     return S
@@ -80,28 +86,28 @@ function OMF4!(mom, U, eps, ns, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspa
     r6::T =  1.0-2.0*(r2+r4)
 
     ee = eps*gp.beta/gp.ng
-    force_wilson(ymws, U, lp)
+    force_gauge(ymws, U, gp.c0, lp)
     for i in 1:ns
         mom .= mom .+ (r1*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r2)
     
-        force_wilson(ymws, U, lp)
+        force_gauge(ymws, U, gp.c0, lp)
         mom .= mom .+ (r3*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r4)
 
-        force_wilson(ymws, U, lp)
+        force_gauge(ymws, U, gp.c0, lp)
         mom .= mom .+ (r5*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r6)
 
-        force_wilson(ymws, U, lp)
+        force_gauge(ymws, U, gp.c0, lp)
         mom .= mom .+ (r5*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r4)
 
-        force_wilson(ymws, U, lp)
+        force_gauge(ymws, U, gp.c0, lp)
         mom .= mom .+ (r3*ee) .* ymws.frc1
         U .= expm.(U, mom, eps*r2)
 
-        force_wilson(ymws, U, lp)
+        force_gauge(ymws, U, gp.c0, lp)
         mom .= mom .+ (r1*ee) .* ymws.frc1
     end
 

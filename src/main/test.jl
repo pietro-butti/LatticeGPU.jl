@@ -13,7 +13,7 @@ GRP  = SU3
 ALG  = SU3alg
 PREC = Float64
 lp = SpaceParm{4}((32,32,32,32), (4,4,4,4))
-gp = GaugeParm{PREC}(6.0, (0.0,0.0), 3)
+gp = GaugeParm{PREC}(6.0, 5.0/3.0, (0.0,0.0), 3)
 
 println("Space  Parameters: ", lp)
 println("Gauge  Parameters: ", gp)
@@ -33,7 +33,7 @@ println("Take to take the configuration to memory: ")
 
 
 println("Allocating YM workspace")
-ymws = YMworkspace(GRP, PREC, lp, save_mem = true)
+ymws = YMworkspace(GRP, PREC, lp)
 
 #CUDA.@sync begin
 #    @device_code_warntype CUDA.@cuda threads=lp.bsz blocks=lp.rsz LatticeGPU.krnl_plaq!(ymws.cm, U, lp)
