@@ -27,7 +27,7 @@ export GaugeParm
 function Base.show(io::IO, gp::GaugeParm)
 
     println(io, "beta:   ", gp.beta)
-    println(io, "Ngauge: ", gp.beta)
+    println(io, "Ngauge: ", gp.ng)
     
     return nothing
 end

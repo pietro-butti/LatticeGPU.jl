@@ -72,14 +72,142 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, ipl, lp::SpaceP
         g1 = gt1/gt2
         g2 = Ush[b,2]\Ush[b,1]
         
-        F1 = projalg(Ush[b,1]*g1/Ush[b,2])
-        F2 = projalg(g1*g2)
-        F3 = projalg(g2*g1)
+        X = projalg(Ush[b,1]*g1/Ush[b,2])
         
-        frc1[b  ,id1, r ] -= F1
-        frc1[b  ,id2, r ] += F1
-        frc2[bu1,id2,ru1] -= F2
-        frc2[bu2,id1,ru2] += F3
+        frc1[b  ,id1, r ] -= X
+        frc1[b  ,id2, r ] += X
+        frc2[bu1,id2,ru1] -= projalg(g1*g2)
+        frc2[bu2,id1,ru2] += projalg(g2*g1)
+    end
+        
+    return nothing
+end
+
+function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, ipl, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+
+    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+
+    Ush = @cuStaticSharedMem(T, (D,2))
+    
+    @inbounds begin
+        id1, id2 = lp.plidx[ipl]
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+
+        Ush[b,1] = U[b,id1,r]
+        Ush[b,2] = U[b,id2,r]
+        sync_threads()
+
+        # H1 staple
+        (b1, r1) = dw((b,r), id2, lp)
+        if r1 == r
+            ga = Ush[b1,2]
+            gb = Ush[b1,1]
+        else
+            ga = U[b1,id2,r1]
+            gb = U[b1,id1,r1]
+        end
+        
+        (b2, r2) = up((b1,r1), id1, lp)
+        if r2 == r
+            gc = Ush[b2,2]
+        else
+            gc = U[b2,id2,r2]
+        end
+        h1 = (ga\gb)*gc
+        
+        # H2 staple
+        (b1, r1) = up((b,r), id1, lp)
+        if r1 == r
+            ga = Ush[b1,1]
+        else
+            ga = U[b1,id2,r1]
+        end
+        
+        (b2, r2) = up((b1,r1), id1, lp)
+        if r2 == r
+            gc = Ush[b2,2]
+        else
+            gc = U[b2,id2,r2]
+        end
+        
+        (b2, r2) = up((b1,r1), id2, lp)
+        if r2 == r
+            gc = Ush[b2,1]
+        else
+            gc = U[b2,id1,r2]
+        end
+        h2 = (ga*gb)/gc
+        
+        # H3 staple
+        (b1, r1) = up((b,r), id2, lp)
+        if r1 == r
+            ga = Ush[b1,2]
+        else
+            ga = U[b1,id2,r1]
+        end
+        
+        (b2, r2) = up((b1,r1), id2, lp)
+        if r2 == r
+            gc = Ush[b2,1]
+        else
+            gc = U[b2,id1,r2]
+        end
+        
+        (b2, r2) = up((b1,r1), id1, lp)
+        if r2 == r
+            gc = Ush[b2,2]
+        else
+            gc = U[b2,id2,r2]
+        end
+        h3 = (ga\gb)/gc
+            
+        # H4 staple
+        (b1, r1) = dw((b,r), id1, lp)
+        if r1 == r
+            ga = Ush[b1,1]
+            gb = Ush[b1,2]
+        else
+            ga = U[b1,id1,r1]
+            gb = U[b1,id2,r1]
+        end
+        
+        (b2, r2) = up((b1,r1), id2, lp)
+        if r2 == r
+            gc = Ush[b2,1]
+        else
+            gc = U[b2,id1,r2]
+        end
+        h4 = (ga\gb)*gc
+        # END staples
+        
+        if ru2 == r
+            gb = Ush[bu2,1]
+        else
+            gb = U[bu2,id1,ru2]
+        end
+        if ru1 == r
+            ga = Ush[bu1,2]
+        else
+            ga = U[bu1,id2,ru1]
+        end
+        
+        g1 = ga/gb
+        g2 = Ush[b,2]\Ush[b,1]
+
+        X = c0*projalg(Ush[b,1]*g1/Ush[b,2]) + c1 * (projalg(Ush[b,1]*h2/(Ush[b,2]*gb)) +
+                                                     projalg(Ush[b,1]*ga/(Ush[b,2]*h3)))
+
+        frc1[b,id1,r] -= X + c1*projalg(Ush[b,1]*g1/h4) 
+        frc1[b,id2,r] += X + c1*projalg(h1*g1/Ush[b,2]) 
+
+        frc2[bu1,id2,ru1] -= c0*projalg(g1*g2) + c1*( projalg((ga/h3)*g2) +
+                                                      projalg((g1/h4)*Ush[b,1]) +
+                                                      projalg((g1/Ush[b,2])*h1) )
+
+        frc2[bu2,id1,ru2] += c0*projalg(g2*g1) + c1*( projalg((Ush[b,2]\h1)*g1) +
+                                                      projalg(g2*h2/gb) +
+                                                      projalg(g2*ga/h3) )
     end
         
     return nothing
@@ -168,7 +296,8 @@ function force_wilson_pln!(frc1, ftmp, U, lp::SpaceParm)
     fill!(ftmp, zero(eltype(ftmp)))
     for i in 1:lp.npls
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,ftmp,U,i,lp)
+#            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,ftmp,U,i,lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_impr_pln!(frc1,ftmp,U,1.0,0.0,i,lp)
         end
     end
     frc1 .= frc1 .+ ftmp
