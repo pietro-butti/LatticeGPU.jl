@@ -9,8 +9,6 @@
 ### created: Thu Jul 15 15:16:47 2021
 ###                               
 
-un(t) = t <: Union{Group, Complex}
-
 function field(::Type{T}, lp::SpaceParm) where {T}
 
     sz = lp.bsz, lp.ndim, lp.rsz

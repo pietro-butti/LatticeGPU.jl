@@ -31,9 +31,9 @@ Base.one(::Type{SU2{T}}) where T <: AbstractFloat = SU2{T}(one(T),zero(T))
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}}) where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
 
 """
-    function normalize(a::SU2)
+    function normalize(a::T) where {T <: Group}
 
-Return a normalized element of `SU(2)`
+Return a normalized element of the group.
 """
 function normalize(a::SU2{T}) where T <: AbstractFloat
     dr = sqrt(abs2(a.t1) + abs2(a.t2))
@@ -80,7 +80,7 @@ function isgroup(a::SU2{T}) where T <: AbstractFloat
 end
 
 """
-    function Base.exp(a::SU2alg, t::Number=1)
+    function Base.exp(a::T, t::Number=1) where {T <: Algebra}
 
 Computes `exp(a)`
 """
@@ -120,7 +120,7 @@ end
 
 
 """
-    function expm(g::SU2, a::SU2alg)
+    function expm(g::G, a::A) where {G <: Algebra, A <: Algebra}
 
 Computes `exp(a)*g`
 

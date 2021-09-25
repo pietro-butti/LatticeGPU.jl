@@ -16,12 +16,21 @@ using CUDA, Random, StructArrays
 using ..Space
 using ..Groups
 
+import Base.show
+
 struct GaugeParm{T}
     beta::T
     cG::NTuple{2,T}
     ng::Int64
 end
 export GaugeParm
+function Base.show(io::IO, gp::GaugeParm)
+
+    println(io, "beta:   ", gp.beta)
+    println(io, "Ngauge: ", gp.beta)
+    
+    return nothing
+end
 
 struct YMworkspace{T}
     GRP
@@ -70,6 +79,19 @@ struct YMworkspace{T}
     end
 end
 export YMworkspace
+function Base.show(io::IO, ymws::YMworkspace)
+    
+    println(io, "Workspace for Group:   ", ymws.GRP)
+    println(io, "              Algebra: ", ymws.ALG)
+    println(io, "Precision:             ", ymws.PRC)
+    if ymws.fpln == nothing
+        println(io, "  - Running in memory efficient mode")
+    else
+        println(io, "  - Running in computing efficient mode")
+    end
+    return nothing
+end
+
 
 include("YMfields.jl")
 export field, field_pln, randomize!, zero!, norm2
