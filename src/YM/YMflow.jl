@@ -42,3 +42,36 @@ function wfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace)
     return nothing
 end
 
+function zfl_euler(U, ns, eps, lp::SpaceParm, ymws::YMworkspace)
+
+    for i in 1:ns
+        force_gauge(ymws, U, 5.0/3.0, lp)
+        U .= expm.(U, ymws.frc1, 2*eps)
+    end
+    
+    return nothing
+end
+
+function zfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace)
+
+    for i in 1:ns
+        c0 = eps/2
+        force_gauge(ymws, U, 5.0/3.0, lp)
+        ymws.mom .= ymws.frc1
+        U .= expm.(U, ymws.mom, c0)
+
+        c0 = -34*eps/36
+        c1 = 16*eps/9
+        force_gauge(ymws, U, 5.0/3.0, lp)
+        ymws.mom .= c0.*ymws.mom .+ c1.*ymws.frc1
+        U .= expm.(U, ymws.mom)
+
+        c1 = 6*eps/4
+        force_gauge(ymws, U, 5.0/3.0, lp)
+        ymws.mom .= c1.*ymws.frc1 .- ymws.mom 
+        U .= expm.(U, ymws.mom)
+    end
+
+    return nothing
+end
+

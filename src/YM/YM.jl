@@ -94,6 +94,6 @@ include("YMhmc.jl")
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 
 include("YMflow.jl")
-export wfl_euler, wfl_rk3
+export wfl_euler, wfl_rk3, zfl_euler, zfl_rk3
 
 end

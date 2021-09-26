@@ -12,7 +12,7 @@ println(CUDA.device())
 GRP  = SU3
 ALG  = SU3alg
 PREC = Float64
-lp = SpaceParm{4}((32,32,32,32), (4,4,4,4))
+lp = SpaceParm{4}((64,64,64,64), (4,4,4,4))
 gp = GaugeParm{PREC}(6.0, 5.0/3.0, (0.0,0.0), 3)
 
 println("Space  Parameters: ", lp)

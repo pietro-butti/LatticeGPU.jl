@@ -70,6 +70,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,D}) wher
                 gc = U[b2,id2,r2]
             end
             h3 = (ga*gb)/gc
+            # END staples
             
             if ru2 == r
                 gb = Ush[bu2,1]

@@ -13,7 +13,7 @@
     
     function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
-Returns the value of the Wilson plaquette action for the configuration U. 
+Returns the value of the gauge plaquette action for the configuration U. The parameters `\beta` and `c0` are taken from the `gp` structure. 
 """
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
 
