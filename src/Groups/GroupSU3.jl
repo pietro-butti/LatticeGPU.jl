@@ -111,10 +111,25 @@ function projalg(a::SU3{T}) where T <: AbstractFloat
 
     sr3ov2::T = 0.866025403784438646763723170752
 
-    ditr = ( imag(a.u11) + imag(a.u22) + 2.0*imag(a.u11*a.u22 - a.u12*a.u21) )/3.0
+    ditr = ( imag(a.u11) + imag(a.u22) - 2.0*imag(a.u11*a.u22 - a.u12*a.u21) )/3.0
     m12 = (a.u12 - conj(a.u21))/2.0
     m13 = (a.u13 - (a.u12*a.u23 - a.u13*a.u22) )/2.0
     m23 = (a.u23 - (a.u13*a.u21 - a.u11*a.u23) )/2.0
+
+    return SU3alg{T}(imag( m12 ), imag( m13 ), imag( m23 ),
+                     real( m12 ), real( m13 ), real( m23 ),
+                     (imag(a.u11)-imag(a.u22))/2.0,
+                     sr3ov2*(ditr))
+end
+
+function projalg(a::M3x3{T}) where T <: AbstractFloat
+
+    sr3ov2::T = 0.866025403784438646763723170752
+
+    ditr = ( imag(a.u11) + imag(a.u22) + 2.0*imag(a.u33) )/3.0
+    m12 = (a.u12 - conj(a.u21))/2.0
+    m13 = (a.u13 - conj(a.u31))/2.0
+    m23 = (a.u23 - conj(a.u32))/2.0
 
     return SU3alg{T}(imag( m12 ), imag( m13 ), imag( m23 ),
                      real( m12 ), real( m13 ), real( m23 ),
@@ -164,9 +179,9 @@ Base.:*(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11*b.u11 + 
 
 function Base.:*(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
     
-    a.u31 = conj(a.u12*a.u23 - a.u13*a.u22)
-    a.u32 = conj(a.u13*a.u21 - a.u11*a.u23)
-    a.u33 = conj(a.u11*a.u22 - a.u12*a.u21)
+    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
+    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
+    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
 
     return M3x3{T}(a.u11*b.u11 + a.u12*b.u21 + a.u13*b.u31,
                    a.u11*b.u12 + a.u12*b.u22 + a.u13*b.u32, 
@@ -214,6 +229,24 @@ function Base.:/(a::M3x3{T},b::SU3{T}) where T <: AbstractFloat
                    a.u31*(bu31) + a.u32*(bu32) + a.u33*(bu33))
 end
 
+function Base.:\(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
+
+    au31 = (a.u12*a.u23 - a.u13*a.u22)
+    au32 = (a.u13*a.u21 - a.u11*a.u23)
+    au33 = (a.u11*a.u22 - a.u12*a.u21)
+
+    return M3x3{T}(conj(a.u11)*b.u11 + conj(a.u21)*b.u21 + (au31)*b.u31,
+                   conj(a.u11)*b.u12 + conj(a.u21)*b.u22 + (au31)*b.u32, 
+                   conj(a.u11)*b.u13 + conj(a.u21)*b.u23 + (au31)*b.u33, 
+                   conj(a.u12)*b.u11 + conj(a.u22)*b.u21 + (au32)*b.u31, 
+                   conj(a.u12)*b.u12 + conj(a.u22)*b.u22 + (au32)*b.u32,
+                   conj(a.u12)*b.u13 + conj(a.u22)*b.u23 + (au32)*b.u33,
+                   conj(a.u13)*b.u11 + conj(a.u23)*b.u21 + (au33)*b.u31, 
+                   conj(a.u13)*b.u12 + conj(a.u23)*b.u22 + (au33)*b.u32,
+                   conj(a.u13)*b.u13 + conj(a.u23)*b.u23 + (au33)*b.u33)
+
+end
+
 Base.:*(a::Number,b::M3x3{T}) where T <: AbstractFloat  = M3x3{T}(a*b.u11, a*b.u12, a*bu13,
                                                                   a*b.u21, a*b.u22, a*bu23,
                                                                   a*b.u31, a*b.u32, a*bu33)
@@ -258,6 +291,11 @@ function alg2mat(a::SU3alg{T}) where T <: AbstractFloat
     
     return M3x3{T}(u11,u12,u13, u21,u22,u23, u31,u32,u33)
 end
+
+Base.:*(a::SU3alg,b::SU3) = alg2mat(a)*b
+Base.:*(a::SU3,b::SU3alg) = a*alg2mat(b)
+Base.:/(a::SU3alg,b::SU3) = alg2mat(a)/b
+Base.\:(a::SU3,b::SU3alg) = a\alg2mat(b)
 
 @inline function exp_iter(dch::Complex{T}, tch::T) where T <: AbstractFloat
 
