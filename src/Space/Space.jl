@@ -74,7 +74,12 @@ function Base.show(io::IO, lp::SpaceParm)
     return
 end
     
+"""
+    function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
+Given a point `x` with index `p`, this routine returns the index of the point
+`x + a id`. 
+"""
 @inline function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
     ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
@@ -96,6 +101,12 @@ end
     return b, r
 end
 
+"""
+    function dw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+
+Given a point `x` with index `p`, this routine returns the index of the point
+`x - a id`. 
+"""
 @inline function dw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
     ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
@@ -116,6 +127,12 @@ end
     return b, r
 end
 
+"""
+    function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+
+Given a point `x` with index `p`, this routine returns the index of the points
+`x + a id` and `x - a id`. 
+"""
 @inline function updw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
     ic = mod(div(p[1]-1,lp.blkS[id]),lp.blk[id])
@@ -152,7 +169,7 @@ end
     return bu, ru, bd, rd
 end
 
-@inline function global_point(p::NTuple{2,Int64}, lp::SpaceParm)
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm)
 
     @inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
     @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
@@ -163,11 +180,22 @@ end
     return pt
 end
 
-@inline function point_idx(pt::NTuple{4, Int64}, lp::SpaceParm)
+@inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm)
+
+    @inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
+    @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
+
+    @inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
+    
+    return cnt(p[1], p[2], 1, lp)
+end
+
+
+@inline function point_index(pt::NTuple{4, Int64}, lp::SpaceParm)
 
     
 end
     
-export up, dw, updw, global_point, point_idx
+export up, dw, updw, global_point, point_index, point_coord, point_time
 
 end

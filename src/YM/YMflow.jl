@@ -20,7 +20,7 @@ function add_zth_term(ymws::YMworkspace, U, lp)
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_zth!(ymws.frc1,ymws.frc2,U,lp)
     end
-    ymws.frc1 .= (5/6).*ymws.frc1 .+ ymws.frc2 
+    ymws.frc1 .= ymws.frc2 
     
     return nothing
 end
@@ -30,14 +30,15 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
     Ush = @cuStaticSharedMem(TG, D)
-    Ush = @cuStaticSharedMem(TA, D)
+    Fsh = @cuStaticSharedMem(TA, D)
     
     @inbounds for id in 1:N
         Ush[b] = U[b,id,r]
-        Fsh[b] = Frc[b,id,r]
+        Fsh[b] = frc[b,id,r]
         sync_threads()
         
-        bu, ru, bd, rd = updw((b,r), id, lp)
+        bu, ru = up((b,r), id, lp)
+        bd, rd = dw((b,r), id, lp)
         
         if ru == r
             X = Fsh[bu]
@@ -52,8 +53,8 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
             Ud = U[bd,id,rd]
         end
         
-        frc2[b,id,r] = (1/6)*(projalg(Ud[b]\Y*Ud[b]) +
-                              projalg(Ush[b]*X/Ush[b]))
+        frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
+                                             projalg(Ush[b]*X/Ush[b]))
     end
     
     return nothing
@@ -76,29 +77,29 @@ end
 function flw_rk3(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
     
     for i in 1:ns
-        c0 = eps/2
+        e0 = eps/2
         force_gauge(ymws, U, c0, lp)
         if add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
         end
         ymws.mom .= ymws.frc1
-        U .= expm.(U, ymws.mom, c0)
+        U .= expm.(U, ymws.mom, e0)
         
-        c0 = -34*eps/36
-        c1 = 16*eps/9
+        e0 = -34*eps/36
+        e1 = 16*eps/9
         force_gauge(ymws, U, c0, lp)
         if add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
         end
-        ymws.mom .= c0.*ymws.mom .+ c1.*ymws.frc1
+        ymws.mom .= e0.*ymws.mom .+ e1.*ymws.frc1
         U .= expm.(U, ymws.mom)
         
-        c1 = 6*eps/4
+        e1 = 6*eps/4
         force_gauge(ymws, U, c0, lp)
         if add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
         end
-        ymws.mom .= c1.*ymws.frc1 .- ymws.mom 
+        ymws.mom .= e1.*ymws.frc1 .- ymws.mom 
         U .= expm.(U, ymws.mom)
     end
                               

@@ -7,7 +7,7 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-lp = SpaceParm{4}((96,96,32,32), (4,4,4,4))
+lp = SpaceParm{4}((32,32,32,32), (4,4,4,4))
 println("Space  Parameters: ", lp)
 
 # Seed RNG
