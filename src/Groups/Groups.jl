@@ -12,6 +12,10 @@
 
 module Groups
 
+using Random
+import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.one,Base.zero
+import Random.rand
+
 abstract type Group end
 abstract type Algebra end
 
@@ -20,8 +24,16 @@ export Group, Algebra
 include("GroupSU2.jl")
 export SU2, SU2alg
 
+##
+# SU(3) and 3x3 matrix operations
+##
+include("SU3Types.jl")
+export SU3, SU3alg, M3x3
+
 include("GroupSU3.jl")
-export SU3, SU3alg
+include("M3x3.jl")
+include("AlgebraSU3.jl")
+## END SU(3)
 
 include("GroupU1.jl")
 export U1, U1alg
