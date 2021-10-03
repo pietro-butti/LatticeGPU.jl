@@ -113,3 +113,18 @@ Base.:-(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(-b.u11, -b.u12
 Base.:+(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(b.u11, b.u12, bu13,
                                                                   b.u21, b.u22, bu23,
                                                                   b.u31, b.u32, bu33)
+function projalg(a::M3x3{T}) where T <: AbstractFloat
+
+    sr3ov2::T = 0.866025403784438646763723170752
+
+    ditr = ( imag(a.u11) + imag(a.u22) + 2.0*imag(a.u33) )/3.0
+    m12 = (a.u12 - conj(a.u21))/2.0
+    m13 = (a.u13 - conj(a.u31))/2.0
+    m23 = (a.u23 - conj(a.u32))/2.0
+
+    return SU3alg{T}(imag( m12 ), imag( m13 ), imag( m23 ),
+                     real( m12 ), real( m13 ), real( m23 ),
+                     (imag(a.u11)-imag(a.u22))/2.0,
+                     sr3ov2*(ditr))
+end
+

@@ -14,6 +14,13 @@ struct SU2{T} <: Group
     t2::Complex{T}
 end
 
+struct M2x2{T}
+    u11::Complex{T}
+    u12::Complex{T}
+    u21::Complex{T}
+    u22::Complex{T}
+end
+
 struct SU2alg{T} <: Algebra
     t1::T
     t2::T
@@ -21,6 +28,9 @@ struct SU2alg{T} <: Algebra
 end
 
 Base.zero(::Type{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(zero(T),zero(T),zero(T))
+Base.zero(::Type{M2x2{T}})   where T <: AbstractFloat = M2x2{T}(zero(T),zero(T),zero(T),zero(T))
+Base.one(::Type{SU2{T}})     where T <: AbstractFloat = SU2{T}(one(T),zero(T))
+Base.one(::Type{M2x2{T}})    where T <: AbstractFloat = M2x2{T}(one(T),zero(T),zero(T),one(T))
+
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T))
-Base.one(::Type{SU2{T}}) where T <: AbstractFloat = SU2{T}(one(T),zero(T))
-Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}}) where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}})    where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))

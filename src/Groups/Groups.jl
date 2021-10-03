@@ -25,9 +25,10 @@ export Group, Algebra
 # SU(2) and 2x2 matrix operations
 ##
 include("SU2Types.jl")
-export SU2, SU2alg
+export SU2, SU2alg, M2x2
 
 include("GroupSU2.jl")
+include("M2x2.jl")
 include("AlgebraSU2.jl")
 ## END SU(2)
 
@@ -46,7 +47,7 @@ include("GroupU1.jl")
 export U1, U1alg
 
 
-export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat
 
 
 end # module

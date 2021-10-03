@@ -129,3 +129,8 @@ b = g2*a
 println("b is one: ", b)
 
 
+println("## Aqui test M3x3")
+ba = rand(SU3alg{T})
+ga = exp(ba)
+println("Matrix: ", alg2mat(ba))
+println("Exp:    ", ga)
