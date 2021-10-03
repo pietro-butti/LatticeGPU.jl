@@ -1,0 +1,26 @@
+###
+### "THE BEER-WARE LICENSE":
+### Alberto Ramos wrote this file. As long as you retain this 
+### notice you can do whatever you want with this stuff. If we meet some 
+### day, and you think this stuff is worth it, you can buy me a beer in 
+### return. <alberto.ramos@cern.ch>
+###
+### file:    SU2Types.jl
+### created: Sun Oct  3 09:22:48 2021
+###                               
+
+struct SU2{T} <: Group
+    t1::Complex{T}
+    t2::Complex{T}
+end
+
+struct SU2alg{T} <: Algebra
+    t1::T
+    t2::T
+    t3::T
+end
+
+Base.zero(::Type{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(zero(T),zero(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T))
+Base.one(::Type{SU2{T}}) where T <: AbstractFloat = SU2{T}(one(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}}) where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
