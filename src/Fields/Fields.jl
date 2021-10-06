@@ -9,7 +9,17 @@
 ### created: Wed Oct  6 17:37:03 2021
 ###                               
 
+module Fields
+
+using CUDA
+using ..Space
+
 
 vector_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
-scalar_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.rsz)
+scalar_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 2}(undef, lp.bsz, lp.rsz)
 nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = CuArray{T, 3}(undef, lp.bsz, n, lp.rsz)
+
+export vector_field, scalar_field, nscalar_field
+
+end
+

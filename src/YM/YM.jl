@@ -15,6 +15,7 @@ module YM
 using CUDA, Random, StructArrays
 using ..Space
 using ..Groups
+using ..Fields
 
 import Base.show
 
@@ -85,7 +86,7 @@ end
 
 
 include("YMfields.jl")
-export field, field_pln, randomize!, zero!, norm2
+export randomize!, zero!, norm2
 
 include("YMact.jl")
 export krnl_plaq!, force0_wilson!
