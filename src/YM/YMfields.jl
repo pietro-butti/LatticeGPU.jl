@@ -9,18 +9,6 @@
 ### created: Thu Jul 15 15:16:47 2021
 ###                               
 
-function field(::Type{T}, lp::SpaceParm) where {T}
-
-    sz = lp.bsz, lp.ndim, lp.rsz
-    return CuArray{T, 3}(undef, sz)
-end
-
-function field_pln(::Type{T}, lp::SpaceParm) where {T}
-
-    sz = lp.bsz, lp.npls, lp.rsz, 3
-    return CuArray{T, 4}(undef, sz)
-end
-
 function randomize!(f, lp::SpaceParm, ymws::YMworkspace) 
         
     if ymws.ALG == SU2alg

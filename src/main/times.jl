@@ -26,7 +26,7 @@ ymws = YMworkspace(GRP, PREC, lp)
 
 # Main program
 println("Allocating gauge field")
-U = field(GRP{PREC}, lp)
+U = vector_field(GRP{PREC}, lp)
 fill!(U, one(GRP{PREC}))
 
 println("Time to take the configuration to memory: ")

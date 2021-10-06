@@ -25,7 +25,7 @@ Random.seed!(1234)
 println("Precision: ", PREC)
 
 println("Allocating gauge field")
-U = field(GRP{PREC}, lp)
+U = vector_field(GRP{PREC}, lp)
 fill!(U, one(GRP{PREC}))
 
 println("Take to take the configuration to memory: ")
