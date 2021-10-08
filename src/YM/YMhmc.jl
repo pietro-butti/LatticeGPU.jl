@@ -48,14 +48,15 @@ function hamiltonian(mom, U, lp, gp, ymws)
     return K+V
 end
 
-function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc=false)
+function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
 
+    int = omf4(T, eps, ns)
     ymws.U1 .= U
 
     randomize!(ymws.mom, lp, ymws)
     hini = hamiltonian(ymws.mom, U, lp, gp, ymws)
 
-    OMF4!(ymws.mom, U, eps, ns, lp, gp, ymws)
+    MD!(ymws.mom, U, int, lp, gp, ymws)
     
     dh   = hamiltonian(ymws.mom, U, lp, gp, ymws) - hini
     pacc = exp(-dh)
@@ -76,40 +77,30 @@ function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc
     return dh, acc
 end
 
-function OMF4!(mom, U, eps, ns, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
+function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
 
-    r1::T =  0.08398315262876693
-    r2::T =  0.2539785108410595
-    r3::T =  0.6822365335719091
-    r4::T = -0.03230286765269967
-    r5::T =  0.5-r1-r3
-    r6::T =  1.0-2.0*(r2+r4)
-
-    ee = eps*gp.beta/gp.ng
+    ee = int.eps*gp.beta/gp.ng
     force_gauge(ymws, U, gp.c0, lp)
-    for i in 1:ns
-        mom .= mom .+ (r1*ee) .* ymws.frc1
-        U .= expm.(U, mom, eps*r2)
-    
-        force_gauge(ymws, U, gp.c0, lp)
-        mom .= mom .+ (r3*ee) .* ymws.frc1
-        U .= expm.(U, mom, eps*r4)
-
-        force_gauge(ymws, U, gp.c0, lp)
-        mom .= mom .+ (r5*ee) .* ymws.frc1
-        U .= expm.(U, mom, eps*r6)
-
-        force_gauge(ymws, U, gp.c0, lp)
-        mom .= mom .+ (r5*ee) .* ymws.frc1
-        U .= expm.(U, mom, eps*r4)
-
-        force_gauge(ymws, U, gp.c0, lp)
-        mom .= mom .+ (r3*ee) .* ymws.frc1
-        U .= expm.(U, mom, eps*r2)
-
-        force_gauge(ymws, U, gp.c0, lp)
-        mom .= mom .+ (r1*ee) .* ymws.frc1
+    mom .= mom .+ (int.r[1]*ee) .* ymws.frc1
+    for i in 1:int.ns
+        k   = 2
+        off = 1
+        for j in 1:NI-1
+            U .= expm.(U, mom, int.eps*int.r[k])
+            if k == NI
+                off = -1
+            end
+            k += off
+            
+            force_gauge(ymws, U, gp.c0, lp)
+            if (i < int.ns) && (k == 1)
+                mom .= mom .+ (2*int.r[k]*ee) .* ymws.frc1
+            else
+                mom .= mom .+ (int.r[k]*ee) .* ymws.frc1
+            end
+            k += off
+        end
     end
-
+    
     return nothing
 end

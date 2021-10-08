@@ -16,6 +16,7 @@ using CUDA, Random, StructArrays
 using ..Space
 using ..Groups
 using ..Fields
+using ..MD
 
 import Base.show
 

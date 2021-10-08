@@ -29,6 +29,11 @@ include("Fields/Fields.jl")
 using .Fields
 export vector_field, scalar_field, nscalar_field
 
+include("MD/MD.jl")
+using .MD
+export IntrScheme
+export omf4, leapfrog
+
 include("YM/YM.jl")
 
 using .YM
