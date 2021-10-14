@@ -305,9 +305,13 @@ the prefactor 1/g0^2, and assign it to the workspace force `ymws.frc1`
 function force_gauge(ymws::YMworkspace, U, c0, lp::SpaceParm)
 
     if abs(c0-1) < 1.0E-10
-        force_wilson_pln!(ymws.frc1, ymws.frc2, U, lp::SpaceParm)
+        @timeit "Wilson gauge force" begin
+            force_wilson_pln!(ymws.frc1, ymws.frc2, U, lp::SpaceParm)
+        end
     else
-        force_wilson_pln!(ymws.frc1, ymws.frc2, U, lp::SpaceParm, c0)
+        @timeit "Improved gauge force" begin
+            force_wilson_pln!(ymws.frc1, ymws.frc2, U, lp::SpaceParm, c0)
+        end
     end
     return nothing
 end

@@ -12,17 +12,21 @@
 function randomize!(f, lp::SpaceParm, ymws::YMworkspace) 
         
     if ymws.ALG == SU2alg
-        m = CUDA.randn(ymws.PRC, lp.bsz,lp.ndim,3,lp.rsz)
-        CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_SU2!(f,m,lp)
+        @timeit "Randomize SU(2) algebra field" begin
+            m = CUDA.randn(ymws.PRC, lp.bsz,lp.ndim,3,lp.rsz)
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_SU2!(f,m,lp)
+            end
         end
         return nothing
     end
 
     if ymws.ALG == SU3alg
-        m = CUDA.randn(ymws.PRC, lp.bsz,lp.ndim,8,lp.rsz)
-        CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_SU3!(f,m,lp)
+        @timeit "Randomize SU(3) algebra field" begin
+            m = CUDA.randn(ymws.PRC, lp.bsz,lp.ndim,8,lp.rsz)
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_SU3!(f,m,lp)
+            end
         end
         return nothing
     end

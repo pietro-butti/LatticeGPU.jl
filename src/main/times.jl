@@ -1,4 +1,4 @@
-using CUDA, Logging, StructArrays, Random
+using CUDA, Logging, StructArrays, Random, TimerOutputs
 
 CUDA.allowscalar(false)
 import Pkg
@@ -7,7 +7,7 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-lp = SpaceParm{4}((32,32,32,32), (4,4,4,4))
+lp = SpaceParm{4}((16,16,16,16), (4,4,4,4))
 println("Space  Parameters: ", lp)
 
 # Seed RNG
@@ -93,5 +93,6 @@ println("Time for 100 steps of RK3 flow integrator: ")
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("## END improved action/flow measurements")
 
+print_timer(linechars = :ascii)
 println("END")
 

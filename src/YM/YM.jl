@@ -12,7 +12,7 @@
 
 module YM
 
-using CUDA, Random, StructArrays
+using CUDA, Random, StructArrays, TimerOutputs
 using ..Space
 using ..Groups
 using ..Fields
@@ -48,26 +48,28 @@ struct YMworkspace{T}
     rm # float   of volume
     function YMworkspace(::Type{G}, ::Type{T}, lp::SpaceParm) where {G <: Group, T <: AbstractFloat}
         
-        if (G == SU2)
-            GRP = SU2
-            ALG = SU2alg
-            f1 = vector_field(SU2alg{T}, lp)
-            f2 = vector_field(SU2alg{T}, lp)
-            mm = vector_field(SU2alg{T}, lp)
-            u1 = vector_field(SU2{T},    lp)
+        @timeit "Allocating YMWorkspace" begin
+            if (G == SU2)
+                GRP = SU2
+                ALG = SU2alg
+                f1 = vector_field(SU2alg{T}, lp)
+                f2 = vector_field(SU2alg{T}, lp)
+                mm = vector_field(SU2alg{T}, lp)
+                u1 = vector_field(SU2{T},    lp)
+            end
+            
+            if (G == SU3)
+                GRP = SU3
+                ALG = SU3alg
+                f1 = vector_field(SU3alg{T}, lp)
+                f2 = vector_field(SU3alg{T}, lp)
+                mm = vector_field(SU3alg{T}, lp)
+                u1 = vector_field(SU3{T},    lp)
+            end
+            cs = scalar_field(Complex{T}, lp)
+            rs = scalar_field(T, lp)
         end
-
-        if (G == SU3)
-            GRP = SU3
-            ALG = SU3alg
-            f1 = vector_field(SU3alg{T}, lp)
-            f2 = vector_field(SU3alg{T}, lp)
-            mm = vector_field(SU3alg{T}, lp)
-            u1 = vector_field(SU3{T},    lp)
-        end
-        cs = scalar_field(Complex{T}, lp)
-        rs = scalar_field(T, lp)
-
+            
         return new{T}(GRP,ALG,T,f1, f2, mm, u1, cs, rs)
     end
 end

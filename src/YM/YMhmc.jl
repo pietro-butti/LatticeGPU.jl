@@ -18,12 +18,16 @@ Returns the value of the gauge plaquette action for the configuration U. The par
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
 
     if abs(gp.c0-1) < 1.0E-10
-        CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+        @timeit "Wilson gauge action" begin
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+            end
         end
     else
-        CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, lp)
+        @timeit "Improved gauge action" begin
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, lp)
+            end
         end
     end
     S = gp.beta*( prod(lp.iL)*lp.npls*(gp.c0 + (1-gp.c0)/8) -
@@ -34,71 +38,81 @@ end
 
 function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+    @timeit "Plaquette measurement" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+        end
     end
-
+    
     return CUDA.mapreduce(real, +, ymws.cm)/(prod(lp.iL)*lp.npls)
 end
     
 function hamiltonian(mom, U, lp, gp, ymws)
-    K = CUDA.mapreduce(norm2, +, mom)/2 
-    V = gauge_action(U, lp, gp, ymws)
-
+    @timeit "Computing Hamiltonian" begin
+        K = CUDA.mapreduce(norm2, +, mom)/2 
+        V = gauge_action(U, lp, gp, ymws)
+    end
+        
     return K+V
 end
 
 function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
 
-    int = omf4(T, eps, ns)
-    ymws.U1 .= U
-
-    randomize!(ymws.mom, lp, ymws)
-    hini = hamiltonian(ymws.mom, U, lp, gp, ymws)
-
-    MD!(ymws.mom, U, int, lp, gp, ymws)
-    
-    dh   = hamiltonian(ymws.mom, U, lp, gp, ymws) - hini
-    pacc = exp(-dh)
-
-    acc = true
-    if (noacc)
-        return dh, acc
-    end
-    
-    if (pacc < 1.0)
-        r = rand()
-        if (pacc < r) 
-            U .= ymws.U1
-            acc = false
+    @timeit "HMC trayectory" begin
+        
+        int = omf4(T, eps, ns)
+        ymws.U1 .= U
+        
+        randomize!(ymws.mom, lp, ymws)
+        hini = hamiltonian(ymws.mom, U, lp, gp, ymws)
+        
+        MD!(ymws.mom, U, int, lp, gp, ymws)
+        
+        dh   = hamiltonian(ymws.mom, U, lp, gp, ymws) - hini
+        pacc = exp(-dh)
+        
+        acc = true
+        if (noacc)
+            return dh, acc
         end
+        
+        if (pacc < 1.0)
+            r = rand()
+            if (pacc < r) 
+                U .= ymws.U1
+                acc = false
+            end
+        end
+        
     end
-
     return dh, acc
 end
 
 function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
+    
+    @timeit "MD evolution" begin
 
-    ee = int.eps*gp.beta/gp.ng
-    force_gauge(ymws, U, gp.c0, lp)
-    mom .= mom .+ (int.r[1]*ee) .* ymws.frc1
-    for i in 1:int.ns
-        k   = 2
-        off = 1
-        for j in 1:NI-1
-            U .= expm.(U, mom, int.eps*int.r[k])
-            if k == NI
-                off = -1
+        ee = int.eps*gp.beta/gp.ng
+        force_gauge(ymws, U, gp.c0, lp)
+        mom .= mom .+ (int.r[1]*ee) .* ymws.frc1
+        for i in 1:int.ns
+            k   = 2
+            off = 1
+            for j in 1:NI-1
+                U .= expm.(U, mom, int.eps*int.r[k])
+                if k == NI
+                    off = -1
+                end
+                k += off
+                
+                force_gauge(ymws, U, gp.c0, lp)
+                if (i < int.ns) && (k == 1)
+                    mom .= mom .+ (2*int.r[k]*ee) .* ymws.frc1
+                else
+                    mom .= mom .+ (int.r[k]*ee) .* ymws.frc1
+                end
+                k += off
             end
-            k += off
-            
-            force_gauge(ymws, U, gp.c0, lp)
-            if (i < int.ns) && (k == 1)
-                mom .= mom .+ (2*int.r[k]*ee) .* ymws.frc1
-            else
-                mom .= mom .+ (int.r[k]*ee) .* ymws.frc1
-            end
-            k += off
         end
     end
     

@@ -63,12 +63,14 @@ end
 
 function flw_euler(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
     
-    for i in 1:ns
-        force_gauge(ymws, U, c0, lp)
-        if add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+    @timeit "Integrating flow equations (Euler)" begin
+        for i in 1:ns
+            force_gauge(ymws, U, c0, lp)
+            if add_zth
+                add_zth_term(ymws::YMworkspace, U, lp)
+            end
+            U .= expm.(U, ymws.frc1, 2*eps)
         end
-        U .= expm.(U, ymws.frc1, 2*eps)
     end
     
     return nothing
@@ -76,31 +78,33 @@ end
 
 function flw_rk3(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
     
-    for i in 1:ns
-        e0 = eps/2
-        force_gauge(ymws, U, c0, lp)
-        if add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+    @timeit "Integrating flow equations (RK3)" begin
+        for i in 1:ns
+            e0 = eps/2
+            force_gauge(ymws, U, c0, lp)
+            if add_zth
+                add_zth_term(ymws::YMworkspace, U, lp)
+            end
+            ymws.mom .= ymws.frc1
+            U .= expm.(U, ymws.mom, e0)
+            
+            e0 = -34*eps/36
+            e1 = 16*eps/9
+            force_gauge(ymws, U, c0, lp)
+            if add_zth
+                add_zth_term(ymws::YMworkspace, U, lp)
+            end
+            ymws.mom .= e0.*ymws.mom .+ e1.*ymws.frc1
+            U .= expm.(U, ymws.mom)
+            
+            e1 = 6*eps/4
+            force_gauge(ymws, U, c0, lp)
+            if add_zth
+                add_zth_term(ymws::YMworkspace, U, lp)
+            end
+            ymws.mom .= e1.*ymws.frc1 .- ymws.mom 
+            U .= expm.(U, ymws.mom)
         end
-        ymws.mom .= ymws.frc1
-        U .= expm.(U, ymws.mom, e0)
-        
-        e0 = -34*eps/36
-        e1 = 16*eps/9
-        force_gauge(ymws, U, c0, lp)
-        if add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
-        end
-        ymws.mom .= e0.*ymws.mom .+ e1.*ymws.frc1
-        U .= expm.(U, ymws.mom)
-        
-        e1 = 6*eps/4
-        force_gauge(ymws, U, c0, lp)
-        if add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
-        end
-        ymws.mom .= e1.*ymws.frc1 .- ymws.mom 
-        U .= expm.(U, ymws.mom)
     end
                               
     return nothing
