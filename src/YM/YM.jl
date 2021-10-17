@@ -66,8 +66,8 @@ struct YMworkspace{T}
                 mm = vector_field(SU3alg{T}, lp)
                 u1 = vector_field(SU3{T},    lp)
             end
-            cs = scalar_field(Complex{T}, lp)
-            rs = scalar_field(T, lp)
+            cs = scalar_field_point(Complex{T}, lp)
+            rs = scalar_field_point(T, lp)
         end
             
         return new{T}(GRP,ALG,T,f1, f2, mm, u1, cs, rs)

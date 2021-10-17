@@ -169,25 +169,67 @@ Given a point `x` with index `p`, this routine returns the index of the points
     return bu, ru, bd, rd
 end
 
-@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm)
+@inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
+@inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
+@inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
 
-    @inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
-    @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{2,M,D}) where {M,D}
 
-    @inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
-    
-    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
-    return pt
+    i1 = cnt(p[1], p[2], 1, lp)
+    i2 = cnt(p[1], p[2], 2, lp)
+
+#    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return CartesianIndex{4}(i1,i2)
 end
 
-@inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm)
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{3,M,D}) where {M,D}
 
-    @inline cntb(nb, id::Int64, lp::SpaceParm) = mod(div(nb-1,lp.blkS[id]),lp.blk[id])
-    @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
+    i1 = cnt(p[1], p[2], 1, lp)
+    i2 = cnt(p[1], p[2], 2, lp)
+    i3 = cnt(p[1], p[2], 3, lp)
 
-    @inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
-    
-    return cnt(p[1], p[2], 1, lp)
+#    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return CartesianIndex{4}(i1,i2,i3)
+end
+
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{4,M,D}) where {M,D}
+
+    i1 = cnt(p[1], p[2], 1, lp)
+    i2 = cnt(p[1], p[2], 2, lp)
+    i3 = cnt(p[1], p[2], 3, lp)
+    i4 = cnt(p[1], p[2], 4, lp)
+
+#    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return CartesianIndex{4}(i1,i2,i3,i4)
+end
+
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{5,M,D}) where {M,D}
+
+    i1 = cnt(p[1], p[2], 1, lp)
+    i2 = cnt(p[1], p[2], 2, lp)
+    i3 = cnt(p[1], p[2], 3, lp)
+    i4 = cnt(p[1], p[2], 4, lp)
+    i5 = cnt(p[1], p[2], 5, lp)
+
+#    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return CartesianIndex{4}(i1,i2,i3,i4,i5)
+end
+
+@inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{6,M,D}) where {M,D}
+
+    i1 = cnt(p[1], p[2], 1, lp)
+    i2 = cnt(p[1], p[2], 2, lp)
+    i3 = cnt(p[1], p[2], 3, lp)
+    i4 = cnt(p[1], p[2], 4, lp)
+    i5 = cnt(p[1], p[2], 5, lp)
+    i6 = cnt(p[1], p[2], 6, lp)
+
+#    pt = ntuple(i -> cnt(p[1], p[2], i, lp), lp.ndim)
+    return CartesianIndex{4}(i1,i2,i3,i4,i5,i6)
+end
+
+@inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm{N,M,D}) where {N,M,D}
+    return cnt(p[1], p[2], N, lp)
 end
 
 

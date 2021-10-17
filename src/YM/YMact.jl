@@ -15,7 +15,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,D}) wher
 
     Ush = @cuStaticSharedMem(T, (D,2))
     
-    plx[b,r] = zero(plx[b,r])
+    S = zero(eltype(plx))
     for id1 in 1:N-1
         bu1, ru1 = up((b, r), id1, lp)
         Ush[b,1] = U[b,id1,r]
@@ -85,9 +85,12 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,D}) wher
 
             g2 = Ush[b,2]\Ush[b,1]
             
-            plx[b,r] += c0*tr(g2*ga/gb) + c1*( tr(g2*h2/gb) + tr(g2*ga/h3))
+            S += c0*tr(g2*ga/gb) + c1*( tr(g2*h2/gb) + tr(g2*ga/h3))
         end
     end
+
+    I = point_coord((b,r), lp)
+    plx[I] = S
 
     return nothing
 end
@@ -98,7 +101,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,D}) where {T,N,M
 
     Ush = @cuStaticSharedMem(T, (D,2))
     
-    plx[b,r] = zero(plx[b,r])
+    S = zero(eltype(plx))
     for id1 in 1:N-1
         bu1, ru1 = up((b, r), id1, lp)
         Ush[b,1] = U[b,id1,r]
@@ -119,10 +122,13 @@ function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,D}) where {T,N,M
                 gt2 = U[bu2,id1,ru2]
             end
             
-            plx[b,r] += tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
+            S += tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
         end
     end
         
+    I = point_coord((b,r), lp)
+    plx[I] = S
+
     return nothing
 end
 

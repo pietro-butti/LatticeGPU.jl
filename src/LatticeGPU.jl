@@ -27,7 +27,7 @@ export up, dw, updw, global_point
 
 include("Fields/Fields.jl")
 using .Fields
-export vector_field, scalar_field, nscalar_field
+export vector_field, scalar_field, nscalar_field, scalar_field_point
 
 include("MD/MD.jl")
 using .MD
