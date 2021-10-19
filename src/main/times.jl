@@ -61,6 +61,17 @@ wfl_rk3(U, 1, 0.01, lp, ymws)
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("Time for 100 steps of RK3 flow integrator: ")
 @time wfl_rk3(U, 100, 0.01, lp, ymws)
+eoft = Eoft_plaq(U, gp, lp, ymws)
+eoft = Eoft_clover(U, lp, ymws)
+qtop = Qtop(U, lp, ymws)
+
+@time eoft = Eoft_plaq(U, gp, lp, ymws)
+println("Plaq: ", eoft)
+@time eoft = Eoft_clover(U, lp, ymws)
+println("Clov: ", eoft)
+@time qtop = Qtop(U, lp, ymws)
+println("Qtop: ", qtop)
+
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("## END Wilson action/flow measurements")
 

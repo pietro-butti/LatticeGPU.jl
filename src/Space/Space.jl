@@ -34,8 +34,8 @@ struct SpaceParm{N,M,D}
         N == length(y) || throw(ArgumentError("Block   size incorrect length for dimension $N"))
 
         pls = Vector{Tuple{Int64, Int64}}()
-        for i in 1:N
-            for j in i+1:N
+        for i in N:-1:1
+            for j in 1:i-1
                 push!(pls, (i,j))
             end
         end
