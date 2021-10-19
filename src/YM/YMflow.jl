@@ -123,12 +123,18 @@ zfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 5.0/
 # Observables
 ##
 
+"""
+    function Eoft_plaq([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Measure the action density `E(t)` using the plaquette discretization. If the argument `Eslc`
+the contribution for each Euclidean time slice and plane are returned.
+"""
 function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,D}, ymws::YMworkspace) where {T,N,M,D}
 
     @timeit "E(t) plaquette measurement" begin
 
         tp = ntuple(i->i, N-1)
-        V3   = prod(lp.iL[1:end-1])
+        V3 = prod(lp.iL[1:end-1])
 
         fill!(Eslc,zero(T))
         Etmp = zeros(T,lp.iL[end])
@@ -175,6 +181,12 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, ipl, lp::SpaceParm{N,M,D}) whe
     return nothing
 end
 
+"""
+    Qtop([Qslc,] U, lp, ymws)
+
+Measure the topological charge `Q` of the configuration `U`. If the argument `Qslc` is present
+the contribution for each Euclidean time slice are returned.
+"""
 function Qtop(Qslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace) where {M,D}
 
     @timeit "Qtop measurement" begin
@@ -210,6 +222,12 @@ end
 Qtop(U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end],M), U, lp, ymws)
 
 
+"""
+    function Eoft_clover([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Measure the action density `E(t)` using the clover discretization. If the argument `Eslc`
+the contribution for each Euclidean time slice and plane are returned.
+"""
 function Eoft_clover(Eslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D}
 
     function acum(ipl1, ipl2, Etmp)
@@ -230,7 +248,7 @@ function Eoft_clover(Eslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where 
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
-            Eslc[it,ipl1] = Etmp[it]/8
+            Eslc[it,ipl2] = Etmp[it]/8
         end
 
         return nothing
