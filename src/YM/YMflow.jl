@@ -25,7 +25,7 @@ function add_zth_term(ymws::YMworkspace, U, lp)
     return nothing
 end
 
-function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,D}) where {TA,TG,N,M,D}
+function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -129,7 +129,7 @@ zfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 5.0/
 Measure the action density `E(t)` using the plaquette discretization. If the argument `Eslc`
 the contribution for each Euclidean time slice and plane are returned.
 """
-function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,D}, ymws::YMworkspace) where {T,N,M,D}
+function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,N,M,B,D}
 
     @timeit "E(t) plaquette measurement" begin
 
@@ -163,10 +163,10 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,D}, ymws::YMwork
     return sum(Eslc)/lp.iL[end]
 end
 
-Eoft_plaq(U, gp::GaugeParm{T}, lp::SpaceParm{N,M,D}, ymws::YMworkspace) where {T,N,M,D} = Eoft_plaq(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
+Eoft_plaq(U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,N,M,B,D} = Eoft_plaq(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
 
 
-function krnl_plaq_pln!(plx, U::AbstractArray{T}, ipl, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_plaq_pln!(plx, U::AbstractArray{T}, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -187,7 +187,7 @@ end
 Measure the topological charge `Q` of the configuration `U`. If the argument `Qslc` is present
 the contribution for each Euclidean time slice are returned.
 """
-function Qtop(Qslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace) where {M,D}
+function Qtop(Qslc, U, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace) where {M,B,D}
 
     @timeit "Qtop measurement" begin
 
@@ -228,7 +228,7 @@ Qtop(U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T
 Measure the action density `E(t)` using the clover discretization. If the argument `Eslc`
 the contribution for each Euclidean time slice and plane are returned.
 """
-function Eoft_clover(Eslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D}
+function Eoft_clover(Eslc, U, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace{T}) where {T,M,B,D}
 
     function acum(ipl1, ipl2, Etmp)
 
@@ -280,9 +280,9 @@ function Eoft_clover(Eslc, U, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where 
 
     return sum(Eslc)/lp.iL[end]
 end
-Eoft_clover(U, lp::SpaceParm{N,M,D}, ymws::YMworkspace{T}) where {T,N,M,D} = Eoft_clover(zeros(T,lp.iL[end],M), U, lp, ymws)
+Eoft_clover(U, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace{T}) where {T,N,M,B,D} = Eoft_clover(zeros(T,lp.iL[end],M), U, lp, ymws)
 
-function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,D}) where {M,D}
+function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -294,7 +294,7 @@ function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,D}) where {M,D}
     return nothing
 end
 
-function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,D}) where {M,D}
+function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -304,7 +304,7 @@ function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,D}) where {M,D}
     return nothing
 end
 
-function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, ipl1, ipl2, lp::SpaceParm{4,M,D}) where {T,M,D}
+function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, ipl1, ipl2, lp::SpaceParm{4,M,B,D}) where {T,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 

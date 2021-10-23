@@ -34,7 +34,7 @@ function randomize!(f, lp::SpaceParm, ymws::YMworkspace)
     return nothing
 end
 
-function krnl_assign_SU3!(frc, m, lp::SpaceParm)
+function krnl_assign_SU3!(frc, m, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     for id in 1:lp.ndim
@@ -45,7 +45,7 @@ function krnl_assign_SU3!(frc, m, lp::SpaceParm)
     return nothing
 end
 
-function krnl_assign_SU2!(frc, m, lp::SpaceParm)
+function krnl_assign_SU2!(frc, m, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     for id in 1:lp.ndim

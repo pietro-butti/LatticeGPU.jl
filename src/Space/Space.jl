@@ -14,7 +14,12 @@ module Space
 
 import Base.show
 
-struct SpaceParm{N,M,D}
+const BC_PERIODIC = 0
+const BC_SF_ORBI  = 1
+const BC_SF_AFWB  = 2
+const BC_OPEN     = 3
+
+struct SpaceParm{N,M,B,D}
     ndim::Int64
     iL::NTuple{N,Int64}
     npls::Int64
@@ -51,21 +56,58 @@ struct SpaceParm{N,M,D}
         end
 
         D = prod(y)
-        return new{N,M,D}(N, x, M, tuple(pls...), y,
+        return new{N,M,BC_PERIODIC,D}(N, x, M, tuple(pls...), y,
+                        tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
+    end
+
+    function SpaceParm{N}(x, y, ibc) where {N}
+        M = convert(Int64, round(N*(N-1)/2))
+        N == length(x) || throw(ArgumentError("Lattice size incorrect length for dimension $N"))
+        N == length(y) || throw(ArgumentError("Block   size incorrect length for dimension $N"))
+
+        pls = Vector{Tuple{Int64, Int64}}()
+        for i in N:-1:1
+            for j in 1:i-1
+                push!(pls, (i,j))
+            end
+        end
+
+        r  = div.(x, y)
+        rS = ones(N)
+        yS = ones(N)
+        for i in 2:N
+            for j in 1:i-1
+                rS[i] = rS[i]*r[j]
+                yS[i] = yS[i]*y[j]
+            end
+        end
+
+        D = prod(y)
+        return new{N,M,ibc,D}(N, x, M, tuple(pls...), y,
                         tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
     end
 end
 export SpaceParm
-function Base.show(io::IO, lp::SpaceParm)
-    println(io, "Lattice dimensions: ", lp.ndim)
+function Base.show(io::IO, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
+    println(io, "Lattice dimensions:       ", lp.ndim)
 
-    print(io, "Lattice size:       ")
+    print(io, "Lattice size:             ")
     for i in 1:lp.ndim-1
         print(io, lp.iL[i], " x ")
     end
     println(io,lp.iL[end])
+    print(io, "Time boundary conditions: ")
+    if B == BC_PERIODIC
+        println(io, "PERIODIC")
+    elseif B == BC_OPEN
+        println(io, "OPEN")
+    elseif B == BC_SF_AFWB
+        println(io, "SF (AFW option B)")
+    elseif B == BC_SF_ORBI
+        println(io, "SF (orbifold improvement)")
+    end
     
-    print(io, "Thread block size:  ")
+    print(io, "Thread block size:        ")
     for i in 1:lp.ndim-1
         print(io, lp.blk[i], " x ")
     end
@@ -239,5 +281,6 @@ end
 end
     
 export up, dw, updw, global_point, point_index, point_coord, point_time
+export BC_PERIODIC, BC_OPEN, BC_SF_AFWB, BC_SF_ORBI
 
 end

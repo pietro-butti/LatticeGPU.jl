@@ -9,7 +9,7 @@
 ### created: Mon Jul 12 18:31:19 2021
 ###                               
 
-function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -95,7 +95,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, lp::SpaceParm{N,M,D}) wher
     return nothing
 end
 
-function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -132,7 +132,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, lp::SpaceParm{N,M,D}) where {T,N,M
     return nothing
 end
 
-function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, ipl, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, ipl, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -172,7 +172,7 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, ipl, lp::SpaceP
     return nothing
 end
 
-function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, ipl, lp::SpaceParm{N,M,D}) where {T,N,M,D}
+function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, ipl, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
