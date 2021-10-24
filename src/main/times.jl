@@ -7,7 +7,7 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-lp = SpaceParm{4}((16,16,16,16), (4,4,4,4))
+lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), BC_SF_AFWB)
 println("Space  Parameters: ", lp)
 
 # Seed RNG
@@ -36,7 +36,7 @@ println("Time to take the configuration to memory: ")
 # Set gauge parameters
 # FIRST SET: Wilson action/flow
 println("\n## WILSON ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(6.0, 1.0, (0.0,0.0), 3)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0, (0.5,0.5))
 println("Gauge  Parameters: ", gp)
 
 
@@ -56,11 +56,11 @@ for i in 1:4
     println("# Plaquette: ", pl[end], "\n")
 end
 
-wfl_rk3(U, 1, 0.01, lp, ymws)
+wfl_rk3(U, 1, 0.01, gp, lp, ymws)
 
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("Time for 100 steps of RK3 flow integrator: ")
-@time wfl_rk3(U, 100, 0.01, lp, ymws)
+@time wfl_rk3(U, 100, 0.01, gp, lp, ymws)
 eoft = Eoft_plaq(U, gp, lp, ymws)
 eoft = Eoft_clover(U, lp, ymws)
 qtop = Qtop(U, lp, ymws)
@@ -78,7 +78,7 @@ println("## END Wilson action/flow measurements")
 # Set gauge parameters
 # SECOND SET: Improved action/flow
 println("\n## IMPROVED ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(6.0, 5.0/3.0, (0.0,0.0), 3)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
 println("Gauge  Parameters: ", gp)
 
 println("Initial Action: ")
@@ -97,11 +97,11 @@ for i in 1:4
     println("# Plaquette: ", pl[end], "\n")
 end
 
-zfl_rk3(U, 1, 0.01, lp, ymws)
+zfl_rk3(U, 1, 0.01, gp, lp, ymws)
 
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("Time for 100 steps of RK3 flow integrator: ")
-@time zfl_rk3(U, 100, 0.01, lp, ymws)
+@time zfl_rk3(U, 100, 0.01, gp, lp, ymws)
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("## END improved action/flow measurements")
 

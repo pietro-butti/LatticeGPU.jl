@@ -20,18 +20,43 @@ using ..MD
 
 import Base.show
 
-struct GaugeParm{T}
+struct GaugeParm{T,G}
     beta::T
     c0::T
     cG::NTuple{2,T}
     ng::Int64
+
+    Ubnd::G
+
+    function GaugeParm{T}(::Type{G}, bt, c0, cG) where {T,G}
+
+        function degree(::SU2{T}) where T
+            return 2
+        end
+        function degree(::Type{SU3{T}}) where T <: AbstractFloat
+            return 3
+        end
+        ng = degree(G)
+        
+        return new{T,G}(bt, c0, cG, ng, one(G))
+    end
+    function GaugeParm{T}(::Type{G}, bt, c0) where {T,G}
+        
+        degree(::Type{SU2{T}}) where T <: AbstractFloat = 2
+        degree(::Type{SU3{T}}) where T <: AbstractFloat = 3
+        ng = degree(G)
+
+        return new{T,G}(bt, c0, (0.0,0.0), ng, one(G))
+    end
 end
 export GaugeParm
-function Base.show(io::IO, gp::GaugeParm)
+function Base.show(io::IO, gp::GaugeParm{T, G}) where {T,G}
 
-    println(io, "beta:   ", gp.beta)
-    println(io, "c0:     ", gp.c0)
-    println(io, "Ngauge: ", gp.ng)
+    println(io, "Group:  ", G)
+    println(io, " - beta:              ", gp.beta)
+    println(io, " - c0:                ", gp.c0)
+    println(io, " - cG:                ", gp.cG)
+    println(io, " - Boundary link:     ", gp.Ubnd)
     
     return nothing
 end

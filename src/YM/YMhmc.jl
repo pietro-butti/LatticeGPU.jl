@@ -20,7 +20,7 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) 
     if abs(gp.c0-1) < 1.0E-10
         @timeit "Wilson gauge action" begin
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, gp.cG[1], lp)
             end
         end
     else
@@ -40,7 +40,7 @@ function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
     @timeit "Plaquette measurement" begin
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, one(gp.cG[1]), lp)
         end
     end
     
@@ -93,7 +93,7 @@ function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ym
     @timeit "MD evolution" begin
 
         ee = int.eps*gp.beta/gp.ng
-        force_gauge(ymws, U, gp.c0, lp)
+        force_gauge(ymws, U, gp.c0, gp, lp)
         mom .= mom .+ (int.r[1]*ee) .* ymws.frc1
         for i in 1:int.ns
             k   = 2
@@ -105,7 +105,7 @@ function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ym
                 end
                 k += off
                 
-                force_gauge(ymws, U, gp.c0, lp)
+                force_gauge(ymws, U, gp.c0, gp, lp)
                 if (i < int.ns) && (k == 1)
                     mom .= mom .+ (2*int.r[k]*ee) .* ymws.frc1
                 else

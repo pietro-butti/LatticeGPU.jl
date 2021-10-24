@@ -61,11 +61,11 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
 end
 
 
-function flw_euler(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
+function flw_euler(U, ns, eps, c0, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
     
     @timeit "Integrating flow equations (Euler)" begin
         for i in 1:ns
-            force_gauge(ymws, U, c0, lp)
+            force_gauge(ymws, U, c0, 1, gp, lp)
             if add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
@@ -76,12 +76,12 @@ function flw_euler(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=fal
     return nothing
 end
 
-function flw_rk3(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
+function flw_rk3(U, ns, eps, c0, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
     
     @timeit "Integrating flow equations (RK3)" begin
         for i in 1:ns
             e0 = eps/2
-            force_gauge(ymws, U, c0, lp)
+            force_gauge(ymws, U, c0, 1, gp, lp)
             if add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
@@ -90,7 +90,7 @@ function flw_rk3(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false
             
             e0 = -34*eps/36
             e1 = 16*eps/9
-            force_gauge(ymws, U, c0, lp)
+            force_gauge(ymws, U, c0, 1, gp, lp)
             if add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
@@ -98,7 +98,7 @@ function flw_rk3(U, ns, eps, c0, lp::SpaceParm, ymws::YMworkspace; add_zth=false
             U .= expm.(U, ymws.mom)
             
             e1 = 6*eps/4
-            force_gauge(ymws, U, c0, lp)
+            force_gauge(ymws, U, c0, 1, gp, lp)
             if add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
@@ -113,10 +113,10 @@ end
 
 
                               
-wfl_euler(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 1, lp, ymws)
-zfl_euler(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 5.0/3.0, lp, ymws, add_zth=true)
-wfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 1, lp, ymws)
-zfl_rk3(U, ns, eps, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 5.0/3.0, lp, ymws, add_zth=true)
+wfl_euler(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 1, gp, lp, ymws)
+zfl_euler(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 5.0/3.0, gp, lp, ymws, add_zth=true)
+wfl_rk3(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 1, gp, lp, ymws)
+zfl_rk3(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 5.0/3.0, gp, lp, ymws, add_zth=true)
 
 
 ##
