@@ -26,7 +26,7 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) 
     else
         @timeit "Improved gauge action" begin
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, gp.Ubnd, gp.cG[1], lp)
             end
         end
     end

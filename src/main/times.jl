@@ -78,7 +78,7 @@ println("## END Wilson action/flow measurements")
 # Set gauge parameters
 # SECOND SET: Improved action/flow
 println("\n## IMPROVED ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 5/6, (0.5,0.5))
 println("Gauge  Parameters: ", gp)
 
 println("Initial Action: ")
