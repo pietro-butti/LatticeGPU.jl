@@ -28,6 +28,9 @@ end
 function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    it = point_time((b, r), lp)
+
+    SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
 
     Ush = @cuStaticSharedMem(TG, D)
     Fsh = @cuStaticSharedMem(TA, D)
@@ -52,9 +55,19 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
             Y  = frc[bd,id,rd]
             Ud = U[bd,id,rd]
         end
-        
-        frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
-                                             projalg(Ush[b]*X/Ush[b]))
+
+        if SFBC
+            if (it > 1) && (it < lp.iL[end])
+                frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
+                                                     projalg(Ush[b]*X/Ush[b]))
+            elseif (it == lp.iL[end]) && (id < N)
+                frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
+                                                     projalg(Ush[b]*X/Ush[b]))
+            end
+        else 
+            frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
+                                                 projalg(Ush[b]*X/Ush[b]))
+        end
     end
     
     return nothing
