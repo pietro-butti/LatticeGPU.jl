@@ -9,28 +9,34 @@
 ### created: Tue Oct 26 14:50:55 2021
 ###                               
 
-const SR3   = 1.73205080756887729352744634151
-const SR3x2 = 3.46410161513775458705489268302
+""" 
+    sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
 
-function sfcoupling(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
+Measures the Schrodinger Functional coupling `ds/d\eta` and `d^2S/d\eta d\nu`. 
+"""
+function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
 
     if lp.iL[end] < 4
         error("Array too small to store partial sums")
     end
+
+    if !((B==BC_SF_AFWB) || (B==BC_SF_ORBI))
+        error("SF coupling can only be measured with SF boundary conditions")
+    end
     
-    tmp = zeros(T,lp.iL[end])
     @timeit "SF coupling measurement" begin
+        tmp = zeros(T,lp.iL[end])
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfcoupling!(ymws.rm, U, gp.Ubnd, lp)
         end
+
+        tp = ntuple(i->i, N-1)
+        V3 = prod(lp.iL[1:end-1])
+        tmp .= reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])
+        
+        dsdeta = (gp.cG[1]*gp.beta/(2*gp.ng*V3))*(tmp[1] + tmp[end])
+        ddnu   = (gp.cG[1]*gp.beta/(2*gp.ng*V3))*(tmp[2] + tmp[end-1])
     end
-
-    tp = ntuple(i->i, N-1)
-    V3 = prod(lp.iL[1:end-1])
-    tmp .= reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])
-
-    dsdeta = (gp.beta/(2*gp.ng*V3))*(tmp[1] + tmp[end])
-    ddnu   = (gp.beta/(2*gp.ng*V3))*(tmp[2] + tmp[end-1])
     
     return dsdeta, ddnu
 end
@@ -38,8 +44,11 @@ end
 function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd::T, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
-    it   = point_time((b, r), lp)
     I    = point_coord((b,r), lp)
+    it   = I[N]
+
+    SR3::eltype(rm) = 1.73205080756887729352744634151
+    SR3x2::type(rm) = 3.46410161513775458705489268302
     
     rm[I] = zero(eltype(rm))
     if (it == 1)
