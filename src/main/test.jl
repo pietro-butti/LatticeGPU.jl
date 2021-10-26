@@ -1,4 +1,4 @@
-using CUDA, Logging, StructArrays, Random
+using CUDA, Logging, Random
 
 CUDA.allowscalar(true)
 import Pkg

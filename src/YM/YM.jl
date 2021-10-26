@@ -12,7 +12,7 @@
 
 module YM
 
-using CUDA, Random, StructArrays, TimerOutputs
+using CUDA, Random, TimerOutputs
 using ..Space
 using ..Groups
 using ..Fields

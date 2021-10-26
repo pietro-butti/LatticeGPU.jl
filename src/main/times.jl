@@ -1,4 +1,4 @@
-using CUDA, Logging, StructArrays, Random, TimerOutputs
+using CUDA, Logging, Random, TimerOutputs
 
 CUDA.allowscalar(false)
 import Pkg
@@ -7,7 +7,7 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), BC_SF_AFWB)
+lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_SF_AFWB)
 println("Space  Parameters: ", lp)
 
 # Seed RNG
