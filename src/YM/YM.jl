@@ -125,4 +125,7 @@ export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 include("YMflow.jl")
 export wfl_euler, wfl_rk3, zfl_euler, zfl_rk3, Eoft_clover, Eoft_plaq, Qtop
 
+include("YMsf.jl")
+export sfcoupling
+
 end
