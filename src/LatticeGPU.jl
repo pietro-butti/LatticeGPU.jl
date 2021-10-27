@@ -33,7 +33,7 @@ export vector_field, scalar_field, nscalar_field, scalar_field_point
 include("MD/MD.jl")
 using .MD
 export IntrScheme
-export omf4, leapfrog
+export omf4, leapfrog, omf2
 
 include("YM/YM.jl")
 

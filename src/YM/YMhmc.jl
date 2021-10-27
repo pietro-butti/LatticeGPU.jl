@@ -56,11 +56,10 @@ function hamiltonian(mom, U, lp, gp, ymws)
     return K+V
 end
 
-function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
+function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
 
     @timeit "HMC trayectory" begin
         
-        int = omf4(T, eps, ns)
         ymws.U1 .= U
         
         randomize!(ymws.mom, lp, ymws)
@@ -87,6 +86,7 @@ function HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; no
     end
     return dh, acc
 end
+HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T = HMC!(U, omf4(T, int.eps, int.ns), lp, gp, ymws; noacc=noacc)
 
 function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
     

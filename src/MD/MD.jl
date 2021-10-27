@@ -33,7 +33,7 @@ end
 
 omf2(::Type{T}, eps, ns) where T = IntrScheme{3,T}((r1omf2,r2omf2,r3omf2), eps, ns)
 omf4(::Type{T}, eps, ns) where T = IntrScheme{6,T}((r1omf4,r2omf4,r3omf4,r4omf4,r5omf4,r6omf4), eps, ns)
-leapfrog(::Type{T}, eps, ns) where T = IntrScheme{2,T}((0.5,1.0,0.5), eps, ns)
+leapfrog(::Type{T}, eps, ns) where T = IntrScheme{2,T}((0.5,1.0), eps, ns)
 
 
 import Base.show

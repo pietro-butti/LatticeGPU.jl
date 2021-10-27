@@ -30,7 +30,7 @@ struct GaugeParm{T,G}
 
     function GaugeParm{T}(::Type{G}, bt, c0, cG) where {T,G}
 
-        function degree(::SU2{T}) where T
+        function degree(::Type{SU2{T}}) where T
             return 2
         end
         function degree(::Type{SU3{T}}) where T <: AbstractFloat
