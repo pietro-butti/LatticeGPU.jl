@@ -25,7 +25,9 @@ function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace)
     end
     
     @timeit "SF coupling measurement" begin
-        tmp = zeros(eltype(ymws.rm),lp.iL[end])
+        T = eltype(ymws.rm)
+        tmp = zeros(T,lp.iL[end])
+        fill!(ymws.rm, zero(T))
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfcoupling!(ymws.rm, U, gp.Ubnd, lp)
         end
@@ -47,10 +49,9 @@ function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd::T, lp::SpaceParm{N,M,B,
     I    = point_coord((b,r), lp)
     it   = I[N]
 
-    SR3::eltype(rm) = 1.73205080756887729352744634151
-    SR3x2::type(rm) = 3.46410161513775458705489268302
+    SR3::eltype(rm)   = 1.73205080756887729352744634151
+    SR3x2::eltype(rm) = 3.46410161513775458705489268302
     
-    rm[I] = zero(eltype(rm))
     if (it == 1)
         but, rut = up((b,r), N, lp)
         IU = point_coord((but,rut), lp)

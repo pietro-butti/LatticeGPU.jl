@@ -86,7 +86,7 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
     end
     return dh, acc
 end
-HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T = HMC!(U, omf4(T, int.eps, int.ns), lp, gp, ymws; noacc=noacc)
+HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T = HMC!(U, omf4(T, eps, ns), lp, gp, ymws; noacc=noacc)
 
 function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
     
