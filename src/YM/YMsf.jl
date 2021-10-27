@@ -25,7 +25,7 @@ function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace)
     end
     
     @timeit "SF coupling measurement" begin
-        tmp = zeros(T,lp.iL[end])
+        tmp = zeros(eltype(ymws.rm),lp.iL[end])
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfcoupling!(ymws.rm, U, gp.Ubnd, lp)
         end
