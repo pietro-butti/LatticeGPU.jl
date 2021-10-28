@@ -23,7 +23,7 @@ include("Space/Space.jl")
 
 using .Space
 export SpaceParm
-export up, dw, updw, global_point
+export up, dw, updw, point_coord, point_index, point_time
 export BC_PERIODIC, BC_OPEN, BC_SF_AFWB, BC_SF_ORBI
 
 include("Fields/Fields.jl")
