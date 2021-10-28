@@ -34,8 +34,8 @@ println("Random algebra: ", a)
 g1 = exp(a, 0.2)
 g2 = exp(a, -0.2)
 
-g = expm(g1, a, -0.2)
-println(g)
+g = g1*g2
+println("One?: ", g)
 
 
 

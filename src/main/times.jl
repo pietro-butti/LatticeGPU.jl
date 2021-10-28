@@ -54,6 +54,9 @@ for i in 1:4
     println("# HMC: ", acc, " ", dh)
     push!(pl, plaquette(U,lp, gp, ymws))
     println("# Plaquette: ", pl[end], "\n")
+
+    @time x, y = sfcoupling(U,lp,gp,ymws)
+    println("SF coupling: ", x, " ", y)
 end
 
 wfl_rk3(U, 1, 0.01, gp, lp, ymws)
