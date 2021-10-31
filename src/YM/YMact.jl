@@ -9,13 +9,14 @@
 ### created: Mon Jul 12 18:31:19 2021
 ###                               
 
-function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
-    
+
+    ipl = 0
     S = zero(eltype(plx))
     for id1 in N:-1:1
         bu1, ru1 = up((b, r), id1, lp)
@@ -26,7 +27,8 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, lp::SpaceParm
             bu2, ru2 = up((b, r), id2, lp)
             Ush[b,2] = U[b,id2,r]
             sync_threads()
-
+            ipl = ipl + 1
+            
             # H2 staple
             (b1, r1) = up((b,r), id1, lp)
             if r1 == r
@@ -100,7 +102,8 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, lp::SpaceParm
             elseif (it == 1) && SFBC
                 S += cG*(c0*tr(g2*ga/gb) + (3*c1/2)*tr(g2*ga/h3)) + c1*tr(g2*h2/gb)
             else
-                S += c0*tr(g2*ga/gb) + c1*( tr(g2*h2/gb) + tr(g2*ga/h3))
+                S += ztw[ipl]*c0*tr(g2*ga/gb) +
+                    (ztw[ipl]^2*c1)*( tr(g2*h2/gb) + tr(g2*ga/h3))
             end
 
         end
@@ -112,14 +115,14 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, lp::SpaceParm
     return nothing
 end
 
-function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
-    it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
     
     S = zero(eltype(plx))
+    ipl = 0
     for id1 in N:-1:1
         bu1, ru1 = up((b, r), id1, lp)
         Ush[b,1] = U[b,id1,r]
@@ -131,7 +134,8 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, lp::SpaceParm{N,M,B,D
             bu2, ru2 = up((b, r), id2, lp)
             Ush[b,2] = U[b,id2,r]
             sync_threads()
-
+            ipl = ipl + 1
+            
             if ru1 == r
                 gt1 = Ush[bu1,2]
             else
@@ -150,7 +154,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, lp::SpaceParm{N,M,B,D
             if SFBND
                 S += cG*tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
             else
-                S += tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
+                S += ztw[ipl]*tr(Ush[b,1]*gt1 / (Ush[b,2]*gt2))
             end
         end
     end
@@ -161,10 +165,10 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, lp::SpaceParm{N,M,B,D
     return nothing
 end
 
-function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
-    it = point_time((b, r), lp)
+    it = point_time((b,r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
     
@@ -198,32 +202,31 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, ip
         g2 = Ush[b,2]\Ush[b,1]
 
         if SFBC && (it == 1)
-            X = cG*projalg(Ush[b,1]*g1/Ush[b,2])
+            X = cG*projalg(ztw,Ush[b,1]*g1/Ush[b,2])
             
             frc1[b  ,id1, r ] -= X
-            frc2[bu1,id2,ru1] -= cG*projalg(g1*g2)
-            frc2[bu2,id1,ru2] += cG*projalg(g2*g1)
+            frc2[bu1,id2,ru1] -= cG*projalg(ztw,g1*g2)
+            frc2[bu2,id1,ru2] += cG*projalg(ztw,g2*g1)
         elseif SFBC && (it == lp.iL[end])
-            X = cG*projalg(Ush[b,1]*g1/Ush[b,2])
+            X = cG*projalg(ztw,Ush[b,1]*g1/Ush[b,2])
             
             frc1[b  ,id1, r ] -= X
             frc1[b  ,id2, r ] += X
-            frc2[bu2,id1,ru2] += cG*projalg(g2*g1)
+            frc2[bu2,id1,ru2] += cG*projalg(ztw,g2*g1)
         else
-            X = projalg(Ush[b,1]*g1/Ush[b,2])
+            X = projalg(ztw,Ush[b,1]*g1/Ush[b,2])
             
             frc1[b  ,id1, r ] -= X
             frc1[b  ,id2, r ] += X
-            frc2[bu1,id2,ru1] -= projalg(g1*g2)
-            frc2[bu2,id1,ru2] += projalg(g2*g1)
+            frc2[bu1,id2,ru1] -= projalg(ztw,g1*g2)
+            frc2[bu2,id1,ru2] += projalg(ztw,g2*g1)
         end
-            
     end
     
     return nothing
 end
 
-function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b, r), lp)
@@ -371,19 +374,18 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, 
             frc2[bu2,id1,ru2] += (cG*c0)*projalg(g2*g1) + (3*c1*cG/2) * projalg((Ush[b,2]\h1)*g1) +
                 c1 * projalg(h4\Ush[b,1]*g1) 
         else
-            X = c0*projalg(Ush[b,1]*g1/Ush[b,2]) + c1 * (projalg(Ush[b,1]*h2/(Ush[b,2]*gb)) +
-                                                         projalg(Ush[b,1]*ga/(Ush[b,2]*h3)))
+            zsq = ztw[ipl]^2
+            X = projalg(c0*ztw[ipl],Ush[b,1]*g1/Ush[b,2]) + projalg(zsq*c1,Ush[b,1]*h2/(Ush[b,2]*gb)) +
+                projalg(zsq*c1,Ush[b,1]*ga/(Ush[b,2]*h3))
             
-            frc1[b,id1,r] -= X + c1*projalg(Ush[b,1]*g1/h4) 
-            frc1[b,id2,r] += X + c1*projalg(h1*g1/Ush[b,2]) 
+            frc1[b,id1,r] -= X + projalg(zsq*c1,Ush[b,1]*g1/h4) 
+            frc1[b,id2,r] += X + projalg(zsq*c1,h1*g1/Ush[b,2]) 
             
-            frc2[bu1,id2,ru1] -= c0*projalg(g1*g2) + c1*( projalg((ga/h3)*g2) +
-                                                          projalg((g1/h4)*Ush[b,1]) +
-                                                          projalg((g1/Ush[b,2])*h1) )
+            frc2[bu1,id2,ru1] -= projalg(c0*ztw[ipl],g1*g2) + projalg(zsq*c1,(ga/h3)*g2) +
+                projalg(zsq*c1,(g1/h4)*Ush[b,1]) + projalg(zsq*c1,(g1/Ush[b,2])*h1) 
             
-            frc2[bu2,id1,ru2] += c0*projalg(g2*g1) + c1*( projalg((Ush[b,2]\h1)*g1) +
-                                                          projalg(g2*h2/gb) +
-                                                          projalg(h4\Ush[b,1]*g1) )
+            frc2[bu2,id1,ru2] += projalg(c0*ztw[ipl],g2*g1) + projalg(zsq*c1,(Ush[b,2]\h1)*g1) +
+                projalg(zsq*c1,g2*h2/gb) + projalg(zsq*c1,h4\Ush[b,1]*g1) 
         end
             
     end
@@ -399,13 +401,14 @@ the prefactor 1/g0^2, and assign it to the workspace force `ymws.frc1`
 """    
 function force_gauge(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm)
 
+    ztw = ztwist(gp, lp)
     if abs(c0-1) < 1.0E-10
         @timeit "Wilson gauge force" begin
-            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, lp::SpaceParm)
+            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, ztw, lp::SpaceParm)
         end
     else
         @timeit "Improved gauge force" begin
-            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, lp::SpaceParm, c0)
+            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, ztw, lp::SpaceParm, c0)
         end
     end
     return nothing
@@ -416,20 +419,20 @@ force_wilson(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm) = force_gauge(y
 force_wilson(ymws::YMworkspace, U, cG, gp::GaugeParm, lp::SpaceParm) = force_gauge(ymws, U, 1, gp.cG[1], gp, lp)
 
 
-function force_pln!(frc1, ftmp, U, Ubnd, cG, lp::SpaceParm, c0=1)
+function force_pln!(frc1, ftmp, U, Ubnd, cG, ztw, lp::SpaceParm, c0=1)
 
     fill!(frc1, zero(eltype(frc1)))
     fill!(ftmp, zero(eltype(ftmp)))
     if c0 == 1
         for i in 1:lp.npls
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,ftmp,U, Ubnd, cG,i,lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_wilson_pln!(frc1,ftmp,U, Ubnd, cG, ztw[i], i,lp)
             end
         end
     else
         for i in 1:lp.npls
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_impr_pln!(frc1,ftmp,U,c0,(1-c0)/8,Ubnd, cG, i,lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_force_impr_pln!(frc1,ftmp,U,c0,(1-c0)/8,Ubnd, cG, ztw[i], i,lp)
             end
         end
     end

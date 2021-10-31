@@ -7,7 +7,8 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_SF_AFWB)
+ntwist = (0,0,0,1,0,0)
+lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
 # Seed RNG
@@ -20,6 +21,10 @@ GRP  = SU3
 ALG  = SU3alg
 PREC = Float64
 println("Precision: ", PREC)
+
+# MD integrator
+int = omf4(PREC, 0.1, 10)
+println(int)
 
 println("Allocating YM workspace")
 ymws = YMworkspace(GRP, PREC, lp)
@@ -44,19 +49,17 @@ println("Initial Action: ")
 @time S = gauge_action(U, lp, gp, ymws)
 
 
-dt = 0.1
-ns  = 10
-HMC!(U,dt,1,lp, gp, ymws, noacc=true)
+HMC!(U,int.eps,1,lp, gp, ymws, noacc=true)
 
 pl = Vector{Float64}()
 for i in 1:4
-    @time dh, acc = HMC!(U,dt,ns,lp, gp, ymws, noacc=true)
+    @time dh, acc = HMC!(U,int,lp, gp, ymws, noacc=true)
     println("# HMC: ", acc, " ", dh)
     push!(pl, plaquette(U,lp, gp, ymws))
     println("# Plaquette: ", pl[end], "\n")
 
-    @time x, y = sfcoupling(U,lp,gp,ymws)
-    println("SF coupling: ", x, " ", y)
+#    @time x, y = sfcoupling(U,lp,gp,ymws)
+#    println("SF coupling: ", x, " ", y)
 end
 
 wfl_rk3(U, 1, 0.01, gp, lp, ymws)
@@ -65,14 +68,14 @@ println("Action: ", gauge_action(U, lp, gp, ymws))
 println("Time for 100 steps of RK3 flow integrator: ")
 @time wfl_rk3(U, 100, 0.01, gp, lp, ymws)
 eoft = Eoft_plaq(U, gp, lp, ymws)
-eoft = Eoft_clover(U, lp, ymws)
-qtop = Qtop(U, lp, ymws)
+eoft = Eoft_clover(U, gp, lp, ymws)
+qtop = Qtop(U, gp, lp, ymws)
 
 @time eoft = Eoft_plaq(U, gp, lp, ymws)
 println("Plaq: ", eoft)
-@time eoft = Eoft_clover(U, lp, ymws)
+@time eoft = Eoft_clover(U, gp, lp, ymws)
 println("Clov: ", eoft)
-@time qtop = Qtop(U, lp, ymws)
+@time qtop = Qtop(U, gp, lp, ymws)
 println("Qtop: ", qtop)
 
 println("Action: ", gauge_action(U, lp, gp, ymws))
@@ -88,13 +91,10 @@ println("Initial Action: ")
 @time S = gauge_action(U, lp, gp, ymws)
 
 
-dt = 0.1
-ns  = 10
-HMC!(U,dt,1,lp, gp, ymws, noacc=true)
-
+HMC!(U,int.eps,1,lp, gp, ymws, noacc=true)
 pl = Vector{Float64}()
 for i in 1:4
-    @time dh, acc = HMC!(U,dt,ns,lp, gp, ymws, noacc=true)
+    @time dh, acc = HMC!(U,int,lp, gp, ymws, noacc=true)
     println("# HMC: ", acc, " ", dh)
     push!(pl, plaquette(U,lp, gp, ymws))
     println("# Plaquette: ", pl[end], "\n")

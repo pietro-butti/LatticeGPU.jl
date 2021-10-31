@@ -32,12 +32,18 @@ struct SpaceParm{N,M,B,D}
 
     bsz::Int64
     rsz::Int64
+
+    ntw::NTuple{M,Int64}
     
-    function SpaceParm{N}(x, y) where {N}
+    function SpaceParm{N}(x, y, nt::Union{Nothing,NTuple{I,Int64}}=nothing) where {N,I}
         M = convert(Int64, round(N*(N-1)/2))
         N == length(x) || throw(ArgumentError("Lattice size incorrect length for dimension $N"))
         N == length(y) || throw(ArgumentError("Block   size incorrect length for dimension $N"))
 
+        if any(i->i!=0, x.%y)
+            error("Lattice size not divisible by block size.")
+        end
+        
         pls = Vector{Tuple{Int64, Int64}}()
         for i in N:-1:1
             for j in 1:i-1
@@ -56,15 +62,32 @@ struct SpaceParm{N,M,B,D}
         end
 
         D = prod(y)
+        if nt == nothing
+            ntw = ntuple(i->0, M)
+        else
+            ntw = nt
+        end
         return new{N,M,BC_PERIODIC,D}(N, x, M, tuple(pls...), y,
-                        tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
+                                      tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r), ntw)
     end
 
-    function SpaceParm{N}(x, y, ibc) where {N}
+    function SpaceParm{N}(x, y, ibc::Int, nt::Union{Nothing,NTuple{I,Int64}}=nothing) where {N,I}
         M = convert(Int64, round(N*(N-1)/2))
         N == length(x) || throw(ArgumentError("Lattice size incorrect length for dimension $N"))
         N == length(y) || throw(ArgumentError("Block   size incorrect length for dimension $N"))
 
+        if any(i->i!=0, x.%y)
+            error("Lattice size not divisible by block size.")
+        end
+
+        if nt!=nothing
+            if (ibc==BC_SF_AFWB) || (ibc==BC_SF_ORBI)
+                if any(i->i!=0, nt[1:N-1])
+                    error("Planes in T direction cannot be twisted with SF boundary conditions")
+                end
+            end
+        end
+        
         pls = Vector{Tuple{Int64, Int64}}()
         for i in N:-1:1
             for j in 1:i-1
@@ -83,11 +106,17 @@ struct SpaceParm{N,M,B,D}
         end
 
         D = prod(y)
+        if nt == nothing
+            ntw = ntuple(i->0,M)
+        else
+            ntw = nt
+        end
         return new{N,M,ibc,D}(N, x, M, tuple(pls...), y,
-                        tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r))
+                              tuple(yS...), tuple(r...), tuple(rS...), prod(y), prod(r), ntw)
     end
 end
 export SpaceParm
+
 function Base.show(io::IO, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
     println(io, "Lattice dimensions:       ", lp.ndim)
 
@@ -113,6 +142,8 @@ function Base.show(io::IO, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
     end
     println(io,lp.blk[end], "     [", lp.bsz,
             "] (Number of blocks: [", lp.rsz,"])")
+    println(io, "Twist tensor: ", lp.ntw)
+    
     return
 end
     
@@ -170,7 +201,7 @@ Given a point `x` with index `p`, this routine returns the index of the point
 end
 
 """
-    function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+    function updw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
 Given a point `x` with index `p`, this routine returns the index of the points
 `x + a id` and `x - a id`. 

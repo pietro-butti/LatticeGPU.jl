@@ -117,7 +117,7 @@ function projalg(a::M3x3{T}) where T <: AbstractFloat
 
     sr3ov2::T = 0.866025403784438646763723170752
 
-    ditr = ( imag(a.u11) + imag(a.u22) + 2.0*imag(a.u33) )/3.0
+    ditr = ( imag(a.u11) + imag(a.u22) - 2.0*imag(a.u33) )/3.0
     m12 = (a.u12 - conj(a.u21))/2.0
     m13 = (a.u13 - conj(a.u31))/2.0
     m23 = (a.u23 - conj(a.u32))/2.0

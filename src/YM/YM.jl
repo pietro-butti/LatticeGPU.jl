@@ -104,13 +104,27 @@ function Base.show(io::IO, ymws::YMworkspace)
     println(io, "Workspace for Group:   ", ymws.GRP)
     println(io, "              Algebra: ", ymws.ALG)
     println(io, "Precision:             ", ymws.PRC)
-    if ymws.fpln == nothing
-        println(io, "  - Running in memory efficient mode")
-    else
-        println(io, "  - Running in computing efficient mode")
-    end
+
     return nothing
 end
+
+
+function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}) where {T,G,N,M,B,D}
+
+    function plnf(ipl)
+        id1, id2 = lp.plidx[ipl]
+        return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(lp.iL[id1]*lp.iL[id2]*gp.ng)))
+    end
+
+    return ntuple(i->plnf(i), M)
+end
+
+function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}, ipl::Int) where {T,G,N,M,B,D}
+
+    id1, id2 = lp.plidx[ipl]
+    return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(lp.iL[id1]*lp.iL[id2]*gp.ng)))
+end
+export ztwist
 
 
 include("YMfields.jl")

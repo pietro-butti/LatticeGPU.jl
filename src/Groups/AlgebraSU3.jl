@@ -24,6 +24,30 @@ function projalg(a::SU3{T}) where T <: AbstractFloat
                      sr3ov2*(ditr))
 end
 
+function projalg(z::Complex{T}, a::SU3{T}) where T <: AbstractFloat
+
+    sr3ov2::T = 0.866025403784438646763723170752
+
+    zu11 = z*a.u11
+    zu12 = z*a.u12
+    zu13 = z*a.u13
+    zu21 = z*a.u21
+    zu22 = z*a.u22
+    zu23 = z*a.u23
+
+    ditr = ( imag(zu11) + imag(zu22) - 2.0*imag(z*conj(a.u11*a.u22 - a.u12*a.u21)) )/3.0
+    m12 = (zu12 - conj(zu21))/2.0
+    m13 = (zu13 - conj(z)*(a.u12*a.u23 - a.u13*a.u22) )/2.0
+    m23 = (zu23 - conj(z)*(a.u13*a.u21 - a.u11*a.u23) )/2.0
+
+    return SU3alg{T}(imag( m12 ), imag( m13 ), imag( m23 ),
+                     real( m12 ), real( m13 ), real( m23 ),
+                     (imag(zu11)-imag(zu22))/2.0,
+                     sr3ov2*(ditr))
+end
+
+projalg(z::Int, a::SU3{T}) where T <: AbstractFloat = projalg(a::SU3{T})
+
 dot(a::SU3alg{T},b::SU3alg{T})     where T <: AbstractFloat = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3 + a.t4*b.t4 + a.t5*b.t5 + a.t6*b.t6 + a.t7*b.t7 + a.t8*b.t8
 norm2(a::SU3alg{T})                where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2 + a.t4^2 + a.t5^2 + a.t6^2 + a.t7^2 + a.t8^2
 norm(a::SU3alg{T})                 where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2 + a.t4^2 + a.t5^2 + a.t6^2 + a.t7^2 + a.t8^2)

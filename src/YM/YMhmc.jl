@@ -17,16 +17,17 @@ Returns the value of the gauge plaquette action for the configuration U. The par
 """
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
 
+    ztw = ztwist(gp, lp)
     if abs(gp.c0-1) < 1.0E-10
         @timeit "Wilson gauge action" begin
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, gp.cG[1], lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, gp.cG[1], ztw, lp)
             end
         end
     else
         @timeit "Improved gauge action" begin
             CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, gp.Ubnd, gp.cG[1], lp)
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_impr!(ymws.cm, U, gp.c0, (1-gp.c0)/8, gp.Ubnd, gp.cG[1], ztw, lp)
             end
         end
     end
@@ -38,9 +39,10 @@ end
 
 function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
+    ztw = ztwist(gp, lp)
     @timeit "Plaquette measurement" begin
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, one(gp.cG[1]), lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, one(gp.cG[1]), ztw, lp)
         end
     end
     
