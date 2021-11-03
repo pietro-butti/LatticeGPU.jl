@@ -12,6 +12,7 @@
 SU2alg(x::T)                       where T <: AbstractFloat = SU2alg{T}(x,0.0,0.0)
 SU2alg(v::Vector{T})               where T <: AbstractFloat = SU2alg{T}(v[1],v[2],v[3])
 projalg(g::SU2{T})                 where T <: AbstractFloat = SU2alg{T}(imag(g.t2), real(g.t2), imag(g.t1))
+projalg(z::Complex{T}, g::SU2{T})  where T <: AbstractFloat = SU2alg{T}(imag(z*g.t2), real(z*g.t2), imag(z*g.t1))
 dot(a::SU2alg{T}, b::SU2alg{T})    where T <: AbstractFloat = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3
 norm(a::SU2alg{T})             where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2)
 norm2(a::SU2alg{T})            where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2
