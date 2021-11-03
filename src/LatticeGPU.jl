@@ -17,7 +17,7 @@ include("Groups/Groups.jl")
 using .Groups
 export Group, Algebra
 export SU2, SU2alg, SU3, SU3alg, M3x3, M2x2, U1, U1alg
-export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat
+export dot, expm, exp, dag, normalize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one
 
 include("Space/Space.jl")
 
@@ -41,7 +41,9 @@ using .YM
 export ztwist
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
-export wfl_euler, wfl_rk3, zfl_euler, zfl_rk3, Eoft_clover, Eoft_plaq, Qtop
+export Eoft_clover, Eoft_plaq, Qtop
+export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
+export flw, flw_adapt
 export sfcoupling
 
 end # module

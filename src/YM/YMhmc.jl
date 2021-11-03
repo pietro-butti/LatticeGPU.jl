@@ -37,7 +37,7 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) 
     return S
 end
 
-function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
+function plaquette(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
 
     ztw = ztwist(gp, lp)
     @timeit "Plaquette measurement" begin
@@ -45,7 +45,7 @@ function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq!(ymws.cm, U, gp.Ubnd, one(gp.cG[1]), ztw, lp)
         end
     end
-    
+
     return CUDA.mapreduce(real, +, ymws.cm)/(prod(lp.iL)*lp.npls)
 end
     

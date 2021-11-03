@@ -7,7 +7,7 @@ Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
-ntwist = (0,0,0,1,0,0)
+ntwist = (0,0,0,0,0,0)
 lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
@@ -44,6 +44,8 @@ println("\n## WILSON ACTION/FLOW TIMES")
 gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0, (0.5,0.5))
 println("Gauge  Parameters: ", gp)
 
+flwint = wfl_rk3(PREC, 0.005, 1.0E-6)
+println(flwint)
 
 println("Initial Action: ")
 @time S = gauge_action(U, lp, gp, ymws)
@@ -62,11 +64,12 @@ for i in 1:4
 #    println("SF coupling: ", x, " ", y)
 end
 
-wfl_rk3(U, 1, 0.01, gp, lp, ymws)
-
+Ucp = Array(U)
 println("Action: ", gauge_action(U, lp, gp, ymws))
+flw(U, flwint, 1, gp, lp, ymws)
+
 println("Time for 100 steps of RK3 flow integrator: ")
-@time wfl_rk3(U, 100, 0.01, gp, lp, ymws)
+@time flw(U, flwint, 400, gp, lp, ymws)
 eoft = Eoft_plaq(U, gp, lp, ymws)
 eoft = Eoft_clover(U, gp, lp, ymws)
 qtop = Qtop(U, gp, lp, ymws)
@@ -77,8 +80,6 @@ println("Plaq: ", eoft)
 println("Clov: ", eoft)
 @time qtop = Qtop(U, gp, lp, ymws)
 println("Qtop: ", qtop)
-
-println("Action: ", gauge_action(U, lp, gp, ymws))
 println("## END Wilson action/flow measurements")
 
 # Set gauge parameters
@@ -86,6 +87,9 @@ println("## END Wilson action/flow measurements")
 println("\n## IMPROVED ACTION/FLOW TIMES")
 gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 5/6, (0.5,0.5))
 println("Gauge  Parameters: ", gp)
+
+flwint = zfl_rk3(PREC, 0.01, 1.0E-6)
+println(flwint)
 
 println("Initial Action: ")
 @time S = gauge_action(U, lp, gp, ymws)
@@ -100,11 +104,11 @@ for i in 1:4
     println("# Plaquette: ", pl[end], "\n")
 end
 
-zfl_rk3(U, 1, 0.01, gp, lp, ymws)
+flw(U, flwint, 1, gp, lp, ymws)
 
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("Time for 100 steps of RK3 flow integrator: ")
-@time zfl_rk3(U, 100, 0.01, gp, lp, ymws)
+@time flw(U, flwint, 100, gp, lp, ymws)
 println("Action: ", gauge_action(U, lp, gp, ymws))
 println("## END improved action/flow measurements")
 

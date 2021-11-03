@@ -9,6 +9,68 @@
 ### created: Sat Sep 25 08:37:14 2021
 ###                               
 
+
+struct FlowIntr{N,T}
+    r::T
+    e0::NTuple{N,T}
+    e1::NTuple{N,T}
+
+    add_zth::Bool
+    c0::T
+    
+    eps::T
+    tol::T
+    eps_ini::T
+    max_eps::T
+    sft_fac::T
+end
+
+# pre-defined integrators
+wfl_euler(::Type{T}, eps::T, tol::T) where T = FlowIntr{0,T}(one(T),(),(),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+zfl_euler(::Type{T}, eps::T, tol::T) where T = FlowIntr{0,T}(one(T),(),(),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
+wfl_rk2(::Type{T}, eps::T, tol::T)   where T = FlowIntr{1,T}(one(T)/2,(-one(T)/2,),(one(T),),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+zfl_rk2(::Type{T}, eps::T, tol::T)   where T = FlowIntr{1,T}(one(T)/2,(-one(T)/2,),(one(T),),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
+wfl_rk3(::Type{T}, eps::T, tol::T)   where T = FlowIntr{2,T}(one(T)/4,(-17/36,-one(T)),(8/9,3/4),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+zfl_rk3(::Type{T}, eps::T, tol::T)   where T = FlowIntr{2,T}(one(T)/4,(-17/36,-one(T)),(8/9,3/4),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
+
+function Base.show(io::IO, int::FlowIntr{N,T}) where {N,T}
+
+    if (abs(int.c0-1) < 1.0E-10)
+        println(io, "WILSON flow integrator")
+    elseif (abs(int.c0-5/3) < 1.0E-10) && int.add_zth
+        println(io, "ZEUTHEN flow integrator")
+    elseif (abs(int.c0-5/3) < 1.0E-10) && !int.add_zth
+        println(io, "SYMANZIK flow integrator")
+    else
+        println(io, "CUSTOM flow integrator")
+        if int.add_zth
+            println(io, "  - ", int.c0, " (with zeuthen term)")
+        else
+            println(io, "  - ", int.c0)
+        end
+    end
+
+    if N == 0
+        println(io, " * Euler schem3")
+    elseif N == 1
+        println(io, " * One stage scheme. Coefficients3")
+        println(io, "    stg 1: ", int.e0[1], " ", int.e1[1])
+    elseif N == 2
+        println(io, " * Two stage scheme. Coefficients:")
+        println(io, "    stg 1: ", int.e0[1], " ", int.e1[1])
+        println(io, "    stg 2: ", int.e0[2], " ", int.e1[2])
+    end
+
+    println(io, " * Fixed step size parameters: eps = ", int.eps)
+    println(io, " * Adaptive step size parameters: tol = ", int.tol)
+    println(io, "    - max eps:      ", int.max_eps)
+    println(io, "    - initial eps:  ", int.eps_ini)
+    println(io, "    - safety scale: ", int.sft_fac)
+
+    return nothing
+end
+
+
 """
     function add_zth_term(ymws::YMworkspace, U, lp)
 
@@ -73,68 +135,81 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
     return nothing
 end
 
-
-function flw_euler(U, ns, eps, c0, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
-    
-    @timeit "Integrating flow equations (Euler)" begin
+function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}    
+    @timeit "Integrating flow equations" begin
         for i in 1:ns
-            force_gauge(ymws, U, c0, 1, gp, lp)
-            if add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
-            end
-            U .= expm.(U, ymws.frc1, 2*eps)
-        end
-    end
-    
-    return nothing
-end
-
-function flw_rk3(U, ns, eps, c0, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace; add_zth=false)
-    
-    @timeit "Integrating flow equations (RK3)" begin
-        for i in 1:ns
-            e0 = eps/2
-            force_gauge(ymws, U, c0, 1, gp, lp)
-            if add_zth
+            force_gauge(ymws, U, int.c0, 1, gp, lp)
+            if int.add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
             ymws.mom .= ymws.frc1
-            U .= expm.(U, ymws.mom, e0)
-            
-            e0 = -34*eps/36
-            e1 = 16*eps/9
-            force_gauge(ymws, U, c0, 1, gp, lp)
-            if add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
+            U .= expm.(U, ymws.mom, 2*eps*int.r)
+
+            for k in 1:NI
+                force_gauge(ymws, U, int.c0, 1, gp, lp)
+                if int.add_zth
+                    add_zth_term(ymws::YMworkspace, U, lp)
+                end
+                ymws.mom .= int.e0[k].*ymws.mom .+ int.e1[k].*ymws.frc1
+                U .= expm.(U, ymws.mom, 2*eps)
             end
-            ymws.mom .= e0.*ymws.mom .+ e1.*ymws.frc1
-            U .= expm.(U, ymws.mom)
-            
-            e1 = 6*eps/4
-            force_gauge(ymws, U, c0, 1, gp, lp)
-            if add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
-            end
-            ymws.mom .= e1.*ymws.frc1 .- ymws.mom 
-            U .= expm.(U, ymws.mom)
         end
     end
-                              
+    
     return nothing
 end
+flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw(U, int, ns, int.eps, gp, lp, ymws)
 
 
+##
+# Adaptive step size integrators
+##
 
-                              
-wfl_euler(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 1, gp, lp, ymws)
-zfl_euler(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_euler(U, ns, eps, 5.0/3.0, gp, lp, ymws, add_zth=true)
-wfl_rk3(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 1, gp, lp, ymws)
-zfl_rk3(U, ns, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) = flw_rk3(U, ns, eps, 5.0/3.0, gp, lp, ymws, add_zth=true)
+function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}
+
+    eps = int.eps_ini
+    dt  = tend
+    nstp = 0
+    while true
+        ns = convert(Int64, floor(dt/eps))
+        if ns > 10
+            flw(U, int, 9, eps, gp, lp, ymws)
+            ymws.U1 .= U
+            flw(U, int, 2, eps/2, gp, lp, ymws)
+            flw(ymws.U1, int, 1, eps, gp, lp, ymws)
+            
+            dt = dt - 10*eps
+            nstp = nstp + 10
+
+            # adjust step size
+            ymws.U1 .= ymws.U1 ./ U
+            maxd = CUDA.mapreduce(dev_one, max, ymws.U1, init=zero(tend))
+            eps  = min(int.max_eps, 2*eps, int.sft_fac*eps*(int.tol/maxd)^(one(tend)/3))
+            
+        else
+            flw(U, int, ns, eps, gp, lp, ymws)
+            dt = dt - ns*eps
+
+            flw(U, int, 1, dt, gp, lp, ymws)
+            dt = zero(tend)
+
+            nstp = nstp + ns + 1
+        end
+        
+        if dt == zero(tend)
+            break
+        end
+    end
+
+    return nstp, eps
+end
+flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw_adapt(U, int, tend, int.eps_ini, gp, lp, ymws)
 
 
 ##
 # Observables
 ##
+
 
 """
     function Eoft_plaq([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
@@ -151,7 +226,7 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMwo
 
         tp = ntuple(i->i, N-1)
         V3 = prod(lp.iL[1:end-1])
-
+        
         fill!(Eslc,zero(T))
         Etmp = zeros(T,lp.iL[end])
         for ipl in 1:M
@@ -159,8 +234,8 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMwo
             CUDA.@sync begin
                 CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_plaq_pln!(ymws.cm, U, gp.Ubnd, ztw[ipl], ipl, lp)
             end
-            
-            Etmp .=  (gp.ng .- reshape(Array(CUDA.mapreduce(real, +, ymws.cm;dims=tp)),lp.iL[end])/V3 )
+
+            Etmp .=  (gp.ng .- reshape(Array(CUDA.mapreduce(real, +, ymws.cm;dims=tp)),lp.iL[end]) ./ V3 )
             if ipl < N
                 for it in 2:lp.iL[end]
                     Eslc[it,ipl] = Etmp[it] + Etmp[it-1]
@@ -201,7 +276,7 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd::T, ztw, ipl, lp::SpacePa
     end
     
     I = point_coord((b,r), lp)
-    plx[I] = ztw*tr(U[b,1,r]*gt / (U[b,2,r]*U[bu2,id1,ru2]))
+    plx[I] = ztw*tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
 
     return nothing
 end
@@ -219,22 +294,23 @@ function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace)
         ztw = ztwist(gp, lp)
         tp = (1,2,3)
         
+        fill!(ymws.rm, zero(eltype(ymws.rm)))
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,6, ztw[1], ztw[5], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,6, ztw[1], ztw[6], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)
         end
     
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,5, ztw[2], ztw[4], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,5, ztw[2], ztw[5], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, U, lp)
         end
     
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,4, ztw[3], ztw[6], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,4, ztw[3], ztw[4], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)

@@ -21,6 +21,7 @@ dag(a::SU2{T})           where T <: AbstractFloat = inverse(a)
 norm(a::SU2{T})          where T <: AbstractFloat = sqrt(abs2(a.t1) + abs2(a.t2))
 norm2(a::SU2{T})         where T <: AbstractFloat = abs2(a.t1) + abs2(a.t2)
 tr(g::SU2{T})            where T <: AbstractFloat = complex(2.0*real(g.t1), 0.0)
+dev_one(g::SU2{T})       where T <: AbstractFloat = sqrt(( abs2(g.t1 - one(T)) + abs2(g.t2))/2)
 
 """
     function normalize(a::T) where {T <: Group}
