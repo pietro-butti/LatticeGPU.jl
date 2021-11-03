@@ -118,6 +118,7 @@ end
 function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
     
