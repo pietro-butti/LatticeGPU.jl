@@ -84,6 +84,8 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
                 acc = false
             end
         end
+
+        U .= unitarize.(U)
         
     end
     return dh, acc

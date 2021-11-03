@@ -24,11 +24,11 @@ tr(g::SU2{T})            where T <: AbstractFloat = complex(2.0*real(g.t1), 0.0)
 dev_one(g::SU2{T})       where T <: AbstractFloat = sqrt(( abs2(g.t1 - one(T)) + abs2(g.t2))/2)
 
 """
-    function normalize(a::T) where {T <: Group}
+    function unitarize(a::T) where {T <: Group}
 
-Return a normalized element of the group.
+Return a unitarized element of the group.
 """
-function normalize(a::SU2{T}) where T <: AbstractFloat
+function unitarize(a::SU2{T}) where T <: AbstractFloat
     dr = sqrt(abs2(a.t1) + abs2(a.t2))
     if (dr == 0.0)
         return SU2(0.0)
