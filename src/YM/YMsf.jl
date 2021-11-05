@@ -43,7 +43,7 @@ function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace)
     return dsdeta, ddnu
 end
     
-function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd::T, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     I    = point_coord((b,r), lp)
@@ -68,11 +68,48 @@ function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd::T, lp::SpaceParm{N,M,B,
         for id in 1:N-1
             bu, ru = up((b,r), id, lp)
 
-            X = projalg(Ubnd/(U[b,id,r]*U[bu,N,ru])*U[b,N,r])
+            X = projalg(Ubnd[id]/(U[b,id,r]*U[bu,N,ru])*U[b,N,r])
             rm[I]  -= 3*X.t7 + SR3   * X.t8
             rm[ID] += 2*X.t7 - SR3x2 * X.t8
         end
     end
 
+    return nothing
+end
+
+
+@inline function bndfield(phi1::T, phi2::T, iL) where T <: AbstractFloat
+
+    SR3::T = 1.73205080756887729352744634151
+
+    zt = zero(T)
+    X = SU3alg{T}(zt,zt,zt,zt,zt,zt,(phi1-phi2)/iL,SR3*(phi1+phi2)/iL)
+    
+    return exp(X)
+end
+    
+
+function setbndfield(U, phi, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_setbnd_it0!(U, phi[1,1], phi[1,2], lp)
+    end
+    
+    return nothing
+end
+
+function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm)
+
+    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    it   = point_time((b,r), lp)
+
+    SFBC = (B == BC_SF_AFWB) || (B == BC_SF_ORBI)
+    
+    if (it == 0) && SFBC
+        for id in 1:N-1
+            U[b,id,r] = bndfield(phi1,phi2,lp.iL[id])
+        end
+    end
+    
     return nothing
 end

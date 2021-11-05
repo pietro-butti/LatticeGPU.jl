@@ -134,3 +134,12 @@ ba = rand(SU3alg{T})
 ga = exp(ba)
 println("Matrix: ", alg2mat(ba))
 println("Exp:    ", ga)
+
+
+println("## Final tests: ")
+g1 = exp(SU3alg{T}(6.23, 1.23, -0.34, 2.34, -0.23, 0.23, -8.34, 8.34))
+println(g1)
+println(isgroup(g1))
+g1 = unitarize(g1)
+println(g1)
+println(isgroup(g1))

@@ -259,7 +259,7 @@ end
 Eoft_plaq(U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,N,M,B,D} = Eoft_plaq(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
 
 
-function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd::T, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
 
@@ -270,7 +270,7 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd::T, ztw, ipl, lp::SpacePa
     bu2, ru2 = up((b, r), id2, lp)
     
     if SFBC && (ru1 != r)
-        gt = Ubnd
+        gt = Ubnd[id2]
     else
         gt = U[bu1,id2,ru1]
     end
@@ -407,7 +407,7 @@ function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,B,D}) where {M,B,
     return nothing
 end
 
-function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {T,M,B,D}
+function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {T,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b,r), lp)
@@ -469,16 +469,16 @@ function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, ipl1, ipl2
     if ru1 == r
         gt1 = Ush[bu1,2]
     else
-        gt1 = U[bu1,id2,ru1]
+        if SFBC && (it == lp.iL[end])
+            gt2 = Ubnd[id2]
+        else
+            gt1 = U[bu1,id2,ru1]
+        end
     end
     if ru2 == r
         gt2 = Ush[bu2,1]
     else
-        if SFBC && (it == lp.iL[end])
-            gt2 = Ubnd
-        else
-            gt2 = U[bu2,id1,ru2]
-        end
+        gt2 = U[bu2,id1,ru2]
     end
     
     l1 = gt1/gt2

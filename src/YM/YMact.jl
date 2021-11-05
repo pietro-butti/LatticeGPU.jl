@@ -9,7 +9,7 @@
 ### created: Mon Jul 12 18:31:19 2021
 ###                               
 
-function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,NB,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b, r), lp)
@@ -72,7 +72,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, lp::Spac
                 gc = Ush[b2,2]
             else
                 if SFBC && (it == lp.iL[end])
-                    gc = Ubnd
+                    gc = Ubnd[id2]
                 else
                     gc = U[b2,id2,r2]
                 end
@@ -89,7 +89,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, lp::Spac
                 ga = Ush[bu1,2]
             else
                 if SFBC && (it == lp.iL[end])
-                    ga = Ubnd
+                    ga = Ubnd[id2]
                 else
                     ga = U[bu1,id2,ru1]
                 end
@@ -115,7 +115,7 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, lp::Spac
     return nothing
 end
 
-function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b, r), lp)
@@ -141,7 +141,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, ztw, lp::SpaceParm{N,
                 gt1 = Ush[bu1,2]
             else
                 if SFBND && (it == lp.iL[end])
-                    gt1 = Ubnd
+                    gt1 = Ubnd[id2]
                 else
                     gt1 = U[bu1,id2,ru1]
                 end
@@ -166,7 +166,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd::T, cG, ztw, lp::SpaceParm{N,
     return nothing
 end
 
-function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b,r), lp)
@@ -193,7 +193,7 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, zt
             gt1 = Ush[bu1,2]
         else
             if SFBC && (it == lp.iL[end])
-                gt1 = Ubnd
+                gt1 = Ubnd[id2]
             else
                 gt1 = U[bu1,id2,ru1]
             end
@@ -227,7 +227,7 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd::T, cG, zt
     return nothing
 end
 
-function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it = point_time((b, r), lp)
@@ -260,7 +260,7 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, 
             gc = Ush[b2,2]
         else
             if SFBC && (it == lp.iL[end])
-                gc = Ubnd
+                gc = Ubnd[id2]
             else
                 gc = U[b2,id2,r2]
             end
@@ -310,7 +310,7 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, 
             gc = Ush[b2,2]
         else
             if SFBC && (it == lp.iL[end])
-                gc = Ubnd
+                gc = Ubnd[id2]
             else
                 gc = U[b2,id2,r2]
             end
@@ -345,7 +345,7 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd::T, 
             ga = Ush[bu1,2]
         else
             if SFBC && (it == lp.iL[end])
-                ga = Ubnd
+                ga = Ubnd[id2]
             else
                 ga = U[bu1,id2,ru1]
             end

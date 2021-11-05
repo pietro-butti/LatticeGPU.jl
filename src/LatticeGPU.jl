@@ -44,6 +44,6 @@ export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
-export sfcoupling
+export sfcoupling, bndfield, setbndfield
 
 end # module

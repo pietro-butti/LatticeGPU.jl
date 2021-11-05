@@ -20,25 +20,22 @@ using ..MD
 
 import Base.show
 
-struct GaugeParm{T,G}
+struct GaugeParm{T,G,N}
     beta::T
     c0::T
     cG::NTuple{2,T}
     ng::Int64
 
-    Ubnd::G
+    Ubnd::NTuple{N, G}
 
-    function GaugeParm{T}(::Type{G}, bt, c0, cG) where {T,G}
+    function GaugeParm{T}(::Type{G}, bt, c0, cG, phi, iL) where {T,G}
 
-        function degree(::Type{SU2{T}}) where T
-            return 2
-        end
-        function degree(::Type{SU3{T}}) where T <: AbstractFloat
-            return 3
-        end
+        degree(::Type{SU2{T}}) where T <: AbstractFloat = 2
+        degree(::Type{SU3{T}}) where T <: AbstractFloat = 3
         ng = degree(G)
+        nsd = length(iL)
         
-        return new{T,G}(bt, c0, cG, ng, one(G))
+        return new{T,G,nsd}(bt, c0, cG, ng, ntuple(id->bndfield(phi[1], phi[2], iL[id]), nsd))
     end
     function GaugeParm{T}(::Type{G}, bt, c0) where {T,G}
         
@@ -46,17 +43,21 @@ struct GaugeParm{T,G}
         degree(::Type{SU3{T}}) where T <: AbstractFloat = 3
         ng = degree(G)
 
-        return new{T,G}(bt, c0, (0.0,0.0), ng, one(G))
+        return new{T,G,0}(bt, c0, (0.0,0.0), ng, ())
     end
 end
 export GaugeParm
-function Base.show(io::IO, gp::GaugeParm{T, G}) where {T,G}
+function Base.show(io::IO, gp::GaugeParm{T, G, N}) where {T,G,N}
 
     println(io, "Group:  ", G)
     println(io, " - beta:              ", gp.beta)
     println(io, " - c0:                ", gp.c0)
     println(io, " - cG:                ", gp.cG)
-    println(io, " - Boundary link:     ", gp.Ubnd)
+    if (N > 0)
+        for i in 1:N
+            println(io, "   - Boundary link:     ", gp.Ubnd[i])
+        end
+    end
     
     return nothing
 end
@@ -142,6 +143,6 @@ export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 
 include("YMsf.jl")
-export sfcoupling
+export sfcoupling, bndfield, setbndfield
 
 end
