@@ -15,7 +15,7 @@
 
 Returns the value of the gauge plaquette action for the configuration U. The parameters `\beta` and `c0` are taken from the `gp` structure. 
 """
-function gauge_action(U, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where T <: AbstractFloat
+function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where T <: AbstractFloat
 
     ztw = ztwist(gp, lp)
     if abs(gp.c0-1) < 1.0E-10
@@ -92,7 +92,7 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
 end
 HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T = HMC!(U, omf4(T, eps, ns), lp, gp, ymws; noacc=noacc)
 
-function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm{T}, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
+function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
     
     @timeit "MD evolution" begin
 

@@ -217,7 +217,7 @@ flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::Y
 Measure the action density `E(t)` using the plaquette discretization. If the argument `Eslc`
 the contribution for each Euclidean time slice and plane are returned.
 """
-function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,N,M,B,D}
+function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,G,NN,N,M,B,D}
 
     @timeit "E(t) plaquette measurement" begin
 
@@ -256,7 +256,7 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMwo
     return sum(Eslc)/lp.iL[end]
 end
 
-Eoft_plaq(U, gp::GaugeParm{T}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,N,M,B,D} = Eoft_plaq(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
+Eoft_plaq(U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,G,NN,N,M,B,D} = Eoft_plaq(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
 
 
 function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}

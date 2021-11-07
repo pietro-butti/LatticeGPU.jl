@@ -41,7 +41,7 @@ println("Time to take the configuration to memory: ")
 # Set gauge parameters
 # FIRST SET: Wilson action/flow
 println("\n## WILSON ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0, (0.5,0.5))
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
 println("Gauge  Parameters: ", gp)
 
 flwint = wfl_rk3(PREC, 0.005, 1.0E-6)
@@ -85,7 +85,7 @@ println("## END Wilson action/flow measurements")
 # Set gauge parameters
 # SECOND SET: Improved action/flow
 println("\n## IMPROVED ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 5/6, (0.5,0.5))
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 5/6)
 println("Gauge  Parameters: ", gp)
 
 flwint = zfl_rk3(PREC, 0.01, 1.0E-6)
