@@ -31,7 +31,7 @@ Return a unitarized element of the group.
 function unitarize(a::SU2{T}) where T <: AbstractFloat
     dr = sqrt(abs2(a.t1) + abs2(a.t2))
     if (dr == 0.0)
-        return SU2(0.0)
+        return SU2{T}(0.0,0.0)
     end
     return SU2{T}(a.t1/dr,a.t2/dr)
 end
