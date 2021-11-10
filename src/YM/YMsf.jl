@@ -98,7 +98,7 @@ function setbndfield(U, phi, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
     return nothing
 end
 
-function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm)
+function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm{N,M,B,D})  where {N,M,B,D}
 
     b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
     it   = point_time((b,r), lp)
