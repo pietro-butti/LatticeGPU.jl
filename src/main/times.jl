@@ -8,7 +8,7 @@ using LatticeGPU
 
 # Set lattice/block size
 ntwist = (0,0,0,0,0,0)
-lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
+lp = SpaceParm{4}((8,8,8,8), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
 # Seed RNG
