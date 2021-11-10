@@ -92,7 +92,7 @@ end
 function setbndfield(U, phi, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
 
     CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_setbnd_it0!(U, phi[1,1], phi[1,2], lp)
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_setbnd_it0!(U, phi[1], phi[2], lp)
     end
     
     return nothing
