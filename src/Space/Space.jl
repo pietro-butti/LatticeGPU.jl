@@ -216,7 +216,7 @@ Given a point `x` with index `p`, this routine returns the index of the points
         ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
         if (ic == lp.rbk[id]-1)
             ru = p[2] - (lp.rbk[id]-1)*lp.rbkS[id]
-        else
+sfqcd_L12_b3.5320_k0.137101170000000_r0_id1n1        else
             ru = p[2] + lp.rbkS[id]
         end
         rd = p[2]
@@ -306,9 +306,16 @@ end
 end
 
 
-@inline function point_index(pt::NTuple{4, Int64}, lp::SpaceParm)
+@inline function point_index(pt::CartesianIndex, lp::SpaceParm)
 
-    
+    b = 1
+    r = 1
+    for i in 1:length(pt)
+        b = b + ((pt[i]-1)%lp.blk[i])*lp.blkS[i]
+        r = r + div((pt[i]-1),lp.blk[i])*lp.rbkS[i]
+    end
+
+    return (b,r)
 end
     
 export up, dw, updw, point_index, point_coord, point_time
