@@ -429,17 +429,16 @@ function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, z
     if ru1 == r
         gt1 = Ush[bu1,2]
     else
-        
-        gt1 = U[bu1,id2,ru1]
+        if SFBC && (it == lp.iL[end])
+            gt1 = Ubnd[id2]
+        else
+            gt1 = U[bu1,id2,ru1]
+        end
     end
     if ru2 == r
         gt2 = Ush[bu2,1]
     else
-        if SFBC && (it == lp.iL[end])
-            gt2 = Ubnd
-        else
-            gt2 = U[bu2,id1,ru2]
-        end
+        gt2 = U[bu2,id1,ru2]
     end
     
     l1 = gt1/gt2
