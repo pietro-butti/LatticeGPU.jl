@@ -421,7 +421,7 @@ function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, z
     Ush[b,2] = U[b,id2,r]
     sync_threads()
 
-    SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == N)
+    SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
 
     bu1, ru1 = up((b, r), id1, lp)
     bu2, ru2 = up((b, r), id2, lp)
@@ -461,7 +461,7 @@ function krnl_field_tensor!(frc1, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, z
     Ush[b,2] = U[b,id2,r]
     sync_threads()
 
-    SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == N)
+    SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
 
     bu1, ru1 = up((b, r), id1, lp)
     bu2, ru2 = up((b, r), id2, lp)
