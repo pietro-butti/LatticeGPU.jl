@@ -216,7 +216,7 @@ Given a point `x` with index `p`, this routine returns the index of the points
         ic = mod(div(p[2]-1,lp.rbkS[id]),lp.rbk[id])
         if (ic == lp.rbk[id]-1)
             ru = p[2] - (lp.rbk[id]-1)*lp.rbkS[id]
-sfqcd_L12_b3.5320_k0.137101170000000_r0_id1n1        else
+        else
             ru = p[2] + lp.rbkS[id]
         end
         rd = p[2]
