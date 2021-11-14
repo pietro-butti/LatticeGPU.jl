@@ -28,7 +28,7 @@ struct GaugeParm{T,G,N}
 
     Ubnd::NTuple{N, G}
 
-    GaugeParm{T1,T2,T3}(a,b,c,d,e) = new{T1,T2,T3,T4}(a,b,c,d,e)
+    GaugeParm{T1,T2,T3}(a,b,c,d,e) = new{T1,T2,T3}(a,b,c,d,e)
     function GaugeParm{T}(::Type{G}, bt, c0, cG, phi, iL) where {T,G}
 
         degree(::Type{SU2{T}}) where T <: AbstractFloat = 2
