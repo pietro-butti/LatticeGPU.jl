@@ -20,8 +20,8 @@ function import_lex64(fname, lp::SpaceParm)
 
     dtr = [2,3,4,1]
 
-    assign(i, V, i4) = SU3{Float64}(V[1,dtr[id],1],V[2,dtr[id],1],V[3,dtr[id],1],
-                                    V[4,dtr[id],1],V[5,dtr[id],1],V[6,dtr[id],1])
+    assign(id, V, i4) = SU3{Float64}(V[1,dtr[id],i3],V[2,dtr[id],i3],V[3,dtr[id],i3],
+                                     V[4,dtr[id],i3],V[5,dtr[id],i3],V[6,dtr[id],i3])
     
     Ucpu = Array{SU3{Float64}, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
     V = Array{ComplexF64, 3}(undef, 9, lp.ndim, lp.iL[3])
@@ -32,7 +32,7 @@ function import_lex64(fname, lp::SpaceParm)
                 for i3 in 1:lp.iL[3]
                     b, r = point_index(CartesianIndex(i1,i2,i3,i4), lp)
                     for id in 1:lp.ndim
-                        Ucpu[b,id,r] = assign(i, V, i4)
+                        Ucpu[b,id,r] = assign(id, V, i3)
                     end
                 end
             end
