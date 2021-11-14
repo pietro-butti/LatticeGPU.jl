@@ -487,8 +487,8 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
 
     if SFBC && (it == lp.iL[end])
         frc2[b,1,r]     = projalg(Ush[b,1]*l1/Ush[b,2])
-        frc1[bu1,2,ru1] = zero(TA)
-        frc1[bd,3,rd]   = zero(TA)
+        frc2[bu1,2,ru1] = zero(TA)
+        frc2[bd,3,rd]   = zero(TA)
         frc2[bu2,4,ru2] = projalg(l2*l1)
     else
         frc2[b,1,r]     = projalg(ztw1, Ush[b,1]*l1/Ush[b,2])
