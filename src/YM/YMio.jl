@@ -20,7 +20,7 @@ function import_lex64(fname, lp::SpaceParm)
 
     dtr = [2,3,4,1]
 
-    assign(id, V, i4) = SU3{Float64}(V[1,dtr[id],i3],V[2,dtr[id],i3],V[3,dtr[id],i3],
+    assign(id, V, i3) = SU3{Float64}(V[1,dtr[id],i3],V[2,dtr[id],i3],V[3,dtr[id],i3],
                                      V[4,dtr[id],i3],V[5,dtr[id],i3],V[6,dtr[id],i3])
     
     Ucpu = Array{SU3{Float64}, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
