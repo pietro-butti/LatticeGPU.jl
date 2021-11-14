@@ -471,7 +471,7 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         gt1 = Ush[bu1,2]
     else
         if SFBC && (it == lp.iL[end])
-            gt2 = Ubnd[id2]
+            gt1 = Ubnd[id2]
         else
             gt1 = U[bu1,id2,ru1]
         end
