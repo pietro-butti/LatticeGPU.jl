@@ -317,7 +317,22 @@ end
 
     return (b,r)
 end
-    
+
+"""
+    function point_color(p::NTuple{2,Int64}, lp::SpaceParm)
+
+Returns the sum of the cartesian coordinates of the point p=(b,r).
+"""
+@inline function point_color(p::NTuple{2,Int64}, lp::SpaceParm)
+
+    s = cnt(p[1], p[2], 1, lp)
+    for i in 2:lp.ndim
+        s = s + cnt(p[1], p[2], i, lp)
+    end
+
+    return s
+end
+
 export up, dw, updw, point_index, point_coord, point_time
 export BC_PERIODIC, BC_OPEN, BC_SF_AFWB, BC_SF_ORBI
 

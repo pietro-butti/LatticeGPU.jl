@@ -296,21 +296,21 @@ function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace)
         
         fill!(ymws.rm, zero(eltype(ymws.rm)))
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,6, ztw[1], ztw[6], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)
         end
     
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,5, ztw[2], ztw[5], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, U, lp)
         end
     
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,4, ztw[3], ztw[4], lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)
@@ -491,10 +491,10 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         frc2[bd,3,rd]   = zero(TA)
         frc2[bu2,4,ru2] = projalg(l2*l1)
     else
-        frc2[b,1,r]     = projalg(ztw1, Ush[b,1]*l1/Ush[b,2])
-        frc2[bu1,2,ru1] = projalg(ztw1, l1*l2)
-        frc2[bd,3,rd]   = projalg(ztw1, gt2\(l2*gt1))
-        frc2[bu2,4,ru2] = projalg(ztw1, l2*l1)
+        frc2[b,1,r]     = projalg(ztw2, Ush[b,1]*l1/Ush[b,2])
+        frc2[bu1,2,ru1] = projalg(ztw2, l1*l2)
+        frc2[bd,3,rd]   = projalg(ztw2, gt2\(l2*gt1))
+        frc2[bu2,4,ru2] = projalg(ztw2, l2*l1)
     end
 
     return nothing
