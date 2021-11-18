@@ -57,4 +57,10 @@ end
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3{T}}) where T <: AbstractFloat = exp(SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T)))
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3alg{T}}) where T <: AbstractFloat = SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T))
 
+struct SU3fund{T}
+    t1::Complex{T}
+    t2::Complex{T}
+    t3::Complex{T}
+end
+Base.zero(::Type{SU3fund{T}}) where T <: AbstractFloat = SU3fund{T}(zero(T),zero(T),zero(T))
 

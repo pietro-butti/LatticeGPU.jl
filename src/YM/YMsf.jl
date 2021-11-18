@@ -33,11 +33,10 @@ function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace)
         end
 
         tp = ntuple(i->i, N-1)
-        V3 = prod(lp.iL[1:end-1])
         tmp .= reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])
         
-        dsdeta = (gp.cG[1]*gp.beta/(2*gp.ng*V3))*(tmp[1] + tmp[end])
-        ddnu   = (gp.cG[1]*gp.beta/(2*gp.ng*V3))*(tmp[2] + tmp[end-1])
+        dsdeta = (gp.cG[1]*gp.beta/(2*gp.ng))*(tmp[1] + tmp[end])
+        ddnu   = (gp.cG[1]*gp.beta/(2*gp.ng))*(tmp[2] + tmp[end-1])
     end
     
     return dsdeta, ddnu
@@ -59,8 +58,8 @@ function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D})
             bu, ru = up((b,r), id, lp)
 
             X = projalg(U[b,id,r]*U[bu,N,ru]/(U[b,N,r]*U[but,id,rut]))
-            rm[I]  += 3*X.t7 + SR3   * X.t8
-            rm[IU] += 2*X.t7 - SR3x2 * X.t8
+            rm[I]  += (3*X.t7 + SR3   * X.t8)/lp.iL[id]
+            rm[IU] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
         end
     elseif (it == lp.iL[end])
         bdt, rdt = up((b,r), N, lp)
@@ -69,8 +68,8 @@ function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D})
             bu, ru = up((b,r), id, lp)
 
             X = projalg(Ubnd[id]/(U[b,id,r]*U[bu,N,ru])*U[b,N,r])
-            rm[I]  -= 3*X.t7 + SR3   * X.t8
-            rm[ID] += 2*X.t7 - SR3x2 * X.t8
+            rm[I]  -= (3*X.t7 + SR3   * X.t8)/lp.iL[id]
+            rm[ID] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
         end
     end
 

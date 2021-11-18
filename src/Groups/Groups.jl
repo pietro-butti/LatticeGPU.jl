@@ -41,6 +41,7 @@ export SU3, SU3alg, M3x3
 include("GroupSU3.jl")
 include("M3x3.jl")
 include("AlgebraSU3.jl")
+include("FundamentalSU3.jl")
 ## END SU(3)
 
 include("GroupU1.jl")

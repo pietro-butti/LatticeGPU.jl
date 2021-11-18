@@ -16,7 +16,7 @@ include("Groups/Groups.jl")
 
 using .Groups
 export Group, Algebra
-export SU2, SU2alg, SU3, SU3alg, M3x3, M2x2, U1, U1alg
+export SU2, SU2alg, SU3, SU3alg, M3x3, M2x2, U1, U1alg, SU3fund
 export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one
 
 include("Space/Space.jl")
@@ -46,5 +46,12 @@ export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield
 export import_lex64, import_cern64
+
+include("Spinors/Spinor.jl")
+
+using .Spinors    
+export Pgamma
+export norm, norm2, dot, imm, mimm
+export pmul, gpmul, gdagpmul
 
 end # module
