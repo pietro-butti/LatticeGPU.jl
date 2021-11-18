@@ -64,7 +64,7 @@ Returns ga
 Base.:*(g::S,b::Spinor{NS,G}) where {S <: Group,NS,G} = Spinor{NS,G}(ntuple(i->g*b.s[i], NS))
 
 """
-    \(g::SU3{T},b::Spinor{NS,G})
+    \\(g::SU3{T},b::Spinor{NS,G})
 
 Returns g^+ a
 """
@@ -97,7 +97,7 @@ end
 """
     pmul(Pgamma{N,S}, a::Spinor)
 
-Returns (1+s\gamma_N)a.
+Returns ``(1+s\\gamma_N)a``.
 """
 function pmul(::Type{Pgamma{4,1}},  a::Spinor{4,G}) where {NS,G}
     
@@ -155,7 +155,7 @@ end
 """
     gpmul(pgamma{N,S}, g::G, a::Spinor) G <: Group
 
-Returns g(1+s\gamma_N)a
+Returns ``g(1+s\\gamma_N)a``
 """
 function gpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
     
@@ -212,7 +212,7 @@ end
 """
     gdagpmul(pgamma{N,S}, g::G, a::Spinor) G <: Group
 
-Returns g^+ (1+s\gamma_N)a
+Returns ``g^+ (1+s\\gamma_N)a``
 """
 function gdagpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
     
@@ -264,4 +264,10 @@ function gdagpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
     r1 = g\(a.s[1]-imm(a.s[3]))
     r2 = g\(a.s[2]+imm(a.s[4]))
     return Spinor{4,G}((r1,r2,imm(r1),mimm(r2)))
+end
+
+export Spinor, Pgamma
+export norm, norm2, dot, imm, mimm
+export pmul, gpmul, gdagpmul
+
 end

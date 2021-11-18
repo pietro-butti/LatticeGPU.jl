@@ -47,10 +47,10 @@ export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield
 export import_lex64, import_cern64
 
-include("Spinors/Spinor.jl")
+include("Spinors/Spinors.jl")
 
 using .Spinors    
-export Pgamma
+export Spinor, Pgamma
 export norm, norm2, dot, imm, mimm
 export pmul, gpmul, gdagpmul
 

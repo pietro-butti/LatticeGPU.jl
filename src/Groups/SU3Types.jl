@@ -63,4 +63,7 @@ struct SU3fund{T}
     t3::Complex{T}
 end
 Base.zero(::Type{SU3fund{T}}) where T <: AbstractFloat = SU3fund{T}(zero(T),zero(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3fund{T}}) where T <: AbstractFloat = SU3fund{T}(complex(randn(rng,T),randn(rng,T)),
+                                                                                                      complex(randn(rng,T),randn(rng,T)),
+                                                                                                      complex(randn(rng,T),randn(rng,T)))
 

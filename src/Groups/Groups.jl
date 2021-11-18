@@ -36,7 +36,7 @@ include("AlgebraSU2.jl")
 # SU(3) and 3x3 matrix operations
 ##
 include("SU3Types.jl")
-export SU3, SU3alg, M3x3
+export SU3, SU3alg, M3x3, SU3fund
 
 include("GroupSU3.jl")
 include("M3x3.jl")

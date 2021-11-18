@@ -52,13 +52,13 @@ Base.:*(g::SU3{T},b::SU3fund{T})     where T <: AbstractFloat = SU3fund{T}(g.u11
                                                                                conj(g.u11*g.u22 - g.u12*g.u21)*b.t3)
 
 """
-    \(g::SU3{T},b::SU3fund{T})
+    \\(g::SU3{T},b::SU3fund{T})
 
 Returns g^dag b
 """
-Base.:\(a::SU3{T},b::SU3fund{T})     where T <: AbstractFloat = SU3fund{T}(conj(g.u11)*b.t1 + conj(g.u21)*b.t2 + (a.u12*a.u23 - a.u13*a.u22)*b.t3,
-                                                                           conj(g.u12)*b.t1 + conj(g.u22)*b.t2 + (a.u13*a.u21 - a.u11*a.u23)*b.t3,
-                                                                           conj(g.u13)*b.t1 + conj(g.u23)*b.t2 + (a.u11*a.u22 - a.u12*a.u21)*b.t3)
+Base.:\(g::SU3{T},b::SU3fund{T})     where T <: AbstractFloat = SU3fund{T}(conj(g.u11)*b.t1 + conj(g.u21)*b.t2 + (g.u12*g.u23 - g.u13*g.u22)*b.t3,
+                                                                           conj(g.u12)*b.t1 + conj(g.u22)*b.t2 + (g.u13*g.u21 - g.u11*g.u23)*b.t3,
+                                                                           conj(g.u13)*b.t1 + conj(g.u23)*b.t2 + (g.u11*g.u22 - g.u12*g.u21)*b.t3)
 
 Base.:+(a::SU3fund{T},b::SU3fund{T}) where T <: AbstractFloat = SU3fund{T}(a.t1+b.t1,a.t2+b.t2,a.t3+b.t3)
 Base.:-(a::SU3fund{T},b::SU3fund{T}) where T <: AbstractFloat = SU3fund{T}(a.t1-b.t1,a.t2-b.t2,a.t3-b.t3)
