@@ -12,6 +12,7 @@
 module Spinors
 
 using ..Groups
+import ..Groups.imm, ..Groups.mimm, ..Groups.norm, ..Groups.norm2
 
 struct Spinor{NS,G}
     s::NTuple{NS,G}
@@ -122,7 +123,7 @@ function pmul(::Type{Pgamma{1,-1}}, a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]-imm(a.s[4])
     r2 = a.s[2]-imm(a.s[3])
-    return Spinor{4,G}((imm(r2),imm(r1)))
+    return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
 function pmul(::Type{Pgamma{2,1}},  a::Spinor{4,G}) where {NS,G}
@@ -180,7 +181,7 @@ function gpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]-imm(a.s[4]))
     r2 = g*(a.s[2]-imm(a.s[3]))
-    return Spinor{4,G}((imm(r2),imm(r1)))
+    return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
 function gpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
@@ -237,7 +238,7 @@ function gdagpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]-imm(a.s[4]))
     r2 = g\(a.s[2]-imm(a.s[3]))
-    return Spinor{4,G}((imm(r2),imm(r1)))
+    return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
 function gdagpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
