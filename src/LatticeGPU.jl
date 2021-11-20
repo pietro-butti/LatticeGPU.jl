@@ -52,6 +52,6 @@ include("Spinors/Spinors.jl")
 using .Spinors    
 export Spinor, Pgamma
 export imm, mimm
-export pmul, gpmul, gdagpmul
+export pmul, gpmul, gdagpmul, dmul
 
 end # module
