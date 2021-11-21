@@ -143,3 +143,29 @@ println(isgroup(g1))
 g1 = unitarize(g1)
 println(g1)
 println(isgroup(g1))
+
+println("## Fundamental")
+psi = rand(SU3fund{Float64})
+println(psi)
+
+s = Spinor{4,SU3fund{Float64}}((rand(SU3fund{Float64}),rand(SU3fund{Float64}),rand(SU3fund{Float64}),rand(SU3fund{Float64})))
+println(s)
+for n in 1:4
+    t1 = pmul(Pgamma{n,1}, s)
+    t2 = g1\gpmul(Pgamma{n,1}, g1, s)
+    println("Direction (+)$n: ", LatticeGPU.norm(t1-t2))
+
+    t1 = pmul(Pgamma{n,-1}, s)
+    t2 = g1\gpmul(Pgamma{n,-1}, g1, s)
+    println("Direction (-)$n: ", LatticeGPU.norm(t1-t2))
+end
+
+for n in 1:4
+    t1 = pmul(Pgamma{n,1}, s)
+    t2 = g1*gdagpmul(Pgamma{n,1}, g1, s)
+    println("Direction (+)$n: ", LatticeGPU.norm(t1-t2))
+
+    t1 = pmul(Pgamma{n,-1}, s)
+    t2 = g1*gdagpmul(Pgamma{n,-1}, g1, s)
+    println("Direction (-)$n: ", LatticeGPU.norm(t1-t2))
+end
