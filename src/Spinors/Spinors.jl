@@ -267,8 +267,125 @@ function gdagpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
     return Spinor{4,G}((r1,r2,imm(r1),mimm(r2)))
 end
 
+
+"""
+    dmul(n::Int64, a::Spinor)
+
+Returns ``\\Gamma_n a``
+
+indexing for Dirac basis ``\\Gamma_n``:
+
+ 1  gamma1
+ 2  gamma2
+ 3  gamma3
+ 4  gamma0
+ 5  gamma5
+ 6  gamma1 gamma5
+ 7  gamma2 gamma5
+ 8  gamma3 gamma5
+ 9  gamma0 gamma5
+10  sigma01
+11  sigma02
+12  sigma03
+13  sigma12
+14  sigma23
+15  sigma31
+16  identity
+
+"""
+
+
+function dmul(n::Int64, a::Spinor{4,G}) where {NS,G}
+
+    if n == 1 then
+       r1 = mimm(a.s[4])
+       r2 = mimm(a.s[3])
+       r3 =  imm(a.s[2])
+       r4 =  imm(a.s[1])
+    elseif n == 2 then
+       r1 = -a.s[4]
+       r2 =  a.s[3]
+       r3 =  a.s[2]
+       r4 = -a.s[1]
+    elseif n == 3 then
+       r1 = mimm(a.s[3])
+       r2 =  imm(a.s[4])
+       r3 =  imm(a.s[1])
+       r4 = mimm(a.s[2])
+    elseif n == 4 then
+       r1 = -a.s[3]
+       r2 = -a.s[4]
+       r3 = -a.s[2]
+       r4 = -a.s[1]
+    elseif n == 5 then
+       r1 =  a.s[1]
+       r2 =  a.s[2]
+       r3 = -a.s[3]
+       r4 = -a.s[4]
+    elseif n == 6 then
+       r1 =  imm(a.s[4])
+       r2 =  imm(a.s[3])
+       r3 =  imm(a.s[2])
+       r4 =  imm(a.s[1])
+    elseif n == 7 then
+       r1 =  a.s[4]
+       r2 = -a.s[3]
+       r3 =  a.s[2]
+       r4 = -a.s[1]
+    elseif n == 8 then
+       r1 =  imm(a.s[3])
+       r2 = mimm(a.s[4])
+       r3 =  imm(a.s[1])
+       r4 = mimm(a.s[2])
+    elseif n == 9 then
+       r1 =  a.s[3]
+       r2 =  a.s[4]
+       r3 = -a.s[2]
+       r4 = -a.s[1]
+    elseif n == 10 then
+       r1 =  a.s[2]
+       r2 =  a.s[1]
+       r3 = -a.s[4]
+       r4 = -a.s[3]
+    elseif n == 11 then
+       r1 = mimm(a.s[2])
+       r2 =  imm(a.s[1])
+       r3 =  imm(a.s[4])
+       r4 = mimm(a.s[3])
+    elseif n == 12 then
+       r1 =  a.s[1]
+       r2 = -a.s[2]
+       r3 = -a.s[3]
+       r4 =  a.s[4]
+    elseif n == 13 then
+       r1 = -a.s[1]
+       r2 =  a.s[2]
+       r3 = -a.s[3]
+       r4 =  a.s[4]
+    elseif n == 14 then
+       r1 = -a.s[2]
+       r2 = -a.s[1]
+       r3 = -a.s[4]
+       r4 = -a.s[3]
+    elseif n == 15 then
+       r1 =  imm(a.s[2])
+       r2 = mimm(a.s[1])
+       r3 =  imm(a.s[4])
+       r4 = mimm(a.s[3])
+    elseif n == 16 then
+       r1 = a.s[1]
+       r2 = a.s[2]
+       r3 = a.s[3]
+       r4 = a.s[4]
+    end
+    
+    return Spinor{4,G}((r1,r2,r3,r4))
+
+end
+
+
 export Spinor, Pgamma
 export norm, norm2, dot, imm, mimm
-export pmul, gpmul, gdagpmul
+export pmul, gpmul, gdagpmul, dmul
 
 end
