@@ -268,6 +268,11 @@ function gdagpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
 end
 
 
+# dummy structs for dispatch:
+# Basis of \\Gamma_n
+struct Gamma{N}
+end
+
 """
     dmul(n::Int64, a::Spinor)
 
@@ -293,96 +298,22 @@ indexing for Dirac basis ``\\Gamma_n``:
 16  identity
 
 """
-
-
-function dmul(n::Int64, a::Spinor{4,G}) where {NS,G}
-
-    if n == 1 then
-       r1 = mimm(a.s[4])
-       r2 = mimm(a.s[3])
-       r3 =  imm(a.s[2])
-       r4 =  imm(a.s[1])
-    elseif n == 2 then
-       r1 = -a.s[4]
-       r2 =  a.s[3]
-       r3 =  a.s[2]
-       r4 = -a.s[1]
-    elseif n == 3 then
-       r1 = mimm(a.s[3])
-       r2 =  imm(a.s[4])
-       r3 =  imm(a.s[1])
-       r4 = mimm(a.s[2])
-    elseif n == 4 then
-       r1 = -a.s[3]
-       r2 = -a.s[4]
-       r3 = -a.s[2]
-       r4 = -a.s[1]
-    elseif n == 5 then
-       r1 =  a.s[1]
-       r2 =  a.s[2]
-       r3 = -a.s[3]
-       r4 = -a.s[4]
-    elseif n == 6 then
-       r1 =  imm(a.s[4])
-       r2 =  imm(a.s[3])
-       r3 =  imm(a.s[2])
-       r4 =  imm(a.s[1])
-    elseif n == 7 then
-       r1 =  a.s[4]
-       r2 = -a.s[3]
-       r3 =  a.s[2]
-       r4 = -a.s[1]
-    elseif n == 8 then
-       r1 =  imm(a.s[3])
-       r2 = mimm(a.s[4])
-       r3 =  imm(a.s[1])
-       r4 = mimm(a.s[2])
-    elseif n == 9 then
-       r1 =  a.s[3]
-       r2 =  a.s[4]
-       r3 = -a.s[2]
-       r4 = -a.s[1]
-    elseif n == 10 then
-       r1 =  a.s[2]
-       r2 =  a.s[1]
-       r3 = -a.s[4]
-       r4 = -a.s[3]
-    elseif n == 11 then
-       r1 = mimm(a.s[2])
-       r2 =  imm(a.s[1])
-       r3 =  imm(a.s[4])
-       r4 = mimm(a.s[3])
-    elseif n == 12 then
-       r1 =  a.s[1]
-       r2 = -a.s[2]
-       r3 = -a.s[3]
-       r4 =  a.s[4]
-    elseif n == 13 then
-       r1 = -a.s[1]
-       r2 =  a.s[2]
-       r3 = -a.s[3]
-       r4 =  a.s[4]
-    elseif n == 14 then
-       r1 = -a.s[2]
-       r2 = -a.s[1]
-       r3 = -a.s[4]
-       r4 = -a.s[3]
-    elseif n == 15 then
-       r1 =  imm(a.s[2])
-       r2 = mimm(a.s[1])
-       r3 =  imm(a.s[4])
-       r4 = mimm(a.s[3])
-    elseif n == 16 then
-       r1 = a.s[1]
-       r2 = a.s[2]
-       r3 = a.s[3]
-       r4 = a.s[4]
-    end
-    
-    return Spinor{4,G}((r1,r2,r3,r4))
-
-end
-
+dmul(::Type{Gamma{1}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[4]), mimm(a.s[3]), imm(a.s[2]), imm(a.s[1]))
+dmul(::Type{Gamma{2}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[4], a.s[3], a.s[2], -a.s[1])
+dmul(::Type{Gamma{3}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[3]), imm(a.s[4]), imm(a.s[1]), mimm(a.s[2]))
+dmul(::Type{Gamma{4}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[3], -a.s[4], -a.s[2], -a.s[1])
+dmul(::Type{Gamma{5}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1],  a.s[2],  -a.s[3], -a.s[4])
+dmul(::Type{Gamma{6}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[4]),  imm(a.s[3]),   imm(a.s[2]),  imm(a.s[1]))
+dmul(::Type{Gamma{7}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[4], -a.s[3],   a.s[2], -a.s[1])
+dmul(::Type{Gamma{8}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[3]), mimm(a.s[4]),   imm(a.s[1]), mimm(a.s[2]))
+dmul(::Type{Gamma{9}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[3],  a.s[4],  -a.s[2], -a.s[1])
+dmul(::Type{Gamma{10}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[2],  a.s[1],  -a.s[4], -a.s[3])
+dmul(::Type{Gamma{11}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[2]),  imm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
+dmul(::Type{Gamma{12}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1], -a.s[2],  -a.s[3],  a.s[4])
+dmul(::Type{Gamma{13}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[1],  a.s[2],  -a.s[3],  a.s[4])
+dmul(::Type{Gamma{14}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[2], -a.s[1],  -a.s[4], -a.s[3])
+dmul(::Type{Gamma{15}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[2]), mimm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
+dmul(::Type{Gamma{16}}, a::Spinor{4,G}) where {G} = a
 
 export Spinor, Pgamma
 export norm, norm2, dot, imm, mimm
