@@ -62,7 +62,7 @@ function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D})
             rm[IU] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
         end
     elseif (it == lp.iL[end])
-        bdt, rdt = up((b,r), N, lp)
+        bdt, rdt = dw((b,r), N, lp)
         ID = point_coord((bdt,rdt), lp)
         for id in 1:N-1
             bu, ru = up((b,r), id, lp)
