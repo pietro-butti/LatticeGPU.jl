@@ -41,7 +41,11 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, zt
             if r2 == r
                 gb = Ush[b2,2]
             else
-                gb = U[b2,id2,r2]
+                if SFBC && (it == lp.iL[end]-1)
+                    gb = Ubnd[id2]
+                else
+                    gb = U[b2,id2,r2]
+                end
             end
             
             (b2, r2) = up((b1,r1), id2, lp)
@@ -279,7 +283,11 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
         if r2 == r
             gb = Ush[b2,2]
         else
-            gb = U[b2,id2,r2]
+            if SFBC && (it == lp.iL[end]-1)
+                gb = Ubnd[id2]
+            else
+                gb = U[b2,id2,r2]
+            end
         end
         
         (b2, r2) = up((b1,r1), id2, lp)
