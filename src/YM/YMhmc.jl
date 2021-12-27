@@ -115,6 +115,9 @@ function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm, ymws:
                 else
                     mom .= mom .+ (int.r[k]*ee) .* ymws.frc1
                 end
+                if k == NI
+                    off = -1
+                end
                 k += off
             end
         end
