@@ -89,7 +89,7 @@ end
 
 function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b, r), lp)
 
     SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
@@ -261,7 +261,7 @@ Eoft_plaq(U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) w
 
 function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
 
     id1, id2 = lp.plidx[ipl]
     SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == lp.iL[end]) 
@@ -387,7 +387,7 @@ Eoft_clover(U, gp::GaugeParm, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace{T}) wher
 
 function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
 
     X1 = (frc1[b,1,r]+frc1[b,2,r]+frc1[b,3,r]+frc1[b,4,r])
     
@@ -399,7 +399,7 @@ end
 
 function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
 
     I = point_coord((b,r), lp)
     rm[I] += op(dot( (frc1[b,1,r]+frc1[b,2,r]+frc1[b,3,r]+frc1[b,4,r]),
@@ -409,7 +409,7 @@ end
 
 function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b,r), lp)
     SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
 

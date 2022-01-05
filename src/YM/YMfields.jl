@@ -36,7 +36,7 @@ end
 
 function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     for id in 1:lp.ndim
         frc[b,id,r] = SU3alg(m[b,id,1,r], m[b,id,2,r], m[b,id,3,r],
                              m[b,id,4,r], m[b,id,5,r], m[b,id,6,r],
@@ -47,7 +47,7 @@ end
 
 function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b,r), lp)
 
     if ((B==BC_SF_AFWB)||(B==BC_SF_ORBI))
@@ -72,7 +72,7 @@ end
 
 function krnl_assign_SU2!(frc, m, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {N,M,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     for id in 1:lp.ndim
         frc[b,id,r] = SU2alg(m[b,id,1,r], m[b,id,2,r], m[b,id,3,r])
     end

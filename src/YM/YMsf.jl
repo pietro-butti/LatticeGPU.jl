@@ -44,7 +44,7 @@ end
     
 function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     I    = point_coord((b,r), lp)
     it   = I[N]
 
@@ -99,7 +99,7 @@ end
 
 function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm{N,M,B,D})  where {N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it   = point_time((b,r), lp)
 
     SFBC = (B == BC_SF_AFWB) || (B == BC_SF_ORBI)

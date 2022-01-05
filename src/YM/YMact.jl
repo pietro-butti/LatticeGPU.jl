@@ -11,7 +11,7 @@
 
 function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,NB,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
@@ -121,7 +121,7 @@ end
 
 function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
     
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
@@ -172,7 +172,7 @@ end
 
 function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b,r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))
@@ -233,7 +233,7 @@ end
 
 function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
-    b, r = CUDA.threadIdx().x, CUDA.blockIdx().x
+    b, r = assign_thx()
     it = point_time((b, r), lp)
 
     Ush = @cuStaticSharedMem(T, (D,2))

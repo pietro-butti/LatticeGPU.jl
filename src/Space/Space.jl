@@ -333,7 +333,10 @@ Returns the sum of the cartesian coordinates of the point p=(b,r).
     return s
 end
 
-export up, dw, updw, point_index, point_coord, point_time
+
+@inline assign_thx() = convert(Int64, CUDA.threadIdx().x), convert(Int64, CUDA.blockIdx().x)
+
+export up, dw, updw, point_index, point_coord, point_time, assign_thx
 export BC_PERIODIC, BC_OPEN, BC_SF_AFWB, BC_SF_ORBI
 
 end
