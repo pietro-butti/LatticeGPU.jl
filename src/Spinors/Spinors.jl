@@ -22,7 +22,7 @@ Base.zero(::Type{Spinor{NS,G}}) where {NS,G} = Spinor{NS,G}(ntuple(i->zero(G), N
 """
     norm2(a::Spinor)
 
-Returns the norm of a fundamental element. Same result as sqrt(dot(a,a)).
+Returns the norm squared of a fundamental element. Same result as `dot(a,a)`.
 """
 @generated function norm2(a::Spinor{NS,G}) where {NS,G}
 
@@ -100,52 +100,52 @@ end
 
 Returns ``(1+s\\gamma_N)a``.
 """
-function pmul(::Type{Pgamma{4,1}},  a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{4,1}},  a::Spinor{4,G}) where {NS,G}
     
     r1 = a.s[1]+a.s[3]
     r2 = a.s[2]+a.s[4]
     return Spinor{4,G}((r1,r2,r1,r2))
 end
-function pmul(::Type{Pgamma{4,-1}}, a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{4,-1}}, a::Spinor{4,G}) where {NS,G}
     
     r1 = a.s[1]-a.s[3]
     r2 = a.s[2]-a.s[4] 
     return Spinor{4,G}((r1,r2,-r1,-r2))
 end
     
-function pmul(::Type{Pgamma{1,1}},  a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{1,1}},  a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]+imm(a.s[4])
     r2 = a.s[2]+imm(a.s[3])
     return Spinor{4,G}((r1,r2,mimm(r2),mimm(r1)))
 end
-function pmul(::Type{Pgamma{1,-1}}, a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{1,-1}}, a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]-imm(a.s[4])
     r2 = a.s[2]-imm(a.s[3])
     return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
-function pmul(::Type{Pgamma{2,1}},  a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{2,1}},  a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]+a.s[4]
     r2 = a.s[2]-a.s[3]
     return Spinor{4,G}((r1,r2,-r2,r1))
 end
-function pmul(::Type{Pgamma{2,-1}}, a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{2,-1}}, a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]-a.s[4]
     r2 = a.s[2]+a.s[3]
     return Spinor{4,G}((r1,r2,r2,-r1))
 end
 
-function pmul(::Type{Pgamma{3,1}},  a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{3,1}},  a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]+imm(a.s[3])
     r2 = a.s[2]-imm(a.s[4])
     return Spinor{4,G}((r1,r2,mimm(r1),imm(r2)))
 end
-function pmul(::Type{Pgamma{3,-1}},  a::Spinor{4,G}) where {NS,G}
+@inline function pmul(::Type{Pgamma{3,-1}},  a::Spinor{4,G}) where {NS,G}
 
     r1 = a.s[1]-imm(a.s[3])
     r2 = a.s[2]+imm(a.s[4])
@@ -158,52 +158,52 @@ end
 
 Returns ``g(1+s\\gamma_N)a``
 """
-function gpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
     
     r1 = g*(a.s[1]+a.s[3])
     r2 = g*(a.s[2]+a.s[4])
     return Spinor{4,G}((r1,r2,r1,r2))
 end
-function gpmul(::Type{Pgamma{4,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{4,-1}}, g, a::Spinor{4,G}) where {NS,G}
     
     r1 = g*(a.s[1]-a.s[3])
     r2 = g*(a.s[2]-a.s[4]) 
     return Spinor{4,G}((r1,r2,-r1,-r2))
 end
     
-function gpmul(::Type{Pgamma{1,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{1,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]+imm(a.s[4]))
     r2 = g*(a.s[2]+imm(a.s[3]))
     return Spinor{4,G}((r1,r2,mimm(r2),mimm(r1)))
 end
-function gpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]-imm(a.s[4]))
     r2 = g*(a.s[2]-imm(a.s[3]))
     return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
-function gpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]+a.s[4])
     r2 = g*(a.s[2]-a.s[3])
     return Spinor{4,G}((r1,r2,-r2,r1))
 end
-function gpmul(::Type{Pgamma{2,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{2,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]-a.s[4])
     r2 = g*(a.s[2]+a.s[3])
     return Spinor{4,G}((r1,r2,r2,-r1))
 end
 
-function gpmul(::Type{Pgamma{3,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{3,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]+imm(a.s[3]))
     r2 = g*(a.s[2]-imm(a.s[4]))
     return Spinor{4,G}((r1,r2,mimm(r1),imm(r2)))
 end
-function gpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g*(a.s[1]-imm(a.s[3]))
     r2 = g*(a.s[2]+imm(a.s[4]))
@@ -215,52 +215,52 @@ end
 
 Returns ``g^+ (1+s\\gamma_N)a``
 """
-function gdagpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{4,1}},  g, a::Spinor{4,G}) where {NS,G}
     
     r1 = g\(a.s[1]+a.s[3])
     r2 = g\(a.s[2]+a.s[4])
     return Spinor{4,G}((r1,r2,r1,r2))
 end
-function gdagpmul(::Type{Pgamma{4,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{4,-1}}, g, a::Spinor{4,G}) where {NS,G}
     
     r1 = g\(a.s[1]-a.s[3])
     r2 = g\(a.s[2]-a.s[4]) 
     return Spinor{4,G}((r1,r2,-r1,-r2))
 end
     
-function gdagpmul(::Type{Pgamma{1,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{1,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]+imm(a.s[4]))
     r2 = g\(a.s[2]+imm(a.s[3]))
     return Spinor{4,G}((r1,r2,mimm(r2),mimm(r1)))
 end
-function gdagpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{1,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]-imm(a.s[4]))
     r2 = g\(a.s[2]-imm(a.s[3]))
     return Spinor{4,G}((r1,r2,imm(r2),imm(r1)))
 end
 
-function gdagpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{2,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]+a.s[4])
     r2 = g\(a.s[2]-a.s[3])
     return Spinor{4,G}((r1,r2,-r2,r1))
 end
-function gdagpmul(::Type{Pgamma{2,-1}}, g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{2,-1}}, g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]-a.s[4])
     r2 = g\(a.s[2]+a.s[3])
     return Spinor{4,G}((r1,r2,r2,-r1))
 end
 
-function gdagpmul(::Type{Pgamma{3,1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{3,1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]+imm(a.s[3]))
     r2 = g\(a.s[2]-imm(a.s[4]))
     return Spinor{4,G}((r1,r2,mimm(r1),imm(r2)))
 end
-function gdagpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
+@inline function gdagpmul(::Type{Pgamma{3,-1}},  g, a::Spinor{4,G}) where {NS,G}
 
     r1 = g\(a.s[1]-imm(a.s[3]))
     r2 = g\(a.s[2]+imm(a.s[4]))
@@ -298,22 +298,22 @@ indexing for Dirac basis ``\\Gamma_n``:
 16  identity
 
 """
-dmul(::Type{Gamma{1}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[4]), mimm(a.s[3]), imm(a.s[2]), imm(a.s[1]))
-dmul(::Type{Gamma{2}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[4], a.s[3], a.s[2], -a.s[1])
-dmul(::Type{Gamma{3}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[3]), imm(a.s[4]), imm(a.s[1]), mimm(a.s[2]))
-dmul(::Type{Gamma{4}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[3], -a.s[4], -a.s[1], -a.s[2])
-dmul(::Type{Gamma{5}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1],  a.s[2],  -a.s[3], -a.s[4])
-dmul(::Type{Gamma{6}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[4]),  imm(a.s[3]),   imm(a.s[2]),  imm(a.s[1]))
-dmul(::Type{Gamma{7}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[4], -a.s[3],   a.s[2], -a.s[1])
-dmul(::Type{Gamma{8}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[3]), mimm(a.s[4]),   imm(a.s[1]), mimm(a.s[2]))
-dmul(::Type{Gamma{9}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[3],  a.s[4],  -a.s[1], -a.s[2])
-dmul(::Type{Gamma{10}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[2],  a.s[1],  -a.s[4], -a.s[3])
-dmul(::Type{Gamma{11}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[2]),  imm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
-dmul(::Type{Gamma{12}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1], -a.s[2],  -a.s[3],  a.s[4])
-dmul(::Type{Gamma{13}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[1],  a.s[2],  -a.s[3],  a.s[4])
-dmul(::Type{Gamma{14}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[2], -a.s[1],  -a.s[4], -a.s[3])
-dmul(::Type{Gamma{15}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[2]), mimm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
-dmul(::Type{Gamma{16}}, a::Spinor{4,G}) where {G} = a
+@inline dmul(::Type{Gamma{1}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[4]), mimm(a.s[3]), imm(a.s[2]), imm(a.s[1]))
+@inline dmul(::Type{Gamma{2}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[4], a.s[3], a.s[2], -a.s[1])
+@inline dmul(::Type{Gamma{3}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[3]), imm(a.s[4]), imm(a.s[1]), mimm(a.s[2]))
+@inline dmul(::Type{Gamma{4}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[3], -a.s[4], -a.s[1], -a.s[2])
+@inline dmul(::Type{Gamma{5}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1],  a.s[2],  -a.s[3], -a.s[4])
+@inline dmul(::Type{Gamma{6}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[4]),  imm(a.s[3]),   imm(a.s[2]),  imm(a.s[1]))
+@inline dmul(::Type{Gamma{7}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[4], -a.s[3],   a.s[2], -a.s[1])
+@inline dmul(::Type{Gamma{8}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[3]), mimm(a.s[4]),   imm(a.s[1]), mimm(a.s[2]))
+@inline dmul(::Type{Gamma{9}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[3],  a.s[4],  -a.s[1], -a.s[2])
+@inline dmul(::Type{Gamma{10}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[2],  a.s[1],  -a.s[4], -a.s[3])
+@inline dmul(::Type{Gamma{11}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(mimm(a.s[2]),  imm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
+@inline dmul(::Type{Gamma{12}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( a.s[1], -a.s[2],  -a.s[3],  a.s[4])
+@inline dmul(::Type{Gamma{13}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[1],  a.s[2],  -a.s[3],  a.s[4])
+@inline dmul(::Type{Gamma{14}}, a::Spinor{4,G}) where {G} = Spinor{4,G}(-a.s[2], -a.s[1],  -a.s[4], -a.s[3])
+@inline dmul(::Type{Gamma{15}}, a::Spinor{4,G}) where {G} = Spinor{4,G}( imm(a.s[2]), mimm(a.s[1]),   imm(a.s[4]), mimm(a.s[3]))
+@inline dmul(::Type{Gamma{16}}, a::Spinor{4,G}) where {G} = a
 
 export Spinor, Pgamma
 export norm, norm2, dot, imm, mimm

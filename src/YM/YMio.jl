@@ -14,6 +14,49 @@
 
 import a double precision configuration in lexicographic format. SF boundary conditions are assummed. 
 """
+function import_bsfqcd(fname, lp::SpaceParm)
+
+    fp = BDIO_open(fname, "r")
+    while BDIO_seek!(fp)
+        if (BDIO_get_uinfo(fb) == 2)
+            break
+        end
+    end
+
+    
+    dtr = [2,3,4,1]
+
+    assign(id, V, i3) = SU3{Float64}(V[1,dtr[id],i3],V[2,dtr[id],i3],V[3,dtr[id],i3],
+                                     V[4,dtr[id],i3],V[5,dtr[id],i3],V[6,dtr[id],i3])
+    
+    Ucpu = Array{SU3{Float64}, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
+    V = Array{ComplexF64, 3}(undef, 9, lp.ndim, lp.iL[3])
+    for i4 in 1:lp.iL[4]
+        for i1 in 1:lp.iL[1]
+            for i2 in 1:lp.iL[2]
+                BDIO_read(fp, V)
+                for i3 in 1:lp.iL[3]
+                    b, r = point_index(CartesianIndex(i1,i2,i3,i4), lp)
+                    for id in 1:lp.ndim
+                        Ucpu[b,id,r] = assign(id, V, i3)
+                    end
+                end
+            end
+        end
+    end
+
+    BDIO_read(fp, V)
+    Ubnd = ntuple(i->assign(i, V, 1), 3)
+    close(fp)
+
+    return CuArray(Ucpu), Ubnd
+end
+
+"""
+    function import_lex64(fname::String, lp::SpaceParm)
+
+import a double precision configuration in lexicographic format. SF boundary conditions are assummed. 
+"""
 function import_lex64(fname, lp::SpaceParm)
 
     fp = open(fname, "r")

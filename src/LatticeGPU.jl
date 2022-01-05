@@ -45,7 +45,7 @@ export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield
-export import_lex64, import_cern64
+export import_lex64, import_cern64, import_bsfqcd
 
 include("Spinors/Spinors.jl")
 
@@ -53,5 +53,15 @@ using .Spinors
 export Spinor, Pgamma
 export imm, mimm
 export pmul, gpmul, gdagpmul, dmul
+
+include("Dirac/Dirac.jl")
+using .Dirac
+export DiracWorkspace
+export Dw!, DwdagDw!
+
+
+include("Solvers/Solvers.jl")
+using .Solvers
+export CG!
 
 end # module

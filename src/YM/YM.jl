@@ -12,7 +12,7 @@
 
 module YM
 
-using CUDA, Random, TimerOutputs
+using CUDA, Random, TimerOutputs, BDIO
 using ..Space
 using ..Groups
 using ..Fields
@@ -147,6 +147,6 @@ include("YMsf.jl")
 export sfcoupling, bndfield, setbndfield
 
 include("YMio.jl")
-export import_lex64, import_cern64
+export import_lex64, import_cern64, import_bsfqcd
 
 end
