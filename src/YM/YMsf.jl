@@ -44,35 +44,37 @@ end
     
 function krnl_sfcoupling!(rm, U::AbstractArray{T}, Ubnd, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
 
-    b, r = assign_thx()
-    I    = point_coord((b,r), lp)
-    it   = I[N]
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
+        I    = point_coord((b,r), lp)
+        it   = I[N]
 
-    SR3::eltype(rm)   = 1.73205080756887729352744634151
-    SR3x2::eltype(rm) = 3.46410161513775458705489268302
-    
-    if (it == 1)
-        but, rut = up((b,r), N, lp)
-        IU = point_coord((but,rut), lp)
-        for id in 1:N-1
-            bu, ru = up((b,r), id, lp)
+        SR3::eltype(rm)   = 1.73205080756887729352744634151
+        SR3x2::eltype(rm) = 3.46410161513775458705489268302
+        
+        if (it == 1)
+            but, rut = up((b,r), N, lp)
+            IU = point_coord((but,rut), lp)
+            for id in 1:N-1
+                bu, ru = up((b,r), id, lp)
 
-            X = projalg(U[b,id,r]*U[bu,N,ru]/(U[b,N,r]*U[but,id,rut]))
-            rm[I]  += (3*X.t7 + SR3   * X.t8)/lp.iL[id]
-            rm[IU] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
-        end
-    elseif (it == lp.iL[end])
-        bdt, rdt = dw((b,r), N, lp)
-        ID = point_coord((bdt,rdt), lp)
-        for id in 1:N-1
-            bu, ru = up((b,r), id, lp)
+                X = projalg(U[b,id,r]*U[bu,N,ru]/(U[b,N,r]*U[but,id,rut]))
+                rm[I]  += (3*X.t7 + SR3   * X.t8)/lp.iL[id]
+                rm[IU] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
+            end
+        elseif (it == lp.iL[end])
+            bdt, rdt = dw((b,r), N, lp)
+            ID = point_coord((bdt,rdt), lp)
+            for id in 1:N-1
+                bu, ru = up((b,r), id, lp)
 
-            X = projalg(Ubnd[id]/(U[b,id,r]*U[bu,N,ru])*U[b,N,r])
-            rm[I]  -= (3*X.t7 + SR3   * X.t8)/lp.iL[id]
-            rm[ID] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
+                X = projalg(Ubnd[id]/(U[b,id,r]*U[bu,N,ru])*U[b,N,r])
+                rm[I]  -= (3*X.t7 + SR3   * X.t8)/lp.iL[id]
+                rm[ID] += (2*X.t7 - SR3x2 * X.t8)/lp.iL[id]
+            end
         end
     end
-
+        
     return nothing
 end
 
@@ -99,16 +101,18 @@ end
 
 function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm{N,M,B,D})  where {N,M,B,D}
 
-    b, r = assign_thx()
-    it   = point_time((b,r), lp)
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
+        it   = point_time((b,r), lp)
 
-    SFBC = (B == BC_SF_AFWB) || (B == BC_SF_ORBI)
-    
-    if (it == 0) && SFBC
-        for id in 1:N-1
-            U[b,id,r] = bndfield(phi1,phi2,lp.iL[id])
+        SFBC = (B == BC_SF_AFWB) || (B == BC_SF_ORBI)
+        
+        if (it == 0) && SFBC
+            for id in 1:N-1
+                U[b,id,r] = bndfield(phi1,phi2,lp.iL[id])
+            end
         end
     end
-    
+        
     return nothing
 end

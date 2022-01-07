@@ -64,7 +64,7 @@ end
 
 function krnl_Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
 
-    b, r = assign_thx()
+    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
     # For SF:
     #  - cttilde affects mass term at x0 = a, T-a
@@ -85,7 +85,7 @@ end
 
 function krnl_g5Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
 
-    b, r = assign_thx()
+    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
     @inbounds begin 
         so[b,r] = (4+m0)*si[b,r]
