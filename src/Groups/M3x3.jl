@@ -90,29 +90,29 @@ function Base.:\(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
 
 end
 
-Base.:*(a::Number,b::M3x3{T}) where T <: AbstractFloat  = M3x3{T}(a*b.u11, a*b.u12, a*bu13,
-                                                                  a*b.u21, a*b.u22, a*bu23,
-                                                                  a*b.u31, a*b.u32, a*bu33)
+Base.:*(a::Number,b::M3x3{T}) where T <: AbstractFloat  = M3x3{T}(a*b.u11, a*b.u12, a*b.u13,
+                                                                  a*b.u21, a*b.u22, a*b.u23,
+                                                                  a*b.u31, a*b.u32, a*b.u33)
 
-Base.:*(b::M3x3{T},a::Number) where T <: AbstractFloat  = M3x3{T}(a*b.u11, a*b.u12, a*bu13,
-                                                                  a*b.u21, a*b.u22, a*bu23,
-                                                                  a*b.u31, a*b.u32, a*bu33)
+Base.:*(b::M3x3{T},a::Number) where T <: AbstractFloat  = M3x3{T}(a*b.u11, a*b.u12, a*b.u13,
+                                                                  a*b.u21, a*b.u22, a*b.u23,
+                                                                  a*b.u31, a*b.u32, a*b.u33)
 
-Base.:+(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11+b.u11, a.u12+b.u12, a.u13+bu13,
-                                                                  a.u21+b.u21, a.u22+b.u22, a.u23+bu23,
-                                                                  a.u31+b.u31, a.u32+b.u32, a.u33+bu33)
+Base.:+(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11+b.u11, a.u12+b.u12, a.u13+b.u13,
+                                                                  a.u21+b.u21, a.u22+b.u22, a.u23+b.u23,
+                                                                  a.u31+b.u31, a.u32+b.u32, a.u33+b.u33)
 
-Base.:-(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-bu13,
-                                                                  a.u21-b.u21, a.u22-b.u22, a.u23-bu23,
-                                                                  a.u31-b.u31, a.u32-b.u32, a.u33-bu33)
+Base.:-(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-b-u13,
+                                                                  a.u21-b.u21, a.u22-b.u22, a.u23-b-u23,
+                                                                  a.u31-b.u31, a.u32-b.u32, a.u33-b-u33)
 
-Base.:-(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(-b.u11, -b.u12, -bu13,
-                                                                  -b.u21, -b.u22, -bu23,
-                                                                  -b.u31, -b.u32, -bu33)
+Base.:-(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(-b.u11, -b.u12, -b.u13,
+                                                                  -b.u21, -b.u22, -b.u23,
+                                                                  -b.u31, -b.u32, -b.u33)
 
-Base.:+(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(b.u11, b.u12, bu13,
-                                                                  b.u21, b.u22, bu23,
-                                                                  b.u31, b.u32, bu33)
+Base.:+(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(b.u11, b.u12, b.u13,
+                                                                  b.u21, b.u22, b.u23,
+                                                                  b.u31, b.u32, b.u33)
 function projalg(a::M3x3{T}) where T <: AbstractFloat
 
     sr3ov2::T = 0.866025403784438646763723170752
@@ -128,3 +128,6 @@ function projalg(a::M3x3{T}) where T <: AbstractFloat
                      sr3ov2*(ditr))
 end
 
+dag(a::M3x3{T}) where T = M3x3{T}(conj(a.u11), conj(a.u21), conj(a.u31),
+                                  conj(a.u12), conj(a.u22), conj(a.u32),
+                                  conj(a.u13), conj(a.u23), conj(a.u33))
