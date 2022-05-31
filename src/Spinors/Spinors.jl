@@ -12,7 +12,7 @@
 module Spinors
 
 using ..Groups
-import ..Groups.imm, ..Groups.mimm, ..Groups.norm, ..Groups.norm2
+import ..Groups.imm, ..Groups.mimm, ..Groups.norm, ..Groups.norm2, ..Groups.dot
 
 struct Spinor{NS,G}
     s::NTuple{NS,G}

@@ -59,6 +59,8 @@ Base.:*(a::SU3alg{T},b::Number)    where T <: AbstractFloat = SU3alg{T}(b*a.t1,b
 Base.:*(b::Number,a::SU3alg{T})    where T <: AbstractFloat = SU3alg{T}(b*a.t1,b*a.t2,b*a.t3,b*a.t4,b*a.t5,b*a.t6,b*a.t7,b*a.t8)
 Base.:/(a::SU3alg{T},b::Number)    where T <: AbstractFloat = SU3alg{T}(a.t1/b,a.t2/b,a.t3/b,a.t4/b,a.t5/b,a.t6/b,a.t7/b,a.t8/b)
 
+Base.:*(a::SU3alg{T},b::SU3alg{T}) where T = convert(M3x3{T}, a)*convert(M3x3{T}, a)
+
 
 function alg2mat(a::SU3alg{T}) where T <: AbstractFloat
 

@@ -18,6 +18,8 @@
 # a.u33 = conj(a.u11*a.u22 - a.u12*a.u21)
 #
 
+import Base.convert
+
 struct SU3{T} <: Group
     u11::Complex{T}
     u12::Complex{T}
@@ -57,6 +59,12 @@ end
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3{T}}) where T <: AbstractFloat = exp(SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T)))
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3alg{T}}) where T <: AbstractFloat = SU3alg{T}(randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T),randn(rng,T))
 
+Base.convert(::Type{M3x3{T}}, a::SU3alg{T}) where T = alg2mat(a)
+Base.convert(::Type{M3x3{T}}, a::SU3{T}) where T = M3x3{T}(a.u11,a.u12,a.u13,
+                                                        a.u21,a.u22,a.u23,
+                                                        conj(a.u12*a.u23 - a.u13*a.u22),
+                                                        conj(a.u13*a.u21 - a.u11*a.u23),
+                                                        conj(a.u11*a.u22 - a.u12*a.u21))
 struct SU3fund{T}
     t1::Complex{T}
     t2::Complex{T}
@@ -66,4 +74,5 @@ Base.zero(::Type{SU3fund{T}}) where T <: AbstractFloat = SU3fund{T}(zero(T),zero
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU3fund{T}}) where T <: AbstractFloat = SU3fund{T}(complex(randn(rng,T),randn(rng,T)),
                                                                                                       complex(randn(rng,T),randn(rng,T)),
                                                                                                       complex(randn(rng,T),randn(rng,T)))
+
 

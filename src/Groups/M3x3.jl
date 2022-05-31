@@ -71,6 +71,9 @@ function Base.:/(a::M3x3{T},b::SU3{T}) where T <: AbstractFloat
                    a.u31*conj(b.u21) + a.u32*conj(b.u22) + a.u33*conj(b.u23),
                    a.u31*(bu31) + a.u32*(bu32) + a.u33*(bu33))
 end
+Base.:/(a::M3x3{T}, b::Number) where T <: AbstractFloat = M3x3{T}(a.u11/b, a.u12/b, a.u13/b,
+                                                                  a.u21/b, a.u22/b, a.u23/b,
+                                                                  a.u31/b, a.u32/b, a.u33/b)
 
 function Base.:\(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
 
@@ -131,3 +134,4 @@ end
 dag(a::M3x3{T}) where T = M3x3{T}(conj(a.u11), conj(a.u21), conj(a.u31),
                                   conj(a.u12), conj(a.u22), conj(a.u32),
                                   conj(a.u13), conj(a.u23), conj(a.u33))
+tr(a::M3x3{T}) where T = a.u11+a.u22+a.u33
