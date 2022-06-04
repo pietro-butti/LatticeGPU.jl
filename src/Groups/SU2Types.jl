@@ -32,8 +32,8 @@ Base.zero(::Type{M2x2{T}})   where T <: AbstractFloat = M2x2{T}(zero(T),zero(T),
 Base.one(::Type{SU2{T}})     where T <: AbstractFloat = SU2{T}(one(T),zero(T))
 Base.one(::Type{M2x2{T}})    where T <: AbstractFloat = M2x2{T}(one(T),zero(T),zero(T),one(T))
 
-Base.convert(::Type{M2x2{T}}, a::SU3alg{T}) where T = alg2mat(a)
-Base.convert(::Type{M2x2{T}}, a::SU3{T}) where T = M2x2{T}(a.t1,a.t2,-conj(a.t2), conj(a.t1))
+Base.convert(::Type{M2x2{T}}, a::SU2alg{T}) where T = alg2mat(a)
+Base.convert(::Type{M2x2{T}}, a::SU2{T}) where T = M2x2{T}(a.t1,a.t2,-conj(a.t2), conj(a.t1))
 
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T))
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}})    where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
