@@ -2,13 +2,13 @@ using CUDA, Logging, Random, TimerOutputs
 
 CUDA.allowscalar(false)
 import Pkg
-Pkg.activate("/lhome/ific/a/alramos/s.images/julia/workspace/LatticeGPU")
+Pkg.activate("../..")
 #Pkg.activate("/home/alberto/code/julia/LatticeGPU")
 using LatticeGPU
 
 # Set lattice/block size
 ntwist = (0,0,0,0,0,0)
-lp = SpaceParm{4}((8,8,8,8), (4,4,4,4), BC_PERIODIC, ntwist)
+lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
 # Seed RNG
@@ -23,7 +23,7 @@ PREC = Float64
 println("Precision: ", PREC)
 
 # MD integrator
-int = omf4(PREC, 0.1, 10)
+int = omf4(PREC, 1.0/40.0, 40)
 println(int)
 
 println("Allocating YM workspace")
@@ -41,10 +41,10 @@ println("Time to take the configuration to memory: ")
 # Set gauge parameters
 # FIRST SET: Wilson action/flow
 println("\n## WILSON ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.66666666)
 println("Gauge  Parameters: ", gp)
 
-flwint = wfl_rk3(PREC, 0.005, 1.0E-6)
+flwint = zfl_rk3(PREC, 0.005, 1.0E-6)
 println(flwint)
 
 println("Initial Action: ")
@@ -54,8 +54,8 @@ println("Initial Action: ")
 HMC!(U,int.eps,1,lp, gp, ymws, noacc=true)
 
 pl = Vector{Float64}()
-for i in 1:4
-    @time dh, acc = HMC!(U,int,lp, gp, ymws, noacc=true)
+for i in 1:100
+    @time dh, acc = HMC!(U,int,lp, gp, ymws)
     println("# HMC: ", acc, " ", dh)
     push!(pl, plaquette(U,lp, gp, ymws))
     println("# Plaquette: ", pl[end], "\n")
