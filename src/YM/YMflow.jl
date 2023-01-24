@@ -96,41 +96,25 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
 
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
 
-        Ush = @cuStaticSharedMem(TG, D)
-        Fsh = @cuStaticSharedMem(TA, D)
-        
         @inbounds for id in 1:N
-            Ush[b] = U[b,id,r]
-            Fsh[b] = frc[b,id,r]
-            sync_threads()
-            
             bu, ru = up((b,r), id, lp)
             bd, rd = dw((b,r), id, lp)
             
-            if ru == r
-                X = Fsh[bu]
-            else
-                X = frc[bu,id,ru]
-            end
-            if rd == r
-                Y  = Fsh[bd]
-                Ud = Ush[bd]
-            else
-                Y  = frc[bd,id,rd]
-                Ud = U[bd,id,rd]
-            end
+            X = frc[bu,id,ru]
+            Y  = frc[bd,id,rd]
+            Ud = U[bd,id,rd]
 
             if SFBC
                 if (it > 1) && (it < lp.iL[end])
-                    frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(Ush[b]*X/Ush[b]))
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
                 elseif (it == lp.iL[end]) && (id < N)
-                    frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(Ush[b]*X/Ush[b]))
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
                 end
             else 
-                frc2[b,id,r] = (5/6)*Fsh[b] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(Ush[b]*X/Ush[b]))
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
             end
         end
     end
@@ -428,87 +412,59 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         it = point_time((b,r), lp)
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
 
-        Ush = @cuStaticSharedMem(T, (D,2))
-
         #First plane
         id1, id2 = lp.plidx[ipl1]
-        Ush[b,1] = U[b,id1,r]
-        Ush[b,2] = U[b,id2,r]
-        sync_threads()
-
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
 
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
         bd, rd   = up((bu1, ru1), id2, lp)
-        if ru1 == r
-            gt1 = Ush[bu1,2]
+        if SFBC && (it == lp.iL[end])
+            gt1 = Ubnd[id2]
         else
-            if SFBC && (it == lp.iL[end])
-                gt1 = Ubnd[id2]
-            else
-                gt1 = U[bu1,id2,ru1]
-            end
-        end
-        if ru2 == r
-            gt2 = Ush[bu2,1]
-        else
-            gt2 = U[bu2,id1,ru2]
+            gt1 = U[bu1,id2,ru1]
         end
         
-        l1 = gt1/gt2
-        l2 = Ush[b,2]\Ush[b,1]
+        l1 = gt1/U[bu2,id1,ru2]
+        l2 = U[b,id2,r]\U[b,id1,r]
 
         if SFBC && (it == lp.iL[end])
-            frc1[b,1,r]     = projalg(Ush[b,1]*l1/Ush[b,2])
+            frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
             frc1[bu1,2,ru1] = zero(TA)
             frc1[bd,3,rd]   = zero(TA)
             frc1[bu2,4,ru2] = projalg(l2*l1)
         else
-            frc1[b,1,r]     = projalg(ztw1, Ush[b,1]*l1/Ush[b,2])
+            frc1[b,1,r]     = projalg(ztw1, U[b,id1,r]*l1/U[b,id2,r])
             frc1[bu1,2,ru1] = projalg(ztw1, l1*l2)
-            frc1[bd,3,rd]   = projalg(ztw1, gt2\(l2*gt1))
+            frc1[bd,3,rd]   = projalg(ztw1, U[bu2,id1,ru2]\(l2*gt1))
             frc1[bu2,4,ru2] = projalg(ztw1, l2*l1)
         end
         
         # Second plane
         id1, id2 = lp.plidx[ipl2]
-        Ush[b,1] = U[b,id1,r]
-        Ush[b,2] = U[b,id2,r]
-        sync_threads()
-
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
 
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
         bd, rd   = up((bu1, ru1), id2, lp)
-        if ru1 == r
-            gt1 = Ush[bu1,2]
+        if SFBC && (it == lp.iL[end])
+            gt1 = Ubnd[id2]
         else
-            if SFBC && (it == lp.iL[end])
-                gt1 = Ubnd[id2]
-            else
-                gt1 = U[bu1,id2,ru1]
-            end
-        end
-        if ru2 == r
-            gt2 = Ush[bu2,1]
-        else
-            gt2 = U[bu2,id1,ru2]
+            gt1 = U[bu1,id2,ru1]
         end
         
-        l1 = gt1/gt2
-        l2 = Ush[b,2]\Ush[b,1]
+        l1 = gt1/U[bu2,id1,ru2]
+        l2 = U[b,id2,r]\U[b,id1,r]
 
         if SFBC && (it == lp.iL[end])
-            frc2[b,1,r]     = projalg(Ush[b,1]*l1/Ush[b,2])
+            frc2[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
             frc2[bu1,2,ru1] = zero(TA)
             frc2[bd,3,rd]   = zero(TA)
             frc2[bu2,4,ru2] = projalg(l2*l1)
         else
-            frc2[b,1,r]     = projalg(ztw2, Ush[b,1]*l1/Ush[b,2])
+            frc2[b,1,r]     = projalg(ztw2, U[b,id1,r]*l1/U[b,id2,r])
             frc2[bu1,2,ru1] = projalg(ztw2, l1*l2)
-            frc2[bd,3,rd]   = projalg(ztw2, gt2\(l2*gt1))
+            frc2[bd,3,rd]   = projalg(ztw2, U[bu2,id1,ru2]\(l2*gt1))
             frc2[bu2,4,ru2] = projalg(ztw2, l2*l1)
         end
     end
