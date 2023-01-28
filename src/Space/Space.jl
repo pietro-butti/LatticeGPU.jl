@@ -301,7 +301,7 @@ end
     return CartesianIndex{6}(i1,i2,i3,i4,i5,i6)
 end
 
-@inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm{N,M,D}) where {N,M,D}
+@inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
     return cnt(p[1], p[2], N, lp)
 end
 

@@ -13,18 +13,23 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, zt
 
     b = Int64(CUDA.threadIdx().x)
     r = Int64(CUDA.blockIdx().x)
-    it = point_time((b, r), lp)
+    I = point_coord((b,r), lp)
+    it = I[N]
     
     ipl = 0
     S = zero(eltype(plx))
     @inbounds begin
         for id1 in N:-1:1
             bu1, ru1 = up((b, r), id1, lp)
-            SFBC  = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1==N) 
+            SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1==N) 
             
             for id2 = 1:id1-1
                 bu2, ru2 = up((b, r), id2, lp)
                 ipl = ipl + 1
+
+                TWP  = (I[id1]==1) && (I[id2]==1)
+                TWH2 = TWP || ( (I[id1]==lp.iL[id1]) && (I[id2]==1) )
+                TWH3 = TWP || ( (I[id1]==1)          && (I[id2]==lp.iL[id2]) )
                 
                 # H2 staple
                 (b1, r1) = up((b,r), id1, lp)
@@ -64,14 +69,26 @@ function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, zt
                 elseif (it == 1) && SFBC
                     S += cG*(c0*tr(g2*ga/U[bu2,id1,ru2]) + (3*c1/2)*tr(g2*ga/h3)) + c1*tr(g2*h2/U[bu2,id1,ru2])
                 else
-                    S += ztw[ipl]*c0*tr(g2*ga/U[bu2,id1,ru2]) +
-                        (ztw[ipl]^2*c1)*( tr(g2*h2/U[bu2,id1,ru2]) + tr(g2*ga/h3))
+                    if TWP
+                        S += (ztw[ipl]*c0)*tr(g2*ga/U[bu2,id1,ru2])
+                    else
+                        S += c0*tr(g2*ga/U[bu2,id1,ru2])
+                    end
+                    if TWH2
+                        S += (ztw[ipl]*c1)*tr(g2*h2/U[bu2,id1,ru2])
+                    else
+                        S += c1*tr(g2*h2/U[bu2,id1,ru2])
+                    end
+                    if TWH3
+                        S += (ztw[ipl]*c1)*tr(g2*ga/h3)
+                    else
+                        S += c1*tr(g2*ga/h3)
+                    end
                 end
                 
             end
         end
         
-        I = point_coord((b,r), lp)
         plx[I] = S
     end
         
@@ -84,9 +101,8 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
-        TWP = (b==1) && (r==1)
-        
-        it = point_time((b, r), lp)
+        I = point_coord((b,r), lp)
+        it = I[N]
         IBND = ( ( (B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) &&
             ( (it == 1) || (it == lp.iL[end])) )
         
@@ -99,7 +115,8 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
             for id2 = 1:id1-1
                 bu2, ru2 = up((b, r), id2, lp)
                 ipl = ipl + 1
-                
+                TWP = (I[id1]==1) && (I[id2]==1)
+                        
                 if SFBND && (it == lp.iL[end]) 
                     gt1 = Ubnd[id2]
                 else
@@ -118,7 +135,6 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
             end
         end
         
-        I = point_coord((b,r), lp)
         plx[I] = S
     end
     
@@ -129,13 +145,14 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, 
 
     b = Int64(CUDA.threadIdx().x)
     r = Int64(CUDA.blockIdx().x)
-    TWP = (b==1) && (r==1)
-    it = point_time((b,r), lp)
+    I = point_coord((b,r), lp)
+    it = I[N]
     
     @inbounds begin
         id1, id2 = lp.plidx[ipl]
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
+        TWP = (I[id1]==1)&&(I[id2]==1)
         
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == N)
         
@@ -149,17 +166,17 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, 
         g2 = U[b,id2,r]\U[b,id1,r]
         
         if SFBC && (it == 1)
-            X = cG*projalg(ztw,U[b,id1,r]*g1/U[b,id2,r])
+            X = cG*projalg(U[b,id1,r]*g1/U[b,id2,r])
             
             frc1[b  ,id1, r ] -= X
-            frc2[bu1,id2,ru1] -= cG*projalg(ztw,g1*g2)
-            frc2[bu2,id1,ru2] += cG*projalg(ztw,g2*g1)
+            frc2[bu1,id2,ru1] -= cG*projalg(g1*g2)
+            frc2[bu2,id1,ru2] += cG*projalg(g2*g1)
         elseif SFBC && (it == lp.iL[end])
-            X = cG*projalg(ztw,U[b,id1,r]*g1/U[b,id2,r])
+            X = cG*projalg(U[b,id1,r]*g1/U[b,id2,r])
             
             frc1[b  ,id1, r ] -= X
             frc1[b  ,id2, r ] += X
-            frc2[bu2,id1,ru2] += cG*projalg(ztw,g2*g1)
+            frc2[bu2,id1,ru2] += cG*projalg(g2*g1)
         else
             if TWP
                 X = projalg(ztw,U[b,id1,r]*g1/U[b,id2,r])
@@ -182,7 +199,8 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
 
     b = Int64(CUDA.threadIdx().x)
     r = Int64(CUDA.blockIdx().x)
-    it = point_time((b, r), lp)
+    I = point_coord((b,r), lp)
+    it = I[N]
     
     @inbounds begin
         id1, id2 = lp.plidx[ipl]
@@ -190,6 +208,11 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
         bu2, ru2 = up((b, r), id2, lp)
         
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == N)
+        TWP  = (I[id1]==1) && (I[id2]==1)
+        TWH1 = TWP || ( (I[id1]==1)          && (I[id2]==2) )
+        TWH2 = TWP || ( (I[id1]==lp.iL[id1]) && (I[id2]==1) )
+        TWH3 = TWP || ( (I[id1]==1)          && (I[id2]==lp.iL[id2]) )
+        TWH4 = TWP || ( (I[id1]==2)          && (I[id2]==1) )
         
         # H1 staple
         (b1, r1) = dw((b,r), id2, lp)
@@ -203,8 +226,6 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
         
         # H2 staple
         (b1, r1) = up((b,r), id1, lp)
-        ga = 
-        
         (b2, r2) = up((b1,r1), id1, lp)
         if SFBC && (it == lp.iL[end]-1)
             gb = Ubnd[id2]
@@ -262,18 +283,50 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
             frc2[bu2,id1,ru2] += (cG*c0)*projalg(g2*g1) + (3*c1*cG/2) * projalg((U[b,id2,r]\h1)*g1) +
                 c1 * projalg(h4\U[b,id1,r]*g1) 
         else
-            zsq = ztw[ipl]^2
-            X = projalg(c0*ztw[ipl],U[b,id1,r]*g1/U[b,id2,r]) + projalg(zsq*c1,U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2])) +
-                projalg(zsq*c1,U[b,id1,r]*ga/(U[b,id2,r]*h3))
+            if TWP
+                X = projalg(c0*ztw,U[b,id1,r]*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= projalg(c0*ztw,g1*g2)
+                frc2[bu2,id1,ru2] += projalg(c0*ztw,g2*g1)
+            else
+                X = c0*projalg(U[b,id1,r]*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= c0*projalg(g1*g2)
+                frc2[bu2,id1,ru2] += c0*projalg(g2*g1)
+            end
+            if TWH1
+                frc1[b,id2,r] += projalg(ztw*c1,h1*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= projalg(ztw*c1,(g1/U[b,id2,r])*h1) 
+                frc2[bu2,id1,ru2] += projalg(ztw*c1,(U[b,id2,r]\h1)*g1)
+            else
+                frc1[b,id2,r] += c1*projalg(h1*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= c1*projalg((g1/U[b,id2,r])*h1) 
+                frc2[bu2,id1,ru2] += c1*projalg((U[b,id2,r]\h1)*g1)
+            end
+            if TWH2
+                X += projalg(ztw*c1,U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2]))
+                frc2[bu2,id1,ru2] += projalg(ztw*c1,g2*h2/U[bu2,id1,ru2])
+            else
+                X += c1*projalg(U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2]))
+                frc2[bu2,id1,ru2] += c1*projalg(g2*h2/U[bu2,id1,ru2])
+            end
+            if TWH3
+                X += projalg(ztw*c1,U[b,id1,r]*ga/(U[b,id2,r]*h3))
+                frc2[bu1,id2,ru1] -= projalg(ztw*c1,(ga/h3)*g2) 
+            else
+                X += c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3))
+                frc2[bu1,id2,ru1] -= c1*projalg((ga/h3)*g2) 
+            end
+            if TWH4
+                frc1[b,id1,r] -= projalg(ztw*c1,U[b,id1,r]*g1/h4) 
+                frc2[bu1,id2,ru1] -= projalg(ztw*c1,(g1/h4)*U[b,id1,r])
+                frc2[bu2,id1,ru2] += projalg(ztw*c1,h4\U[b,id1,r]*g1) 
+            else
+                frc1[b,id1,r] -= c1*projalg(U[b,id1,r]*g1/h4) 
+                frc2[bu1,id2,ru1] -= c1*projalg((g1/h4)*U[b,id1,r])
+                frc2[bu2,id1,ru2] += c1*projalg(h4\U[b,id1,r]*g1) 
+            end
+            frc1[b,id1,r] -= X 
+            frc1[b,id2,r] += X 
             
-            frc1[b,id1,r] -= X + projalg(zsq*c1,U[b,id1,r]*g1/h4) 
-            frc1[b,id2,r] += X + projalg(zsq*c1,h1*g1/U[b,id2,r]) 
-            
-            frc2[bu1,id2,ru1] -= projalg(c0*ztw[ipl],g1*g2) + projalg(zsq*c1,(ga/h3)*g2) +
-                projalg(zsq*c1,(g1/h4)*U[b,id1,r]) + projalg(zsq*c1,(g1/U[b,id2,r])*h1) 
-            
-            frc2[bu2,id1,ru2] += projalg(c0*ztw[ipl],g2*g1) + projalg(zsq*c1,(U[b,id2,r]\h1)*g1) +
-                projalg(zsq*c1,g2*h2/U[bu2,id1,ru2]) + projalg(zsq*c1,h4\U[b,id1,r]*g1) 
         end
         
     end

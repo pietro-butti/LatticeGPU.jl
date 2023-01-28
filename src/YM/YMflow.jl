@@ -251,10 +251,12 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
-
+        I = point_coord((b,r), lp)
+        
         id1, id2 = lp.plidx[ipl]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == lp.iL[end]) 
-
+        TWP  = ((I[id1]==1)&&(I[id2]==1))
+        
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
         
@@ -264,8 +266,11 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
             gt = U[bu1,id2,ru1]
         end
         
-        I = point_coord((b,r), lp)
-        plx[I] = ztw*tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
+        if TWP
+            plx[I] = ztw*tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
+        else
+            plx[I] = tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
+        end            
     end
         
     return nothing
@@ -409,13 +414,14 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
-        it = point_time((b,r), lp)
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
-
+        I = point_coord((b,r), lp)
+        it = I[4]
+        
         #First plane
         id1, id2 = lp.plidx[ipl1]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
-
+        TWP  = ((I[id1]==1)&&(I[id2]==1))
+        
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
         bd, rd   = up((bu1, ru1), id2, lp)
@@ -434,15 +440,23 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
             frc1[bd,3,rd]   = zero(TA)
             frc1[bu2,4,ru2] = projalg(l2*l1)
         else
-            frc1[b,1,r]     = projalg(ztw1, U[b,id1,r]*l1/U[b,id2,r])
-            frc1[bu1,2,ru1] = projalg(ztw1, l1*l2)
-            frc1[bd,3,rd]   = projalg(ztw1, U[bu2,id1,ru2]\(l2*gt1))
-            frc1[bu2,4,ru2] = projalg(ztw1, l2*l1)
+            if TWP
+                frc1[b,1,r]     = projalg(ztw1, U[b,id1,r]*l1/U[b,id2,r])
+                frc1[bu1,2,ru1] = projalg(ztw1, l1*l2)
+                frc1[bd,3,rd]   = projalg(ztw1, U[bu2,id1,ru2]\(l2*gt1))
+                frc1[bu2,4,ru2] = projalg(ztw1, l2*l1)
+            else
+                frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+                frc1[bu1,2,ru1] = projalg(l1*l2)
+                frc1[bd,3,rd]   = projalg(U[bu2,id1,ru2]\(l2*gt1))
+                frc1[bu2,4,ru2] = projalg(l2*l1)
+            end
         end
         
         # Second plane
         id1, id2 = lp.plidx[ipl2]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        TWP  = ((I[id1]==1)&&(I[id2]==1))
 
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
@@ -462,10 +476,17 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
             frc2[bd,3,rd]   = zero(TA)
             frc2[bu2,4,ru2] = projalg(l2*l1)
         else
-            frc2[b,1,r]     = projalg(ztw2, U[b,id1,r]*l1/U[b,id2,r])
-            frc2[bu1,2,ru1] = projalg(ztw2, l1*l2)
-            frc2[bd,3,rd]   = projalg(ztw2, U[bu2,id1,ru2]\(l2*gt1))
-            frc2[bu2,4,ru2] = projalg(ztw2, l2*l1)
+            if TWP
+                frc2[b,1,r]     = projalg(ztw2, U[b,id1,r]*l1/U[b,id2,r])
+                frc2[bu1,2,ru1] = projalg(ztw2, l1*l2)
+                frc2[bd,3,rd]   = projalg(ztw2, U[bu2,id1,ru2]\(l2*gt1))
+                frc2[bu2,4,ru2] = projalg(ztw2, l2*l1)
+            else
+                frc2[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+                frc2[bu1,2,ru1] = projalg(l1*l2)
+                frc2[bd,3,rd]   = projalg(U[bu2,id1,ru2]\(l2*gt1))
+                frc2[bu2,4,ru2] = projalg(l2*l1)
+            end
         end
     end
         

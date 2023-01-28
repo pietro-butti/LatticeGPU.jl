@@ -7,7 +7,7 @@ Pkg.activate("../..")
 using LatticeGPU
 
 # Set lattice/block size
-ntwist = (1,0,0,0,0,0)
+ntwist = (0,0,0,0,0,1)
 lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
@@ -23,7 +23,7 @@ PREC = Float64
 println("Precision: ", PREC)
 
 # MD integrator
-int = omf4(PREC, 1.0/40.0, 40)
+int = omf4(PREC, 1.0/80.0, 80)
 println(int)
 
 println("Allocating YM workspace")
@@ -41,7 +41,8 @@ println("Time to take the configuration to memory: ")
 # Set gauge parameters
 # FIRST SET: Wilson action/flow
 println("\n## WILSON ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
+#gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.6666666666666666)
 println("Gauge  Parameters: ", gp)
 
 flwint = wfl_rk3(PREC, 0.005, 1.0E-6)
