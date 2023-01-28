@@ -84,20 +84,23 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
+        TWP = (b==1) && (r==1)
+        
         it = point_time((b, r), lp)
-
+        IBND = ( ( (B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) &&
+            ( (it == 1) || (it == lp.iL[end])) )
+        
         S = zero(eltype(plx))
         ipl = 0
         for id1 in N:-1:1
             bu1, ru1 = up((b, r), id1, lp)
-            SFBND = ( ( (B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) &&
-                ( (it == 1) || (it == lp.iL[end])) ) && (id1 == N) 
+             SFBND = IBND && (id1 == N) 
 
             for id2 = 1:id1-1
                 bu2, ru2 = up((b, r), id2, lp)
                 ipl = ipl + 1
                 
-                if SFBND && (it == lp.iL[end])
+                if SFBND && (it == lp.iL[end]) 
                     gt1 = Ubnd[id2]
                 else
                     gt1 = U[bu1,id2,ru1]
@@ -106,7 +109,11 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
                 if SFBND
                     S += cG*tr(U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2]))
                 else
-                    S += ztw[ipl]*tr(U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2]))
+                    if TWP
+                        S += ztw[ipl]*tr(U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2]))
+                    else
+                        S += tr(U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2]))
+                    end
                 end
             end
         end
@@ -122,6 +129,7 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, 
 
     b = Int64(CUDA.threadIdx().x)
     r = Int64(CUDA.blockIdx().x)
+    TWP = (b==1) && (r==1)
     it = point_time((b,r), lp)
     
     @inbounds begin
@@ -153,12 +161,17 @@ function krnl_force_wilson_pln!(frc1, frc2, U::AbstractArray{T}, Ubnd, cG, ztw, 
             frc1[b  ,id2, r ] += X
             frc2[bu2,id1,ru2] += cG*projalg(ztw,g2*g1)
         else
-            X = projalg(ztw,U[b,id1,r]*g1/U[b,id2,r])
-            
+            if TWP
+                X = projalg(ztw,U[b,id1,r]*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= projalg(ztw,g1*g2)
+                frc2[bu2,id1,ru2] += projalg(ztw,g2*g1)
+            else
+                X = projalg(U[b,id1,r]*g1/U[b,id2,r])
+                frc2[bu1,id2,ru1] -= projalg(g1*g2)
+                frc2[bu2,id1,ru2] += projalg(g2*g1)
+            end
             frc1[b  ,id1, r ] -= X
             frc1[b  ,id2, r ] += X
-            frc2[bu1,id2,ru1] -= projalg(ztw,g1*g2)
-            frc2[bu2,id1,ru2] += projalg(ztw,g2*g1)
         end
     end
         

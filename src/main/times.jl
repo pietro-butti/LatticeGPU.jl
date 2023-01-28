@@ -7,7 +7,7 @@ Pkg.activate("../..")
 using LatticeGPU
 
 # Set lattice/block size
-ntwist = (0,0,0,0,0,0)
+ntwist = (1,0,0,0,0,0)
 lp = SpaceParm{4}((32,32,32,32), (4,4,4,4), BC_PERIODIC, ntwist)
 println("Space  Parameters: ", lp)
 
@@ -41,10 +41,10 @@ println("Time to take the configuration to memory: ")
 # Set gauge parameters
 # FIRST SET: Wilson action/flow
 println("\n## WILSON ACTION/FLOW TIMES")
-gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.66666666)
+gp = GaugeParm{PREC}(GRP{PREC}, 6.0, 1.0)
 println("Gauge  Parameters: ", gp)
 
-flwint = zfl_rk3(PREC, 0.005, 1.0E-6)
+flwint = wfl_rk3(PREC, 0.005, 1.0E-6)
 println(flwint)
 
 println("Initial Action: ")
@@ -54,7 +54,7 @@ println("Initial Action: ")
 HMC!(U,int.eps,1,lp, gp, ymws, noacc=true)
 
 pl = Vector{Float64}()
-for i in 1:100
+for i in 1:4
     @time dh, acc = HMC!(U,int,lp, gp, ymws)
     println("# HMC: ", acc, " ", dh)
     push!(pl, plaquette(U,lp, gp, ymws))
@@ -69,7 +69,7 @@ println("Action: ", gauge_action(U, lp, gp, ymws))
 flw(U, flwint, 1, gp, lp, ymws)
 
 println("Time for 100 steps of RK3 flow integrator: ")
-@time flw(U, flwint, 400, gp, lp, ymws)
+@time flw(U, flwint, 100, gp, lp, ymws)
 eoft = Eoft_plaq(U, gp, lp, ymws)
 eoft = Eoft_clover(U, gp, lp, ymws)
 qtop = Qtop(U, gp, lp, ymws)
