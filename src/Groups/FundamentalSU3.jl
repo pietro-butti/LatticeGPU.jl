@@ -13,16 +13,16 @@
 SU3fund(a::T, b::T, c::T)          where T <: AbstractFloat = SU3fund{T}(complex(a), complex(b), complex(c))
 
 """
-    norm(a::SU3fund{T})
+    dag(a::SU3fund{T})
 
 Returns the conjugate of a fundamental element. 
 """
 dag(a::SU3fund{T})                 where T <: AbstractFloat = SU3fund{T}(conj(a.t1), conj(a.t2), conj(a.t3))
 
 """
-    norm2(a::SU3fund{T})
+    norm(a::SU3fund{T})
 
-Returns the norm squared of a fundamental element. Same result as dot(a,a).
+Returns the norm of a fundamental element. Same result as dot(a,a).
 """
 norm(a::SU3fund{T})                where T <: AbstractFloat = sqrt((abs2(a.t1) + abs2(a.t2) + abs2(a.t1)))
 
