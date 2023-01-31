@@ -107,7 +107,7 @@ function krnl_setbnd_it0!(U, phi1, phi2, lp::SpaceParm{N,M,B,D})  where {N,M,B,D
 
         SFBC = (B == BC_SF_AFWB) || (B == BC_SF_ORBI)
         
-        if (it == 0) && SFBC
+        if (it == 1) && SFBC
             for id in 1:N-1
                 U[b,id,r] = bndfield(phi1,phi2,lp.iL[id])
             end
