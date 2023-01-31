@@ -20,6 +20,11 @@
 
 import Base.convert
 
+"""
+    struct SU3{T} <: Group
+
+\`\`SU(3)\`\` elements. The type `T <: AbstractFloat` can be used to define single or double precision elements.
+"""
 struct SU3{T} <: Group
     u11::Complex{T}
     u12::Complex{T}
@@ -30,7 +35,12 @@ struct SU3{T} <: Group
 end
 Base.one(::Type{SU3{T}}) where T <: AbstractFloat = SU3{T}(one(T),zero(T),zero(T),zero(T),one(T),zero(T))
 
-struct M3x3{T} 
+"""
+    struct M3x3{T} <: Group
+
+3x3 Complex matrix. The type `T <: AbstractFloat` can be used to define single or double precision elements.
+"""
+struct M3x3{T} <: GMatrix
     u11::Complex{T}
     u12::Complex{T}
     u13::Complex{T}
@@ -44,6 +54,11 @@ end
 Base.one(::Type{M3x3{T}}) where T <: AbstractFloat = M3x3{T}(one(T),zero(T),zero(T),zero(T),one(T),zero(T),zero(T),zero(T),one(T))
 Base.zero(::Type{M3x3{T}}) where T <: AbstractFloat = M3x3{T}(zero(T),zero(T),zero(T),zero(T),zero(T),zero(T),zero(T),zero(T),zero(T))
 
+"""
+    struct SU3alg{T} <: Group
+
+\`\`su(3)\`\` elements. The type `T <: AbstractFloat` can be used to define single or double precision elements.
+"""
 struct SU3alg{T} <: Algebra
     t1::T
     t2::T

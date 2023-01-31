@@ -11,11 +11,21 @@
 
 SU2alg(x::T)                       where T <: AbstractFloat = SU2alg{T}(x,0.0,0.0)
 SU2alg(v::Vector{T})               where T <: AbstractFloat = SU2alg{T}(v[1],v[2],v[3])
+
+"""
+    projalg([z::Complex,] g::T) where T <: Union{Group, GMatrix}
+
+Projects the group element/matrix `g` (or `zg`) to the algebra. This amounts to the following operation:
+
+\`\` X = {\\rm projalg}(g) = -X^a\\frac{1}{2} {\\rm tr}\\{T^a(g - g^{\\dagger})\\} \`\`
+
+where the substraction of group elements has to be understood in the matrix sense. This method returns an [`Algebra`](@ref) type. The generators of the algebra are the elements \`\` T^a\`\`. 
+"""
 projalg(g::SU2{T})                 where T <: AbstractFloat = SU2alg{T}(imag(g.t2), real(g.t2), imag(g.t1))
 projalg(z::Complex{T}, g::SU2{T})  where T <: AbstractFloat = SU2alg{T}(imag(z*g.t2), real(z*g.t2), imag(z*g.t1))
 dot(a::SU2alg{T}, b::SU2alg{T})    where T <: AbstractFloat = a.t1*b.t1 + a.t2*b.t2 + a.t3*b.t3
-norm(a::SU2alg{T})             where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2)
-norm2(a::SU2alg{T})            where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2
+norm(a::SU2alg{T})                 where T <: AbstractFloat = sqrt(a.t1^2 + a.t2^2 + a.t3^2)
+norm2(a::SU2alg{T})                where T <: AbstractFloat = a.t1^2 + a.t2^2 + a.t3^2
 
 Base.:+(a::SU2alg{T})              where T <: AbstractFloat = SU2alg{T}(a.t1,a.t2,a.t3)
 Base.:-(a::SU2alg{T})              where T <: AbstractFloat = SU2alg{T}(-a.t1,-a.t2,-a.t3)
@@ -26,6 +36,11 @@ Base.:*(a::SU2alg{T},b::Number)    where T <: AbstractFloat = SU2alg{T}(a.t1*b,a
 Base.:*(b::Number,a::SU2alg{T})    where T <: AbstractFloat = SU2alg{T}(a.t1*b,a.t2*b,a.t3*b)
 Base.:/(a::SU2alg{T},b::Number)    where T <: AbstractFloat = SU2alg{T}(a.t1/b,a.t2/b,a.t3/b)
 
+"""
+    alg2mat(a::T) where T <: Algebra
+
+Returns the [`Algebra`](@ref) element as a [`GMatrix`](@ref) type.
+"""
 function alg2mat(a::SU2alg{T}) where T <: AbstractFloat
 
     u11::Complex{T} = complex(0.0, a.t3)/2
@@ -41,11 +56,10 @@ Base.:*(a::SU2,b::SU2alg) = a*alg2mat(b)
 Base.:/(a::SU2alg,b::SU2) = alg2mat(a)/b
 Base.:\(a::SU2,b::SU2alg) = a\alg2mat(b)
 
-
 """
-    function Base.exp(a::T, t::Number=1) where {T <: Algebra}
+    exp(a::T, t::Number=1) where {T <: Algebra}
 
-Computes `exp(a)`
+Computes `exp(ta)`
 """
 function Base.exp(a::SU2alg{T}) where T <: AbstractFloat
     
@@ -83,9 +97,9 @@ end
 
 
 """
-    function expm(g::G, a::A) where {G <: Algebra, A <: Algebra}
+    expm(g::G, a::A, t=1) where {G <: Group, A <: Algebra}
 
-Computes `exp(a)*g`
+Computes `g*exp(ta)`
 
 """
 function expm(g::SU2{T}, a::SU2alg{T}) where T <: AbstractFloat
@@ -105,12 +119,6 @@ function expm(g::SU2{T}, a::SU2alg{T}) where T <: AbstractFloat
     return SU2{T}(t1,t2)
 end
 
-"""
-    function expm(g::SU2, a::SU2alg, t::Float64)
-
-Computes `exp(t*a)*g`
-
-"""
 function expm(g::SU2{T}, a::SU2alg{T}, t::T) where T <: AbstractFloat
     
     rm = t*sqrt( a.t1^2+a.t2^2+a.t3^2 )/2.0

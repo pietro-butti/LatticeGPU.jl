@@ -64,20 +64,9 @@ Base.:/(a::U1alg{T},b::Number)   where T <: AbstractFloat = U1alg{T}(a.t/b)
 
 isgroup(a::U1{T}) where T <: AbstractFloat = (abs(a.t) -1.0) < 1.0E-10
 
-"""
-    function Base.exp(a::U1alg, t::Number=1)
-
-Computes `exp(a)`
-"""
 Base.exp(a::U1alg{T}) where T <: AbstractFloat = U1{T}(CUDA.cos(a.t), CUDA.sin(a.t))
 Base.exp(a::U1alg{T}, t::T) where T <: AbstractFloat  = U1{T}(CUDA.cos(t*a.t), CUDA.sin(t*a.t))
 
-"""
-    function expm(g::U1, a::U1alg; t=1)
-
-Computes `exp(a)*g`
-
-"""
 expm(g::U1{T}, a::U1alg{T}) where T <: AbstractFloat = U1{T}(CUDA.cos(a.t), CUDA.sin(a.t))*g
 expm(g::U1{T}, a::U1alg{T}, t::T) where T <: AbstractFloat = U1{T}(CUDA.cos(t*a.t), CUDA.sin(t*a.t))*g
 

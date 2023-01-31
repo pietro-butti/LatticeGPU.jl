@@ -12,7 +12,7 @@
 inverse(a::SU3{T})       where T <: AbstractFloat = SU3{T}(conj(a.u11),conj(a.u21),(a.u12*a.u23 - a.u13*a.u22), conj(a.u12),conj(a.u22),(a.u13*a.u21 - a.u11*a.u23))
 dag(a::SU3{T})           where T <: AbstractFloat = inverse(a)
 tr(a::SU3{T})            where T <: AbstractFloat = a.u11+a.u22+conj(a.u11*a.u22 - a.u12*a.u21)
-dev_one(g::SU3{T}) where T <: AbstractFloat = sqrt(( abs2(g.u11 - one(T)) + abs2(g.u12) + abs2(g.u13) + abs2(g.u21) + abs2(g.u22 - one(T)) + abs2(g.u23) )/6)
+dev_one(g::SU3{T})       where T <: AbstractFloat = sqrt(( abs2(g.u11 - one(T)) + abs2(g.u12) + abs2(g.u13) + abs2(g.u21) + abs2(g.u22 - one(T)) + abs2(g.u23) )/6)
 
 function unitarize(g::SU3{T}) where T <: AbstractFloat
 

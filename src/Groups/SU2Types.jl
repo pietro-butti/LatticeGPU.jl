@@ -9,18 +9,34 @@
 ### created: Sun Oct  3 09:22:48 2021
 ###                               
 
+
+"""
+    struct SU2{T} <: Group
+
+\`\`SU(2)\`\` elements. The type `T <: AbstractFloat` can be used to define single or double precision elements.
+"""
 struct SU2{T} <: Group
     t1::Complex{T}
     t2::Complex{T}
 end
 
-struct M2x2{T}
+"""
+    struct M2x2{T} <: GMatrix
+
+Generic \`\` 2\\times 2\`\` complex matrix.
+"""
+struct M2x2{T} <: GMatrix
     u11::Complex{T}
     u12::Complex{T}
     u21::Complex{T}
     u22::Complex{T}
 end
 
+"""
+    struct SU2alg{T} <: Algebra
+
+\`\`{\\rm su}(2)\`\` Algebra elements.
+"""
 struct SU2alg{T} <: Algebra
     t1::T
     t2::T

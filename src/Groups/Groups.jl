@@ -16,10 +16,39 @@ using CUDA, Random
 import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp,Base.one,Base.zero
 import Random.rand
 
+"""
+    abstract type Group
+
+This abstract type encapsulates group types (i.e. \`\`SU(N)\`\`). The following operations/methods are assumed to be defined for a each group.
+- `*,/,\\`: Usual group operations.
+- [`inverse`](@ref), [`dag`](@ref): The group inverse.
+- [`tr`](@ref)
+- [`dev_one`](@ref)
+- [`unitarize`](@ref)
+- [`isgroup`](@ref)
+- [`projalg`](@ref)
+"""
 abstract type Group end
+
+"""
+    abstract type Algebra
+
+This abstract type encapsulates algebra types  (i.e. \`\` {\\rm su}(N)\`\`). The following operations/methods are assumed to be defined for each algebra:
+- `+,-`: Usual operation of Algebra elements.
+- `*,/`: Multiplication/division by Numbers
+- `*`: Multiplication of [`Algebra`](@ref) and [`Group`](@ref) or [`GMatrix`](@ref) elements. These routines use the matrix form of the group elements, and return a [`GMatrix`](@ref) type.
+- [`exp`](@ref), [`expm`](@ref): Exponential map. Returns a [`Group`](@ref) element.
+"""
 abstract type Algebra end
 
-export Group, Algebra
+"""
+    abstract type GM
+
+This abstract type encapsulates \`\` N\\times N \`\` matrix types. The usual matrix operations (`+,-,*,/`) are expected to be defined for this case.
+"""
+abstract type GMatrix end
+
+export Group, Algebra, GMatrix
 
 ##
 # SU(2) and 2x2 matrix operations
