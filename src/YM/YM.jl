@@ -115,7 +115,7 @@ function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}) where {T,G,N,M,B,D}
 
     function plnf(ipl)
         id1, id2 = lp.plidx[ipl]
-        return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(lp.iL[id1]*lp.iL[id2]*gp.ng)))
+        return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(gp.ng)))
     end
 
     return ntuple(i->plnf(i), M)
@@ -124,7 +124,7 @@ end
 function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}, ipl::Int) where {T,G,N,M,B,D}
 
     id1, id2 = lp.plidx[ipl]
-    return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(lp.iL[id1]*lp.iL[id2]*gp.ng)))
+    return convert(Complex{T},exp(2im * pi * lp.ntw[ipl]/(gp.ng)))
 end
 export ztwist
 
