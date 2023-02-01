@@ -19,6 +19,27 @@ const BC_SF_ORBI  = 1
 const BC_SF_AFWB  = 2
 const BC_OPEN     = 3
 
+"""
+    struct SpaceParm{N,M,B,D}
+
+This structure contains information about the lattice being simulated. The parameters that define the structure are
+- `N`: The number of dimensions
+- `M`: The number of planes (i.e. \`\` N(N-1)/2 \`\`)
+- `B`: The boundary conditions in Euclidean time. Acceptable values are
+    - `BC_PERIODIC`: Periodic boundary conditions
+    - `BC_SF_AFWB`: Schrödinger Funtional Aoki-Frezzoptti-Weisz Choice B.
+    - `BC_SF_ORBI`: Schrödinger Funtional orbifold constructions.
+    - `BC_OPEN`: Open boundary conditions.
+
+The structure conatins the following components:
+- `iL`: Tuple containing the lattice length in each dimension.
+- `plidx`: The directions of each plane
+- `blk`: The block size in each each dimension
+- `rbk`: The number of blocks in each dimension
+- `bsz`: The number of points in each block
+- `rsz`: The number of blocks in the lattice
+- `ntw`: The twist tensor in each plane
+"""
 struct SpaceParm{N,M,B,D}
     ndim::Int64
     iL::NTuple{N,Int64}
@@ -148,7 +169,7 @@ function Base.show(io::IO, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
 end
     
 """
-    function up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+    up(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
 Given a point `x` with index `p`, this routine returns the index of the point
 `x + a id`. 
@@ -175,7 +196,7 @@ Given a point `x` with index `p`, this routine returns the index of the point
 end
 
 """
-    function dw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+    dw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
 Given a point `x` with index `p`, this routine returns the index of the point
 `x - a id`. 
@@ -201,7 +222,7 @@ Given a point `x` with index `p`, this routine returns the index of the point
 end
 
 """
-    function updw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
+    updw(p::NTuple{2,Int64}, id::Int64, lp::SpaceParm)
 
 Given a point `x` with index `p`, this routine returns the index of the points
 `x + a id` and `x - a id`. 
@@ -246,6 +267,11 @@ end
 @inline cntr(nr, id::Int64, lp::SpaceParm) = mod(div(nr-1,lp.rbkS[id]),lp.rbk[id])
 @inline cnt(nb, nr, id::Int64, lp::SpaceParm)  = 1 + cntb(nb,id,lp) + cntr(nr,id,lp)*lp.blk[id]
 
+"""
+    point_coord(p::NTuple{2,Int64}, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
+
+Returns the cartesian coordinates of point index `p`
+"""
 @inline function point_coord(p::NTuple{2,Int64}, lp::SpaceParm{2,M,D}) where {M,D}
 
     i1 = cnt(p[1], p[2], 1, lp)
@@ -301,11 +327,20 @@ end
     return CartesianIndex{6}(i1,i2,i3,i4,i5,i6)
 end
 
+"""
+    point_time(p::NTuple{2,Int64}, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
+
+Returns the Euclidean time coordinate of point index `p`
+"""
 @inline function point_time(p::NTuple{2,Int64}, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
     return cnt(p[1], p[2], N, lp)
 end
 
+"""
+    point_index(pt::CartesianIndex, lp::SpaceParm)
 
+Given the cartesian coordinates of a point, returns the point index
+"""
 @inline function point_index(pt::CartesianIndex, lp::SpaceParm)
 
     b = 1
@@ -319,7 +354,7 @@ end
 end
 
 """
-    function point_color(p::NTuple{2,Int64}, lp::SpaceParm)
+    point_color(p::NTuple{2,Int64}, lp::SpaceParm)
 
 Returns the sum of the cartesian coordinates of the point p=(b,r).
 """
@@ -334,7 +369,7 @@ Returns the sum of the cartesian coordinates of the point p=(b,r).
 end
 
 
-export up, dw, updw, point_index, point_coord, point_time
+export SpaceParm, up, dw, updw, point_index, point_coord, point_time, point_color
 export BC_PERIODIC, BC_OPEN, BC_SF_AFWB, BC_SF_ORBI
 
 end
