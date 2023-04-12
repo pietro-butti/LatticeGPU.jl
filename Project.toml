@@ -1,7 +1,7 @@
 name = "LatticeGPU"
 uuid = "958c3683-801a-4582-9cfa-2d6e2ae1763b"
 authors = ["Alberto Ramos <alberto.ramos@ific.uv.es>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 BDIO = "375f315e-f2c4-11e9-2ef9-134f02f79e27"
