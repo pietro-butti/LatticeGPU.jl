@@ -316,7 +316,7 @@ function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace)
 
     return sum(Qslc)
 end
-Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
+Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end]), U, gp, lp, ymws)
 
 
 """
