@@ -294,21 +294,21 @@ function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace)
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
         end
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
         end
     
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
         end
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, lp)
         end
     
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
         end
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
         end
         
         Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
@@ -333,7 +333,7 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         V3 = prod(lp.iL[1:end-1])
 
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, +, ymws.frc1, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, ymws.frc1, lp)
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
@@ -341,7 +341,7 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         end
         
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, +, ymws.frc2, U, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, ymws.frc2, lp)
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
@@ -380,7 +380,7 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
 end
 Eoft_clover(U, gp::GaugeParm, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace{T}) where {T,N,M,B,D} = Eoft_clover(zeros(T,lp.iL[end],M), U, gp, lp, ymws)
 
-function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
+function krnl_add_et!(rm, frc1, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
@@ -395,7 +395,7 @@ function krnl_add_et!(rm, op, frc1, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
     return nothing
 end
 
-function krnl_add_qd!(rm, op, frc1, frc2, U, lp::SpaceParm{4,M,B,D}) where {M,B,D}
+function krnl_add_qd!(rm, op, frc1, frc2, lp::SpaceParm{4,M,B,D}) where {M,B,D}
 
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
