@@ -50,7 +50,7 @@ Returns the scalar product of two spinors.
 
     sum = :(dot(a.s[1],b.s[1]))
     for i in 2:NS
-        sum = :($sum + norm2(a.s[$i]))
+        sum = :($sum + dot(a.s[$i],b.s[$i]))
     end
 
     return :($sum)
@@ -65,6 +65,21 @@ Returns ga
 Base.:*(g::S,b::Spinor{NS,G}) where {S <: Group,NS,G} = Spinor{NS,G}(ntuple(i->g*b.s[i], NS))
 
 """
+    *(a::SU3alg{T},b::Spinor)
+
+Returns ab
+"""
+Base.:*(a::S,b::Spinor{NS,G}) where {S <: Algebra,NS,G} = Spinor{NS,G}(ntuple(i->a*b.s[i], NS))
+
+"""
+    *(a::M3x3{T},b::Spinor)
+
+Returns ab
+"""
+Base.:*(a::S,b::Spinor{NS,G}) where {S <: GMatrix,NS,G} = Spinor{NS,G}(ntuple(i->a*b.s[i], NS))
+
+
+"""
     \\(g::SU3{T},b::Spinor{NS,G})
 
 Returns g^+ a
@@ -75,9 +90,9 @@ Base.:\(g::S,b::Spinor{NS,G}) where {S <: Group,NS,G} = Spinor{NS,G}(ntuple(i->g
 Base.:+(a::Spinor{NS,G},b::Spinor{NS,G}) where {NS,G} = Spinor{NS,G}(ntuple(i->a.s[i]+b.s[i], NS))
 Base.:-(a::Spinor{NS,G},b::Spinor{NS,G}) where {NS,G} = Spinor{NS,G}(ntuple(i->a.s[i]-b.s[i], NS))
 Base.:+(a::Spinor{NS,G})                 where {NS,G} = a
-Base.:-(a::Spinor{NS,G})                 where {NS,G} = Spinor{NS,G}(ntuple(i->-b.s[i], NS))
-imm(a::Spinor{NS,G})                     where {NS,G} = Spinor{NS,G}(ntuple(i->imm(b.s[i]), NS))
-mimm(a::Spinor{NS,G})                    where {NS,G} = Spinor{NS,G}(ntuple(i->mimm(b.s[i]), NS))
+Base.:-(a::Spinor{NS,G})                 where {NS,G} = Spinor{NS,G}(ntuple(i->-a.s[i], NS))
+imm(a::Spinor{NS,G})                     where {NS,G} = Spinor{NS,G}(ntuple(i->imm(a.s[i]), NS))
+mimm(a::Spinor{NS,G})                    where {NS,G} = Spinor{NS,G}(ntuple(i->mimm(a.s[i]), NS))
 
 
 # Operations with numbers
