@@ -271,6 +271,26 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
 end
 
 
-export Dw!, g5Dw!, DwdagDw!
+function SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
+    end
+    
+    return nothing
+end
+
+function krnl_sfbndfix!(sp,lp::SpaceParm)
+    b=Int64(CUDA.threadIdx().x)
+    r=Int64(CUDA.blockIdx().x)
+
+    if (point_time((b,r),lp) == 1)
+        sp[b,r] = 0.0*sp[b,r]
+    end
+    return nothing
+end
+
+
+
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!
 
 end
