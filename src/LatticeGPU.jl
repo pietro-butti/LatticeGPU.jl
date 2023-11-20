@@ -63,5 +63,6 @@ export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
 include("Solvers/Solvers.jl")
 using .Solvers
 export CG!
+export propagator!, bndpropagator!, Tbndpropagator!, bndtobnd
 
 end # module
