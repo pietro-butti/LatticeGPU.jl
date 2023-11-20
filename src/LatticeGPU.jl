@@ -56,8 +56,8 @@ export pmul, gpmul, gdagpmul, dmul
 
 include("Dirac/Dirac.jl")
 using .Dirac
-export DiracWorkspace
-export Dw!, DwdagDw!
+export DiracWorkspace, DiracParam
+export Dw!, g5Dw!, DwdagDw!
 
 
 include("Solvers/Solvers.jl")
