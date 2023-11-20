@@ -74,11 +74,14 @@ include("FundamentalSU3.jl")
 export imm, mimm
 ## END SU(3)
 
+include("AlgebraU3.jl")
+export U3alg
+
 include("GroupU1.jl")
 export U1, U1alg
 
 
-export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one
+export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one, antsym
 
 
 end # module
