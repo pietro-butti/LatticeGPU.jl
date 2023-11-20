@@ -558,7 +558,76 @@ function krnl_sfbndfix!(sp,lp::SpaceParm)
 end
 
 
+"""
+    function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund / SU2fund {T}}}, lp::SpaceParm, t::Int64 = 0)
 
-export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!
+Randomizes the SU2fund / SU3fund fermion field. If the argument t is present, it only randomizes that time-slice. 
+"""
+function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund{T}}}, lp::SpaceParm, t::Int64 = 0) where {T} 
+
+    @timeit "Randomize pseudofermion field" begin
+        p = ntuple(i->CUDA.randn(T, lp.bsz, 3, lp.rsz,2),4) # complex generation not suported for Julia 1.5.4
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_pf_su3!(f,p,lp,t)
+        end
+    end
+
+    return nothing
+end
+
+function krnl_assign_pf_su3!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+
+            if t == 0
+            f[b,r] = Spinor(map(x->SU3fund(x[b,1,r,1] + im* x[b,1,r,2],
+                                        x[b,2,r,1] + im* x[b,2,r,2],
+                                        x[b,3,r,1] + im* x[b,3,r,2]),p))
+            elseif point_time((b,r),lp) == t
+            f[b,r] = Spinor(map(x->SU3fund(x[b,1,r,1] + im* x[b,1,r,2],
+                                        x[b,2,r,1] + im* x[b,2,r,2],
+                                        x[b,3,r,1] + im* x[b,3,r,2]),p))
+            end
+            
+    end
+
+    return nothing
+end
+
+function pfrandomize!(f::AbstractArray{Spinor{4, SU2fund{T}}},lp::SpaceParm, t::Int64=0) where {T} 
+
+    @timeit "Randomize pseudofermion field" begin
+        p = ntuple(i->CUDA.randn(T, lp.bsz, 2, lp.rsz,2),4) # complex generation not suported for Julia 1.5.4
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_pf_su2!(f,p,lp,t)
+        end
+    end
+
+    return nothing
+end
+
+function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+
+            if t == 0
+            f[b,r] = Spinor(map(x->SU2fund(x[b,1,r,1] + im* x[b,1,r,2],
+                                        x[b,2,r,1] + im* x[b,2,r,2]),p))
+            elseif point_time((b,r),lp) == t
+            f[b,r] = Spinor(map(x->SU2fund(x[b,1,r,1] + im* x[b,1,r,2],
+                                        x[b,2,r,1] + im* x[b,2,r,2]),p))
+            end
+            
+    end
+
+    return nothing
+end
+
+
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
 
 end
