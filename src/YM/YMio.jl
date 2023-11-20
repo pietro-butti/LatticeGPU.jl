@@ -157,7 +157,7 @@ function save_cnfg(fname::String, U, lp::SpaceParm{4,M,B,D}, gp::GaugeParm; run:
     if B == BC_SF_AFWB || B == BC_SF_ORBI
         for i3 in 1:lp.iL[3]
             for id in 1:lp.ndim-1
-                assign!(id, V, i3, Ubnd[id])
+                assign!(id, V, i3, gp.Ubnd[id])
             end
             assign!(4, V, i3, zero(M3x3{Float64}))
         end
