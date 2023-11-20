@@ -627,7 +627,11 @@ function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
     return nothing
 end
 
-
 export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
+
+
+include("DiracIO.jl")
+export read_prop, save_prop, read_dpar
+
 
 end
