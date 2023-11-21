@@ -53,3 +53,13 @@ Base.convert(::Type{M2x2{T}}, a::SU2{T}) where T = M2x2{T}(a.t1,a.t2,-conj(a.t2)
 
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2alg{T}}) where T <: AbstractFloat = SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T))
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2{T}})    where T <: AbstractFloat = exp(SU2alg{T}(randn(rng,T),randn(rng,T),randn(rng,T)))
+
+
+struct SU2fund{T}
+    t1::Complex{T}
+    t2::Complex{T}
+end
+
+Base.zero(::Type{SU2fund{T}}) where T <: AbstractFloat = SU2fund{T}(zero(T),zero(T),zero(T))
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2fund{T}}) where T <: AbstractFloat = SU2fund{T}(complex(randn(rng,T),randn(rng,T)),
+                                                                                                      complex(randn(rng,T),randn(rng,T)))
