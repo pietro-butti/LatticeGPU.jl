@@ -56,19 +56,23 @@ struct DiracWorkspace{T}
 
         @timeit "Allocating DiracWorkspace" begin
             if G == SU3fund
-                sr  = scalar_field(Spinor{4,G}, lp)
-                sp  = scalar_field(Spinor{4,G}, lp)
-                sAp = scalar_field(Spinor{4,G}, lp)
-                st  = scalar_field(Spinor{4,G}, lp)
+                sr  = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                sp  = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                sAp = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                st  = scalar_field(Spinor{4,SU3fund{T}}, lp)
                 csw = tensor_field(U3alg{T},lp)
-            end
-            
-            if G == SU2fund
+            elseif G == SU2fund
+                sr  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                sp  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                sAp = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                st  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                csw = tensor_field(U2alg{T},lp)
+            else
                 sr  = scalar_field(Spinor{4,G}, lp)
                 sp  = scalar_field(Spinor{4,G}, lp)
                 sAp = scalar_field(Spinor{4,G}, lp)
                 st  = scalar_field(Spinor{4,G}, lp)
-                csw = tensor_field(U2alg{T},lp)
+                csw = nothing
             end
         end
 
