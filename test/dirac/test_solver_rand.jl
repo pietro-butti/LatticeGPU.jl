@@ -10,7 +10,7 @@ using CUDA, LatticeGPU, TimerOutputs
     gp = GaugeParm{Float64}(SU3{Float64}, 6.0, 1.0)
     ymws = YMworkspace(SU3, Float64, lp)
     dpar = DiracParam{Float64}(SU3fund,2.3,0.0,(1.0,1.0,1.0,1.0),0.0)
-    dws = DiracWorkspace(SU3fund{Float64},Float64,lp);
+    dws = DiracWorkspace(SU3fund,Float64,lp);
 
     randomize!(ymws.mom, lp, ymws)
     U = exp.(ymws.mom)

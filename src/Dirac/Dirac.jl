@@ -54,15 +54,31 @@ struct DiracWorkspace{T}
     
     function DiracWorkspace(::Type{G}, ::Type{T}, lp::SpaceParm{4,6,B,D}) where {G,T <: AbstractFloat, B,D}
 
-        sr  = scalar_field(Spinor{4,G}, lp)
-        sp  = scalar_field(Spinor{4,G}, lp)
-        sAp = scalar_field(Spinor{4,G}, lp)
-        st  = scalar_field(Spinor{4,G}, lp)
+        @timeit "Allocating DiracWorkspace" begin
+            if G == SU3fund
+                sr  = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                sp  = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                sAp = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                st  = scalar_field(Spinor{4,SU3fund{T}}, lp)
+                csw = tensor_field(U3alg{T},lp)
+            elseif G == SU2fund
+                sr  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                sp  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                sAp = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                st  = scalar_field(Spinor{4,SU2fund{T}}, lp)
+                csw = tensor_field(U2alg{T},lp)
+            else
+                sr  = scalar_field(Spinor{4,G}, lp)
+                sp  = scalar_field(Spinor{4,G}, lp)
+                sAp = scalar_field(Spinor{4,G}, lp)
+                st  = scalar_field(Spinor{4,G}, lp)
+                csw = nothing
+            end
+        end
 
-        csw = tensor_field(U3alg{T},lp)
+        return new{T}(sr,sp,sAp,st,csw)
+        end
 
-        return new{T}(sr,sp,sAp,st,csw,cs)
-    end
 end
 
 export DiracWorkspace, DiracParam

@@ -16,7 +16,7 @@ include("Groups/Groups.jl")
 
 using .Groups
 export Group, Algebra, GMatrix
-export SU2, SU2alg, SU3, SU3alg, M3x3, M2x2, U1, U1alg, SU3fund, U3alg
+export SU2, SU2alg, SU3, SU3alg, M3x3, M2x2, U1, U1alg, SU3fund, U3alg, SU2fund, U2alg
 export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one, antsym
 
 include("Space/Space.jl")
