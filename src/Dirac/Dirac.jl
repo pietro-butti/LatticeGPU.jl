@@ -72,7 +72,7 @@ struct DiracWorkspace{T}
             end
         end
 
-        return new{T}(sr,sp,sAp,st,csw,cs)
+        return new{T}(sr,sp,sAp,st,csw)
         end
 
 end

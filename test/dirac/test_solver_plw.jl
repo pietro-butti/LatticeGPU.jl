@@ -8,7 +8,7 @@ function Dwpw_test(;p=0,s=1,c=1)
 lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), 0, (0,0,0,0,0,0))
 gp = GaugeParm{Float64}(SU3{Float64}, 6.0, 1.0)
 dpar = DiracParam{Float64}(SU3fund,1.3,0.0,(1.0,1.0,1.0,1.0),0.0)
-dws = DiracWorkspace(SU3fund{Float64},Float64,lp);
+dws = DiracWorkspace(SU3fund,Float64,lp);
 
 p==0 ? p = Int.(round.(lp.iL.*rand(4),RoundUp)) : nothing
 U = fill!(vector_field(SU3{Float64},lp),one(SU3{Float64}))
