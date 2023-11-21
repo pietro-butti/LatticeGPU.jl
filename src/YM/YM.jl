@@ -147,6 +147,6 @@ include("YMsf.jl")
 export sfcoupling, bndfield, setbndfield
 
 include("YMio.jl")
-export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg
+export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 end

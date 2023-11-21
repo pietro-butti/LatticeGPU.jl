@@ -45,7 +45,7 @@ export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield
-export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg
+export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 include("Spinors/Spinors.jl")
 
