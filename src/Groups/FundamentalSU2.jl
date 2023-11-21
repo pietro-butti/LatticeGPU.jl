@@ -1,9 +1,5 @@
 
 
-Base.zero(::Type{SU2fund{T}}) where T <: AbstractFloat = SU2fund{T}(zero(T),zero(T))
-Random.rand(rng::AbstractRNG, ::Random.SamplerType{SU2fund{T}}) where T <: AbstractFloat = SU2fund{T}(complex(randn(rng,T),randn(rng,T)),
-                                                                                                      complex(randn(rng,T),randn(rng,T)))
-
 
 SU2fund(a::T, b::T)          where T <: AbstractFloat = SU2fund{T}(complex(a), complex(b))
 
