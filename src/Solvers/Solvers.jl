@@ -22,7 +22,8 @@ using ..Dirac
 include("CG.jl")
 export CG!
 
-
+include("Propagators.jl")
+export propagator!, bndpropagator!, Tbndpropagator!, bndtobnd
 
 
 end

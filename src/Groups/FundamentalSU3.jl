@@ -24,14 +24,14 @@ dag(a::SU3fund{T})                 where T <: AbstractFloat = SU3fund{T}(conj(a.
 
 Returns the norm of a fundamental element. Same result as dot(a,a).
 """
-norm(a::SU3fund{T})                where T <: AbstractFloat = sqrt((abs2(a.t1) + abs2(a.t2) + abs2(a.t1)))
+norm(a::SU3fund{T})                where T <: AbstractFloat = sqrt((abs2(a.t1) + abs2(a.t2) + abs2(a.t3)))
 
 """
     norm(a::SU3fund{T})
 
 Returns the norm of a fundamental element. Same result as sqrt(dot(a,a)).
 """
-norm2(a::SU3fund{T})               where T <: AbstractFloat = (abs2(a.t1) + abs2(a.t2) + abs2(a.t1))
+norm2(a::SU3fund{T})               where T <: AbstractFloat = (abs2(a.t1) + abs2(a.t2) + abs2(a.t3))
 
 """
     dot(a::SU3fund{T},b::SU3fund{T})
