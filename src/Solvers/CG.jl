@@ -9,11 +9,6 @@
 ### created: Tue Nov 30 11:10:57 2021
 ###                               
 
-"""
-    function CG!
-
-Solves the linear equation `Ax = si`
-"""
 function krnl_dot!(sum,fone,ftwo)
     b=Int64(CUDA.threadIdx().x)
     r=Int64(CUDA.blockIdx().x)
@@ -32,6 +27,12 @@ function field_dot(fone::AbstractArray,ftwo::AbstractArray,sumf,lp) where {T}
     return sum(sumf)
 end
 
+
+"""
+    function CG!
+
+Solves the linear equation `Ax = si`
+"""
 function CG!(si, U, A, dpar::DiracParam, lp::SpaceParm, dws::DiracWorkspace{T}, maxiter::Int64 = 10, tol=1.0) where {T}
 
     dws.sr .= si

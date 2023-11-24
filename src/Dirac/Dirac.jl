@@ -19,7 +19,17 @@ using ..Fields
 using ..YM
 using ..Spinors
 
+"""
+    struct DiracParam{T,R}
 
+Stores the parameters of the Dirac operator. It can be generated via the constructor `function DiracParam{T}(::Type{R},m0,csw,th,ct)`. The first argument can be ommited and is taken to be `SU3fund`.
+The parameters are:
+
+- `m0::T` : Mass of the fermion
+- `csw::T` : Improvement coefficient for the Csw term
+- `th{Ntuple{4,Complex{T}}}` : Phase for the fermions included in the boundary conditions, reabsorbed in the Dirac operator.
+- `ct` : Boundary improvement term, only used for Schrödinger Funtional boundary conditions. 
+"""
 struct DiracParam{T,R}
     m0::T
     csw::T
@@ -45,6 +55,18 @@ function Base.show(io::IO, dpar::DiracParam{T,R}) where {T,R}
     return nothing
 end
 
+
+"""
+    struct DiracWorkspace{T}    
+
+Workspace needed to work with fermion fields. It contains four scalar fermion fields and, for the SU2fund and SU3fund, a U(N) field to store the clover term.
+
+It can be created with the constructor `DiracWorkspace(::Type{G}, ::Type{T}, lp::SpaceParm{4,6,B,D})`. For example:
+
+dws = DiracWorkspace(SU2fund,Float64,lp);
+dws = DiracWorkspace(SU3fund,Float64,lp);
+
+"""
 struct DiracWorkspace{T}
     sr
     sp
@@ -146,6 +168,14 @@ function krnl_csw!(csw::AbstractArray{T}, U, Ubnd, ipl, lp::SpaceParm{4,M,B,D}) 
     return nothing
 end
 
+
+"""
+    function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
+
+Computes the Dirac operator (with the Wilson term) `\`\ D_w \`\` with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
+If `dpar.csw` is different from zero, the clover term should be stored in `dws.csw` via the Csw! function and is automatically included in the operator.
+
+"""
 function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
        
     if abs(dpar.csw) > 1.0E-10
@@ -310,6 +340,12 @@ function krnl_Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},S
     return nothing
 end
 
+"""
+    function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})    
+
+Computes \`\` \\gamma_5 \`\` times the Dirac operator (with the Wilson term) with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
+If `dpar.csw` is different from zero, the clover term should be stored in `dws.csw` via the Csw! function and is automatically included in the operator.
+"""
 function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
        
     if abs(dpar.csw) > 1.0E-10
@@ -480,6 +516,13 @@ function krnl_g5Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D}
     return nothing
 end
 
+"""
+    function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
+
+Applies the operator \`\` \\gamma_5 D_w \`\` twice to `si` and stores the result in `so`. This is equivalent to appling the operator \`\` \`\`
+The Dirac operator is the same as in the functions `Dw!` and `g5Dw!`
+"""
+
 function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     if abs(dpar.csw) > 1.0E-10
@@ -554,7 +597,11 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
     return nothing
 end
 
+"""
+    SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}})
 
+Sets all the values of `sp` in the  first time slice to zero.
+"""
 function SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
     CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
