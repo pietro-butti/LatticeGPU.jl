@@ -41,10 +41,11 @@ where $$m_0$$ and $$\theta$$ are respectively the values `.m0` and `.th` of [`Di
 Note that $$|\theta(i)|=1$$ is not built into the code, so it should be imposed explicitly. 
 
 Additionally, if |`dpar.csw`| > 1.0E-10, the clover term is assumed to be stored in `ymws.csw`, which
-can be done via the [`Csw`](@ref) function. In this case we have an extra term in `Dw!`:
+can be done via the [`Csw`](@ref) function. In this case we have the Sheikholeslami–Wohlert (SW) term
+in `Dw!`:
 
 ```math
-    \frac{i}{2}C_{sw} \sum_{\pi = 1}^6 F^{cl}_\pi \sigma_\pi \psi(\vec{x})
+    \frac{i}{2}c_{sw} \sum_{\pi = 1}^6 F^{cl}_\pi \sigma_\pi \psi(\vec{x})
 ```
 where the $$\sigma$$ matrices are those described in the `Spinors` module and the index $$\pi$$ runs
 as specified in `lp.plidx`.

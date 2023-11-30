@@ -99,7 +99,7 @@ end
 
 """
 
-    function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+    function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
         
 Returns the propagator from the t=T boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's'. The factor c_t is included while the factor 1/sqrt(V) is not.
 For the propagator from t=0 to the bulk, use the function bndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
