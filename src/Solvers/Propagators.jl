@@ -47,10 +47,6 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
     end
        
     g5Dw!(pro,U,dws.sp,dpar,dws,lp)
-
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
-    end
       
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
     return nothing
