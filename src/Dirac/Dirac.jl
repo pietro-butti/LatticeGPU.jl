@@ -172,7 +172,7 @@ end
 """
     function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
 
-Computes the Dirac operator (with the Wilson term) `\`\ D_w \`\` with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
+Computes the Dirac operator (with the Wilson term) `\`\``D_w``\`\` with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
 If `dpar.csw` is different from zero, the clover term should be stored in `dws.csw` via the Csw! function and is automatically included in the operator.
 
 """
