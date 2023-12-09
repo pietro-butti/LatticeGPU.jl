@@ -16,7 +16,7 @@ end
 """
     antsym(a::SU2{T}) where T <: AbstractFloat
 
-Returns the antisymmetrization of the SU2 element `a`, that is `\`\ a - a^{\\dagger} `\`. This method returns al element of `U2alg{T}`.
+Returns the antisymmetrization of the SU2 element `a`, that is `\`\` `a - a^{\\dagger}` `\`. This method returns al element of `U2alg{T}`.
 """
 function antsym(a::SU2{T}) where T <: AbstractFloat
     return U2alg{T}(2.0*imag(a.t1),-2.0*imag(a.t1),2.0*a.t2)
