@@ -18,7 +18,7 @@ function krnl_dot!(sum,fone,ftwo)
 return nothing
 end
 
-function field_dot(fone::AbstractArray,ftwo::AbstractArray,sumf,lp) where {T}
+function field_dot(fone::AbstractArray,ftwo::AbstractArray,sumf,lp)
         
     CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_dot!(sumf,fone,ftwo)
