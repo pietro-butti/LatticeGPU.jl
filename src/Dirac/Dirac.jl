@@ -522,7 +522,6 @@ end
 Applies the operator \`\` \\gamma_5 D_w \`\` twice to `si` and stores the result in `so`. This is equivalent to appling the operator \`\` \`\`
 The Dirac operator is the same as in the functions `Dw!` and `g5Dw!`
 """
-
 function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     if abs(dpar.csw) > 1.0E-10

@@ -29,7 +29,7 @@ end
 
 
 """
-    function CG!
+    function CG!(si, U, A, dpar::DiracParam, lp::SpaceParm, dws::DiracWorkspace{T}, maxiter::Int64 = 10, tol=1.0)
 
 Solves the linear equation `Ax = si`
 """

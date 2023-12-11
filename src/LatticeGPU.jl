@@ -50,7 +50,7 @@ export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 include("Spinors/Spinors.jl")
 
 using .Spinors    
-export Spinor, Pgamma
+export Spinor, Pgamma, Gamma
 export imm, mimm
 export pmul, gpmul, gdagpmul, dmul
 
