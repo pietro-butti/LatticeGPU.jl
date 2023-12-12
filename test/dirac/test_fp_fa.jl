@@ -13,7 +13,7 @@ function fP_test(;theta = (0.5,0.7,1.0,0.0), m = 1.3, size = (8,8,8,16),prec = 1
 lp = SpaceParm{4}(size,(4,4,4,4),1,(0,0,0,0,0,0));
 exptheta = exp.(im.*theta./lp.iL);
 
-dpar = DiracParam{Float64}(SU3fund,m,0.0,exptheta,1.0);
+dpar = DiracParam{Float64}(SU3fund,m,0.0,exptheta,0.0,1.0);
 dws = DiracWorkspace(SU3fund,Float64,lp);
 
 U = fill!(vector_field(SU3{Float64},lp),one(SU3{Float64}));
@@ -65,7 +65,7 @@ function fA_test(;theta = (0.5,0.7,1.0,0.0), m = 1.3, size = (8,8,8,16),prec = 1
     lp = SpaceParm{4}(size,(4,4,4,4),1,(0,0,0,0,0,0));
     exptheta = exp.(im.*theta./lp.iL);
     
-    dpar = DiracParam{Float64}(SU3fund,m,0.0,exptheta,1.0);
+    dpar = DiracParam{Float64}(SU3fund,m,0.0,exptheta,0.0,1.0);
     dws = DiracWorkspace(SU3fund,Float64,lp);
     
     U = fill!(vector_field(SU3{Float64},lp),one(SU3{Float64}));
