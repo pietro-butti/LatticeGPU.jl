@@ -24,6 +24,11 @@ const r1omf2 =  0.1931833275037836
 const r2omf2 =  0.5
 const r3omf2 =  1 - 2*r1omf2
 
+"""
+        struct IntrScheme{N, T}
+
+Integrator for the molecular dynamics.
+"""
 struct IntrScheme{N, T}
     r::NTuple{N, T}
     eps::T
@@ -31,8 +36,23 @@ struct IntrScheme{N, T}
 end
 
 
+"""
+        omf2(::Type{T}, eps, ns)
+
+Second order Omelyan integrator with `eps` stepsize and `ns` steps.
+"""
 omf2(::Type{T}, eps, ns) where T = IntrScheme{3,T}((r1omf2,r2omf2,r3omf2), eps, ns)
+"""
+        omf4(::Type{T}, eps, ns)
+
+Fourth order Omelyan integrator with `eps` stepsize and `ns` steps.
+"""
 omf4(::Type{T}, eps, ns) where T = IntrScheme{6,T}((r1omf4,r2omf4,r3omf4,r4omf4,r5omf4,r6omf4), eps, ns)
+"""
+        leapfrog(::Type{T}, eps, ns)
+
+Leapfrog integrator with `eps` stepsize and `ns` steps.
+"""
 leapfrog(::Type{T}, eps, ns) where T = IntrScheme{2,T}((0.5,1.0), eps, ns)
 
 

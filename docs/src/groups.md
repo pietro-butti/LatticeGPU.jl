@@ -153,6 +153,10 @@ projalg
 ## Generic `Algebra` methods
 
 ```@docs
+dot
+norm
+norm2
+normalize
 exp
 expm
 alg2mat

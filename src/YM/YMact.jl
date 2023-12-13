@@ -335,9 +335,9 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
 end
 
 """ 
-    function force_wilson(ymws::YMworkspace, U, lp::SpaceParm)
+    function force_gauge(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm)
 
-Computes the force deriving from the Wilson plaquette action, without
+Computes the force deriving from an improved action with parameter `c0`, without
 the prefactor 1/g0^2, and assign it to the workspace force `ymws.frc1`
 """    
 function force_gauge(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm)
@@ -354,8 +354,15 @@ function force_gauge(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm)
     end
     return nothing
 end
-
 force_gauge(ymws::YMworkspace, U, c0, gp, lp) = force_gauge(ymws, U, c0, gp.cG[1], gp, lp)
+force_gauge(ymws::YMworkspace, U, gp, lp) = force_gauge(ymws, U, gp.c0, gp.cG[1], gp, lp)
+
+""" 
+    function force_wilson(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm)
+
+Computes the force deriving from the Wilson plaquette action, without
+the prefactor 1/g0^2, and assign it to the workspace force `ymws.frc1`
+"""    
 force_wilson(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm) = force_gauge(ymws, U, 1, gp, lp)
 force_wilson(ymws::YMworkspace, U, cG, gp::GaugeParm, lp::SpaceParm) = force_gauge(ymws, U, 1, gp.cG[1], gp, lp)
 

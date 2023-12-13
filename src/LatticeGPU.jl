@@ -40,6 +40,7 @@ include("YM/YM.jl")
 using .YM
 export ztwist
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
+export force_gauge, MD!
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3

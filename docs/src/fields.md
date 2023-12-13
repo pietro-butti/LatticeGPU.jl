@@ -10,10 +10,11 @@ gauge fields `SU3`, for scalar fields `Float64`). We have:
   direction.
 - `N` scalar fields: `N` elemental types at each spacetime point.
 
-For all these fields the spacetime point are ordered in memory
-according to the point-in-block and block indices (see
-[`SpaceParm`](@ref)). An execption is the [`scalar_field_point`](@ref)
-fields. 
+Fields can have **naturaL indexing**, where the memory layout follows
+the point-in-block and block indices (see
+[`SpaceParm`](@ref)). Fields can also have **lexicographic indexing**,
+where points are labelled by a D-dimensional index (see [`scalar_field_point`](@ref)).
+
 
 ## Initialization
 
