@@ -28,7 +28,7 @@ The parameters are:
 - `m0::T` : Mass of the fermion
 - `csw::T` : Improvement coefficient for the Csw term
 - `th{Ntuple{4,Complex{T}}}` : Phase for the fermions included in the boundary conditions, reabsorbed in the Dirac operator.
-- `tm` : Twisted mass paramete
+- `tm` : Twisted mass parameter
 - `ct` : Boundary improvement term, only used for Schrödinger Funtional boundary conditions. 
 """
 struct DiracParam{T,R}
@@ -534,12 +534,13 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
                     CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(dws.st, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
                 end
             end
-
+            SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
                     CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
                 end
             end
+            SF_bndfix!(so,lp)
         end
     else
         @timeit "DwdagDw" begin
@@ -549,12 +550,13 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
                     CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(dws.st, U, si, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
                 end
             end
-
+            SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
                     CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
                 end
             end
+            SF_bndfix!(so,lp)
         end
     end
 
@@ -604,10 +606,11 @@ end
 Sets all the values of `sp` in the  first time slice to zero.
 """
 function SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
+    @timeit "SF boundary fix" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
+        end
     end
-    
     return nothing
 end
 

@@ -56,7 +56,7 @@ end
 
     function bndpropagator!(pro,U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
         
-Saves the propagator in from the t=0 boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's'. The factor c_t is included while the factor 1/sqrt(V) is not.
+Saves the propagator from the t=0 boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's' in 'pro'. The factor c_t is included while the factor 1/sqrt(V) is not.
 For the propagator from T to the bulk, use the function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
 
 """
@@ -81,6 +81,7 @@ function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Sp
         return nothing
     end
 
+    SF_bndfix!(pro,lp)
     fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
     
     CUDA.@sync begin
@@ -94,7 +95,7 @@ function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Sp
     g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
     
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return pro
+    return nothing
 end
 
 """
@@ -124,7 +125,8 @@ function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::S
 
         return nothing
     end
-  
+
+    SF_bndfix!(pro,lp)
     fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
     
     CUDA.@sync begin
@@ -138,7 +140,7 @@ function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::S
     g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
     
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return pro
+    return nothing
 end
 
 

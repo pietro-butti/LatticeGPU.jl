@@ -63,6 +63,11 @@ in the first time-slice is zero. To enforce this, we have the function
 SF_bndfix!
 ```
 
+Note that this is not enforced in the Dirac operators, so if the field `so` does not satisfy SF
+boundary conditions, it will not (in general) satisfy them after applying [`Dw!`](@ref) 
+or [`g5Dw!`](@ref). This function is called for the function [`DwdagDw!`](@ref), so in this case
+`so` will always be a proper SF field after calling this function.
+
 The function [`Csw!`](@ref) is used to store the clover in `dws.csw`. It is computed 
 according to the expression
 

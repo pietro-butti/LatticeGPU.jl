@@ -96,15 +96,15 @@ end
 
 
 begin
-dif = 0.0
+diff = 0.0
 for i in 1:3 for j in 1:4
-    dif += Dwpw_test(c=i,s=j)
+    global diff += Dwpw_test(c=i,s=j)
 end end
 
-if dif < 1.0e-15
-    print("Dwpl test passed with average error ", dif/12,"!\n")    
+if diff < 1.0e-15
+    print("Dwpl test passed with average error ", diff/12,"!\n")
 else
-    error("Dwpl test failed with difference: ",dif,"\n")
+    error("Dwpl test failed with difference: ",diff,"\n")
 end
 
 
