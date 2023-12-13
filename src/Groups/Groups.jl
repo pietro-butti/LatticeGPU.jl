@@ -54,11 +54,12 @@ export Group, Algebra, GMatrix
 # SU(2) and 2x2 matrix operations
 ##
 include("SU2Types.jl")
-export SU2, SU2alg, M2x2
+export SU2, SU2alg, M2x2, SU2fund
 
 include("GroupSU2.jl")
 include("M2x2.jl")
 include("AlgebraSU2.jl")
+include("FundamentalSU2.jl")
 ## END SU(2)
 
 ##
@@ -74,11 +75,16 @@ include("FundamentalSU3.jl")
 export imm, mimm
 ## END SU(3)
 
+
+include("AlgebraU2.jl")
+include("AlgebraU3.jl")
+export U2alg, U3alg
+
 include("GroupU1.jl")
 export U1, U1alg
 
 
-export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one
+export dot, expm, exp, dag, unitarize, inverse, tr, projalg, norm, norm2, isgroup, alg2mat, dev_one, antsym
 
 
 end # module

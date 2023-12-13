@@ -43,7 +43,15 @@ Returns a scalar field of elemental type `T`, with lexicografic memory layout.
 """
 scalar_field_point(::Type{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D} = CuArray{T, N}(undef, lp.iL...)
 
-export vector_field, scalar_field, nscalar_field, scalar_field_point
+"""
+        tensor_field(::Type{T}, lp::SpaceParm)
+
+Returns a tensor field of elemental type `T`.
+"""
+tensor_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.npls, lp.rsz)
+
+
+export vector_field, scalar_field, nscalar_field, scalar_field_point, tensor_field
 
 end
 

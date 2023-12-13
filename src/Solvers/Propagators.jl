@@ -1,0 +1,177 @@
+
+
+
+"""
+    function propagator!(pro,U, dpar::DiracParam{T}, dws::DiracWorkspace,  lp::SpaceParm, maxiter::Int64, tol::Float64, y::NTuple{4,Int64}, c::Int64, s::Int64)
+
+Saves the fermionic progapator in pro for a source at point `y` with color `c` and spin `s`. If the last three arguments are replaced by `time::Int64`, the source is replaced
+by a random source in spin and color at t = `time`.
+
+"""
+function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, y::NTuple{4,Int64}, c::Int64, s::Int64) where {T}
+
+    function krnlg5!(src)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+        src[b,r] = dmul(Gamma{5},src[b,r])
+        return nothing
+    end
+  
+    fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
+    
+    CUDA.@allowscalar dws.sp[point_index(CartesianIndex{lp.ndim}(y),lp)...] = Spinor{4,SU3fund{Float64}}(ntuple(i -> (i==s)*SU3fund{Float64}(ntuple(j -> (j==c)*1.0,3)...),4))
+       
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
+    end
+       
+    g5Dw!(pro,U,dws.sp,dpar,dws,lp)
+      
+    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return nothing
+end
+
+function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, time::Int64) where {T}
+
+    function krnlg5!(src)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+        src[b,r] = dmul(Gamma{5},src[b,r])
+        return nothing
+    end
+  
+    pfrandomize!(dws.sp,lp,time)
+    
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
+    end
+       
+    g5Dw!(pro,U,dws.sp,dpar,dws,lp)
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
+    end
+      
+    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return nothing
+end
+
+"""
+
+    function bndpropagator!(pro,U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+        
+Saves the propagator in from the t=0 boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's'. The factor c_t is included while the factor 1/sqrt(V) is not.
+For the propagator from T to the bulk, use the function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+
+"""
+function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64) where {T,D}
+
+    function krnlg5!(src)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+        src[b,r] = dmul(Gamma{5},src[b,r])
+        return nothing
+    end
+
+    function krnl_assign_bndsrc!(src,U,lp::SpaceParm, c::Int64, s::Int64)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+
+        if (point_time((b,r),lp) == 2)
+        bd4, rd4 = dw((b,r), 4, lp) 
+        src[b,r] = gdagpmul(Pgamma{4,1},U[bd4,4,rd4],Spinor{4,SU3fund{Float64}}(ntuple(i -> (i==s)*SU3fund{Float64}(ntuple(j -> (j==c)*1.0,3)...),4)))/2
+        end
+
+        return nothing
+    end
+
+    fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
+    
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_bndsrc!(dws.sp, U, lp, c, s)
+    end
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
+    end
+       
+    g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
+    
+    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return pro
+end
+
+"""
+
+    function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+        
+Returns the propagator from the t=T boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's'. The factor c_t is included while the factor 1/sqrt(V) is not.
+For the propagator from t=0 to the bulk, use the function bndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+
+"""
+function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64) where {T,D}
+
+    function krnlg5!(src)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+        src[b,r] = dmul(Gamma{5},src[b,r])
+        return nothing
+    end
+
+    function krnl_assign_bndsrc!(src,U,lp::SpaceParm, c::Int64, s::Int64)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+
+        if (point_time((b,r),lp) == lp.iL[end])
+        src[b,r] = gpmul(Pgamma{4,-1},U[b,4,r],Spinor{4,SU3fund{Float64}}(ntuple(i -> (i==s)*SU3fund{Float64}(ntuple(j -> (j==c)*1.0,3)...),4)))/2
+        end
+
+        return nothing
+    end
+  
+    fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
+    
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_bndsrc!(dws.sp, U, lp, c, s)
+    end
+
+    CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
+    end
+       
+    g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
+    
+    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return pro
+end
+
+
+"""
+    function bndtobnd(bndpro, U, dpar, dws, lp)
+
+Returns the boundary to boundary propagator of the Schrodinger functional given that bndpro is the propagator from t = 0 to the bulk, given by the function bndpropagator!.
+
+"""
+function bndtobnd(bndpro::AbstractArray, U::AbstractArray, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}) where {D}
+
+    function krnl_bndtobnd!(psi::AbstractArray, bndp::AbstractArray, U::AbstractArray, lp::SpaceParm)
+        b=Int64(CUDA.threadIdx().x)
+        r=Int64(CUDA.blockIdx().x)
+
+        if point_time((b, r), lp) == lp.iL[end]
+            psi[b,r] = gdagpmul(Pgamma{4,1},U[b,4,r],bndpro[b,r])/2
+        else
+            psi[b,r] = 0.0*bndpro[b,r]
+        end
+
+        return nothing
+    end
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_bndtobnd!(dws.sp, bndpro ,U, lp)
+    end
+
+    res = -dpar.ct * sum(dws.sp) / (lp.iL[1]*lp.iL[2]*lp.iL[3])
+
+    return res
+end
