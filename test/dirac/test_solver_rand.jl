@@ -32,7 +32,8 @@ end
 CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(rpsi)
 end
-g5Dw!(prop,U,rpsi,dpar,dws,lp)
+
+g5Dw!(prop,U,rpsi,mtwmdpar(dpar),dws,lp)
 CG!(prop,U,DwdagDw!,dpar,lp,dws,10000,1.0e-14)
 
 Dw!(dws.sp,U,prop,dpar,dws,lp)

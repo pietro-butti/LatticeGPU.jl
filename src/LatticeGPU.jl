@@ -57,7 +57,7 @@ export pmul, gpmul, gdagpmul, dmul
 include("Dirac/Dirac.jl")
 using .Dirac
 export DiracWorkspace, DiracParam
-export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 export read_prop, save_prop, read_dpar
 
 include("Solvers/Solvers.jl")

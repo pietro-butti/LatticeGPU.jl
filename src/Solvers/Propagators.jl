@@ -25,7 +25,7 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
     end
        
-    g5Dw!(pro,U,dws.sp,dpar,dws,lp)
+    g5Dw!(pro,U,dws.sp,mtwmdpar(dpar),dws,lp)
       
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
     return nothing
@@ -46,7 +46,7 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
     end
        
-    g5Dw!(pro,U,dws.sp,dpar,dws,lp)
+    g5Dw!(pro,U,dws.sp,mtwmdpar(dpar),dws,lp)
       
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
     return nothing
@@ -92,7 +92,7 @@ function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Sp
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
     end
        
-    g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
+    g5Dw!(pro,U,dpar.ct*dws.sp,mtwmdpar(dpar),dws,lp)
     
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
     return nothing
@@ -137,7 +137,7 @@ function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::S
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
     end
        
-    g5Dw!(pro,U,dpar.ct*dws.sp,dpar,dws,lp)
+    g5Dw!(pro,U,dpar.ct*dws.sp,mtwmdpar(dpar),dws,lp)
     
     CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
     return nothing

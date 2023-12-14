@@ -22,7 +22,7 @@ using ..Spinors
 """
     struct DiracParam{T,R}
 
-Stores the parameters of the Dirac operator. It can be generated via the constructor `function DiracParam{T}(::Type{R},m0,csw,th,ct)`. The first argument can be ommited and is taken to be `SU3fund`.
+Stores the parameters of the Dirac operator. It can be generated via the constructor `function DiracParam{T}(::Type{R},m0,csw,th,tm,ct)`. The first argument can be ommited and is taken to be `SU3fund`.
 The parameters are:
 
 - `m0::T` : Mass of the fermion
@@ -537,7 +537,7 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
             SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, -dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
                 end
             end
             SF_bndfix!(so,lp)
@@ -553,7 +553,7 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
             SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, -dpar.tm, dpar.th, dpar.ct, lp)
                 end
             end
             SF_bndfix!(so,lp)
@@ -576,7 +576,7 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
 
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, -dpar.tm, dpar.th, dpar.csw, lp)
                 end
             end
         end
@@ -591,7 +591,7 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
 
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, dpar.tm, dpar.th, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, -dpar.tm, dpar.th, lp)
                 end
             end
         end
@@ -599,6 +599,16 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
     
     return nothing
 end
+
+"""
+    function mtwmdpar(dpar::DiracParam)
+
+Returns `dpar` with oposite value of the twisted mass.
+"""
+function mtwmdpar(dpar::DiracParam{P,R}) where {P,R}
+    return DiracParam{P}(R,dpar.m0,dpar.csw,dpar.th,-dpar.tm,dpar.ct)
+end
+
 
 """
     SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}})
@@ -694,7 +704,7 @@ function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
     return nothing
 end
 
-export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 
 
 include("DiracIO.jl")

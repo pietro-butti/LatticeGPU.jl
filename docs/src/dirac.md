@@ -28,7 +28,7 @@ Wilson-Dirac operator.
 The action of the Dirac operator `Dw!` is the following:
 
 ```math
-D_w\psi (\vec{x} = x_1,x_2,x_3,x_4) = (4 + m_0)\psi(\vec{x}) - 
+D_w\psi (\vec{x} = x_1,x_2,x_3,x_4) = (4 + m_0 + i \mu \gamma_5)\psi(\vec{x}) - 
 ```
 ```math
     - \frac{1}{2}\sum_{\mu = 1}^4 \theta (\mu) (1-\gamma_\mu) U_\mu(\vec{x}) \psi(\vec{x} + \hat{\mu}) + \theta^* (\mu) (1 + \gamma_\mu) U^{-1}_\mu(\vec{x} - \hat{\mu}) \psi(\vec{x} - \hat{\mu})
@@ -108,4 +108,5 @@ g5Dw!
 DwdagDw!
 Csw!
 pfrandomize!
+mtwmdpar
 ```
