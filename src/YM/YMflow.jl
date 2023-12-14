@@ -10,6 +10,11 @@
 ###                               
 
 
+"""
+        struct FlowIntr{N,T}
+
+Structure containing info about a particular flow integrator
+"""
 struct FlowIntr{N,T}
     r::T
     e0::NTuple{N,T}
@@ -26,11 +31,46 @@ struct FlowIntr{N,T}
 end
 
 # pre-defined integrators
+"""
+        wfl_euler(::Type{T}, eps::T, tol::T)
+
+Euler scheme integrator for the Wilson Flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 wfl_euler(::Type{T}, eps::T, tol::T) where T = FlowIntr{0,T}(one(T),(),(),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+
+"""
+        zfl_euler(::Type{T}, eps::T, tol::T)
+
+Euler scheme integrator for the Zeuthen flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 zfl_euler(::Type{T}, eps::T, tol::T) where T = FlowIntr{0,T}(one(T),(),(),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
+
+"""
+        wfl_rk2(::Type{T}, eps::T, tol::T)
+
+Second order Runge-Kutta integrator for the Wilson flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 wfl_rk2(::Type{T}, eps::T, tol::T)   where T = FlowIntr{1,T}(one(T)/2,(-one(T)/2,),(one(T),),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+
+"""
+        zfl_rk2(::Type{T}, eps::T, tol::T)
+
+Second order Runge-Kutta integrator for the Zeuthen flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 zfl_rk2(::Type{T}, eps::T, tol::T)   where T = FlowIntr{1,T}(one(T)/2,(-one(T)/2,),(one(T),),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
+
+"""
+        wfl_rk3(::Type{T}, eps::T, tol::T)
+
+Third order Runge-Kutta integrator for the Wilson flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 wfl_rk3(::Type{T}, eps::T, tol::T)   where T = FlowIntr{2,T}(one(T)/4,(-17/36,-one(T)),(8/9,3/4),false,one(T),eps,tol,one(T)/200,one(T)/10,9/10)
+
+"""
+        Zfl_rk3(::Type{T}, eps::T, tol::T)
+
+Third order Runge-Kutta integrator for the Zeuthen flow. The fixed step size is given by `eps` and the tolerance for the adaptive integrators by `tol`. 
+"""
 zfl_rk3(::Type{T}, eps::T, tol::T)   where T = FlowIntr{2,T}(one(T)/4,(-17/36,-one(T)),(8/9,3/4),true, (one(T)*5)/3,eps,tol,one(T)/200,one(T)/10,9/10)
 
 function Base.show(io::IO, int::FlowIntr{N,T}) where {N,T}
@@ -122,6 +162,11 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
     return nothing
 end
 
+"""
+        function flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Integrates the flow equations with the integration scheme defined by `int` performing `ns` steps with fixed step size. The configuration `U` is overwritten.   
+"""
 function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}    
     @timeit "Integrating flow equations" begin
         for i in 1:ns
@@ -152,6 +197,11 @@ flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMwor
 # Adaptive step size integrators
 ##
 
+"""
+        function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Integrates the flow equations with the integration scheme defined by `int` using the adaptive step size integrator up to `tend` with the tolerance defined in `int`. The configuration `U` is overwritten.   
+"""
 function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}
 
     eps = int.eps_ini
@@ -201,7 +251,7 @@ flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::Y
 """
     function Eoft_plaq([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the action density `E(t)` using the plaquette discretization. If the argument `Eslc`
+Measure the action density `E(t)` using the plaquette discretization. If the argument `Eslc` is given
 the contribution for each Euclidean time slice and plane are returned.
 """
 function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) where {T,G,NN,N,M,B,D}
@@ -277,10 +327,9 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
 end
 
 """
-    Qtop([Qslc,] U, lp, ymws)
+    Qtop([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the topological charge `Q` of the configuration `U`. If the argument `Qslc` is present
-the contribution for each Euclidean time slice are returned.
+Measure the topological charge `Q` of the configuration `U` using the clover definition of the field strength tensor. If the argument `Qslc` is present the contribution for each Euclidean time slice are returned. Only wors in 4D.
 """
 function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace) where {M,B,D}
 

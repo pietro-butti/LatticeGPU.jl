@@ -3,7 +3,10 @@
 
 D-dimensional lattice points are labeled by two ordered integer
 numbers: the point-in-block index ($$b$$ in the figure below) and the
-block index ($$r$$ in the figure below). The routines [`up`](@ref) and
+block index ($$r$$ in the figure below). This is called **natural
+indexing**, in contrast with the **lexicographic indexing**  where points on
+the lattice are represented by a D-dimensional `CartesianIndex`.
+The routines [`up`](@ref) and
 [`dw`](@ref) allow you to displace to the neighboring points of the
 lattice. 
 ![D dimensional lattice points are labeled by its

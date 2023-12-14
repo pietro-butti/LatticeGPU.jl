@@ -10,9 +10,9 @@
 ###                               
 
 """ 
-    sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
+    sfcoupling(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace) 
 
-Measures the Schrodinger Functional coupling `ds/d\eta` and `d^2S/d\eta d\nu`. 
+Measures the Schrodinger Functional coupling ``{\\rm d}S/{\\rm d}\\eta`` and ``{\\rm d}^2S/{\\rm d}\\eta d\nu``. 
 """
 function sfcoupling(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
 
@@ -89,7 +89,11 @@ end
     return exp(X)
 end
     
+"""
+        function setbndfield(U, phi, lp::SpaceParm)
 
+Sets abelian boundary fields with phases `phi[1]` and `phi[2]` to the configuration `U` at time salice ``x_0=0``.
+"""
 function setbndfield(U, phi, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
 
     CUDA.@sync begin

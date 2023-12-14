@@ -9,6 +9,11 @@
 ### created: Thu Jul 15 15:16:47 2021
 ###                               
 
+"""
+        function randomize!(f, lp::SpaceParm, ymws::YMworkspace)
+
+Given an algebra field with natural indexing, this routine sets the components to random Gaussian distributed values. If SF boundary conditions are used, the force at the boundaries is set to zero.
+"""
 function randomize!(f, lp::SpaceParm, ymws::YMworkspace) 
         
     if ymws.ALG == SU2alg

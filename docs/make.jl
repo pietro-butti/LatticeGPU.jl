@@ -10,7 +10,11 @@ makedocs(sitename="LatticeGPU", modules=[LatticeGPU], doctest=true,
              "Space-time" => "space.md",
              "Groups and algebras" => "groups.md",
              "Fields" => "fields.md",
+             "Yang-Mills" => "ym.md",
+             "Gradient flow" => "flow.md",
+             "Schrödinger Functional" => "sf.md",
              "Dirac" => "dirac.md",
-             "Solvers" => "solvers.md"
-             ],
+             "Solvers" => "solvers.md",
+             "Input Output" => "io.md"
+             ], 
          repo = "https://igit.ific.uv.es/alramos/latticegpu.jl")
