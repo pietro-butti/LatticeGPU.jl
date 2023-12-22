@@ -9,7 +9,7 @@ using CUDA, LatticeGPU, TimerOutputs
     lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), 0, (0,0,0,0,0,0))
     gp = GaugeParm{Float64}(SU3{Float64}, 6.0, 1.0)
     ymws = YMworkspace(SU3, Float64, lp)
-    dpar = DiracParam{Float64}(SU3fund,2.3,0.0,(1.0,1.0,1.0,1.0),0.0)
+    dpar = DiracParam{Float64}(SU3fund,2.3,0.0,(1.0,1.0,1.0,1.0),0.0,0.0)
     dws = DiracWorkspace(SU3fund,Float64,lp);
 
     randomize!(ymws.mom, lp, ymws)
@@ -32,7 +32,8 @@ end
 CUDA.@sync begin
         CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(rpsi)
 end
-g5Dw!(prop,U,rpsi,dpar,dws,lp)
+
+g5Dw!(prop,U,rpsi,mtwmdpar(dpar),dws,lp)
 CG!(prop,U,DwdagDw!,dpar,lp,dws,10000,1.0e-14)
 
 Dw!(dws.sp,U,prop,dpar,dws,lp)

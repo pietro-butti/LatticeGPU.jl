@@ -297,3 +297,50 @@ function import_cern64(fname, ibc, lp::SpaceParm; log=true)
 
     return CuArray(Ucpu)
 end
+
+
+
+"""
+    read_gp(fname::String)
+
+Reads Gauge parameters from file `fname` using the native (BDIO) format. Returns GaugeParm and SpaceParm.
+"""
+function read_gp(fname::String)
+
+    UID_HDR = 14
+    fb = BDIO_open(fname, "r")
+    while BDIO_get_uinfo(fb) != UID_HDR
+        BDIO_seek!(fb)
+    end
+    ihdr = Vector{Int32}(undef, 2)
+    BDIO_read(fb, ihdr)
+    if (ihdr[1] != convert(Int32, 1653996111)) && (ihdr[2] != convert(Int32, 2))
+        error("Wrong file format [header]")
+    end
+
+    run = BDIO.BDIO_read_str(fb)
+
+    while BDIO_get_uinfo(fb) != 1
+        BDIO_seek!(fb)
+    end
+
+    ifoo = Vector{Int32}(undef, 4)
+    BDIO_read(fb, ifoo)
+    ndim = convert(Int64, ifoo[1])
+    npls = convert(Int64, round(ndim*(ndim-1)/2))
+    ibc  = convert(Int64, ifoo[2])
+    nf   = ifoo[4]
+    
+    ifoo = Vector{Int32}(undef, ndim+convert(Int32, npls))
+    BDIO_read(fb, ifoo)
+    iL  = ntuple(i -> convert(Int64, ifoo[i]),ndim)
+    ntw = ntuple(i -> convert(Int64, ifoo[i+ndim]), npls)
+
+    dfoo = Vector{Float64}(undef, 4)
+    BDIO_read(fb, dfoo)
+
+    lp = SpaceParm{ndim}(iL, (4,4,4,4), ibc, ntw)
+    gp = GaugeParm{Float64}(SU3{Float64}, dfoo[1], dfoo[2])
+    
+    return gp, lp
+end

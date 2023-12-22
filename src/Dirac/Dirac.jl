@@ -19,20 +19,31 @@ using ..Fields
 using ..YM
 using ..Spinors
 
+"""
+    struct DiracParam{T,R}
 
+Stores the parameters of the Dirac operator. It can be generated via the constructor `function DiracParam{T}(::Type{R},m0,csw,th,tm,ct)`. The first argument can be ommited and is taken to be `SU3fund`.
+The parameters are:
+
+- `m0::T` : Mass of the fermion
+- `csw::T` : Improvement coefficient for the Csw term
+- `th{Ntuple{4,Complex{T}}}` : Phase for the fermions included in the boundary conditions, reabsorbed in the Dirac operator.
+- `tm` : Twisted mass parameter
+- `ct` : Boundary improvement term, only used for Schrödinger Funtional boundary conditions. 
+"""
 struct DiracParam{T,R}
     m0::T
     csw::T
     th::NTuple{4,Complex{T}}
+    tm::T
     ct::T
 
-
-    function DiracParam{T}(::Type{R},m0,csw,th,ct) where {T,R} 
-        return new{T,R}(m0,csw,th,ct)
+    function DiracParam{T}(::Type{R},m0,csw,th,tm,ct) where {T,R}
+        return new{T,R}(m0,csw,th,tm,ct)
     end
 
-    function DiracParam{T}(m0,csw,th,ct) where {T} 
-        return new{T,SU3fund}(m0,csw,th,ct)
+    function DiracParam{T}(m0,csw,th,tm,ct) where {T}
+        return new{T,SU3fund}(m0,csw,th,tm,ct)
     end
 end
 function Base.show(io::IO, dpar::DiracParam{T,R}) where {T,R}
@@ -40,11 +51,24 @@ function Base.show(io::IO, dpar::DiracParam{T,R}) where {T,R}
     println(io, "Wilson fermions in the: ", R, " representation")
     println(io, " - Bare mass: ", dpar.m0," // Kappa = ",0.5/(dpar.m0+4))
     println(io, " - Csw :                ", dpar.csw)
-    println(io, " - c_t:                 ", dpar.ct)
     println(io, " - Theta:               ", dpar.th)
+    println(io, " - Twisted mass:        ", dpar.tm)
+    println(io, " - c_t:                 ", dpar.ct)
     return nothing
 end
 
+
+"""
+    struct DiracWorkspace{T}    
+
+Workspace needed to work with fermion fields. It contains four scalar fermion fields and, for the SU2fund and SU3fund, a U(N) field to store the clover term.
+
+It can be created with the constructor `DiracWorkspace(::Type{G}, ::Type{T}, lp::SpaceParm{4,6,B,D})`. For example:
+
+dws = DiracWorkspace(SU2fund,Float64,lp);
+dws = DiracWorkspace(SU3fund,Float64,lp);
+
+"""
 struct DiracWorkspace{T}
     sr
     sp
@@ -146,18 +170,26 @@ function krnl_csw!(csw::AbstractArray{T}, U, Ubnd, ipl, lp::SpaceParm{4,M,B,D}) 
     return nothing
 end
 
+
+"""
+    function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
+
+Computes the Dirac operator (with the Wilson term) `\`\``D_w``\`\` with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
+If `dpar.csw` is different from zero, the clover term should be stored in `dws.csw` via the Csw! function and is automatically included in the operator.
+
+"""
 function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
        
     if abs(dpar.csw) > 1.0E-10
         @timeit "Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, lp)
             end
         end
     else
         @timeit "Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dw!(so, U, si, dpar.m0, dpar.th, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dw!(so, U, si, dpar.m0, dpar.tm, dpar.th, lp)
             end
         end
     end
@@ -165,7 +197,7 @@ function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6
     return nothing
 end
 
-function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, lp::SpaceParm{4,6,B,D}) where {B,D}
+function krnl_Dwimpr!(so, U, si, Fcsw, m0, tm, th, csw, lp::SpaceParm{4,6,B,D}) where {B,D}
 
     b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
@@ -180,8 +212,8 @@ function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, lp::SpaceParm{4,6,B,D}) wher
 
     @inbounds begin 
         
-        so[b,r] = (4+m0)*si[b,r]  + 0.5*csw*im*( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
-                                                +Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) + Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) + Fcsw[b,6,r]*dmul(Gamma{13},si[b,r]))          
+        so[b,r] = (4+m0)*si[b,r]+ im*tm*dmul(Gamma{5},si[b,r]) + 0.5*csw*im*( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
+                                                                             +Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) + Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) + Fcsw[b,6,r]*dmul(Gamma{13},si[b,r]))
 
         so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
                         th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
@@ -193,7 +225,7 @@ function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, lp::SpaceParm{4,6,B,D}) wher
     return nothing
 end
 
-function krnl_Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
+function krnl_Dw!(so, U, si, m0, tm, th, lp::SpaceParm{4,6,B,D}) where {B,D}
 
     b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
@@ -208,7 +240,7 @@ function krnl_Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
 
     @inbounds begin 
         
-        so[b,r] = (4+m0)*si[b,r]
+        so[b,r] = (4+m0)*si[b,r] + im*tm*dmul(Gamma{5},si[b,r])
 
         so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
                         th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
@@ -225,13 +257,13 @@ function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpacePa
     if abs(dpar.csw) > 1.0E-10
         @timeit "Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, dpar.ct, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
             end
         end
     else
         @timeit "Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dw!(so, U, si, dpar.m0, dpar.th, dpar.ct, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Dw!(so, U, si, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
             end
         end
     end
@@ -239,7 +271,7 @@ function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpacePa
     return nothing
 end
 
-function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+function krnl_Dwimpr!(so, U, si, Fcsw, m0, tm, th, csw, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     # The field si is assumed to be zero at t = 0
 
@@ -258,8 +290,8 @@ function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, ct, lp::Union{SpaceParm{4,6,
 
         @inbounds begin 
             
-            so[b,r] = (4+m0)*si[b,r]  + 0.5*csw*im*( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
-                                                    +Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) + Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) + Fcsw[b,6,r]*dmul(Gamma{13},si[b,r]))          
+            so[b,r] = (4+m0)*si[b,r]  + im*tm*dmul(Gamma{5},si[b,r]) + 0.5*csw*im*( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
+                                                                                   +Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) + Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) + Fcsw[b,6,r]*dmul(Gamma{13},si[b,r]))
 
             
             so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
@@ -276,7 +308,7 @@ function krnl_Dwimpr!(so, U, si, Fcsw, m0, th, csw, ct, lp::Union{SpaceParm{4,6,
     return nothing
 end
 
-function krnl_Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+function krnl_Dw!(so, U, si, m0, tm, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     # The field si is assumed to be zero at t = 0
 
@@ -295,7 +327,7 @@ function krnl_Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},S
 
         @inbounds begin 
             
-            so[b,r] = (4+m0)*si[b,r]
+            so[b,r] = (4+m0)*si[b,r] + im*tm*dmul(Gamma{5},si[b,r])
             so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
                             th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
                             th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
@@ -310,18 +342,24 @@ function krnl_Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},S
     return nothing
 end
 
+"""
+    function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})    
+
+Computes \`\` \\gamma_5 \`\` times the Dirac operator (with the Wilson term) with gauge field U and parameters `dpar` of the field `si` and stores it in `so`. 
+If `dpar.csw` is different from zero, the clover term should be stored in `dws.csw` via the Csw! function and is automatically included in the operator.
+"""
 function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
        
     if abs(dpar.csw) > 1.0E-10
         @timeit "g5Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, lp)
             end
         end
     else
         @timeit "g5Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, si, dpar.m0, dpar.th, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, si, dpar.m0, dpar.tm, dpar.th, lp)
             end
         end
     end
@@ -329,7 +367,7 @@ function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4
     return nothing
 end
 
-function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, th, csw, lp::SpaceParm{4,6,B,D}) where {B,D}
+function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, tm, th, csw, lp::SpaceParm{4,6,B,D}) where {B,D}
 
     b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
@@ -352,13 +390,13 @@ function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, th, csw, lp::SpaceParm{4,6,B,D}) wh
                         th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
                         th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
 
-        so[b,r] = dmul(Gamma{5}, so[b,r])
+        so[b,r] = dmul(Gamma{5}, so[b,r])+ im*tm*si[b,r]
     end
 
     return nothing
 end
 
-function krnl_g5Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
+function krnl_g5Dw!(so, U, si, m0, tm, th, lp::SpaceParm{4,6,B,D}) where {B,D}
 
     b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
 
@@ -380,7 +418,7 @@ function krnl_g5Dw!(so, U, si, m0, th, lp::SpaceParm{4,6,B,D}) where {B,D}
                         th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
                         th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
 
-        so[b,r] = dmul(Gamma{5}, so[b,r])
+        so[b,r] = dmul(Gamma{5}, so[b,r]) + im*tm*si[b,r]
     end
 
     return nothing
@@ -391,13 +429,13 @@ function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Space
     if abs(dpar.csw) > 1.0E-10
         @timeit "g5Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, dpar.ct, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
             end
         end
     else
         @timeit "g5Dw" begin
             CUDA.@sync begin
-               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, si, dpar.m0, dpar.th, dpar.ct, lp)
+               CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, si, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
             end
         end
     end
@@ -405,7 +443,7 @@ function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Space
     return nothing
 end
 
-function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, th, csw, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, tm, th, csw, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     # The field si is assumed to be zero at t = 0
 
@@ -439,12 +477,12 @@ function krnl_g5Dwimpr!(so, U, si, Fcsw, m0, th, csw, ct, lp::Union{SpaceParm{4,
         end
     end
 
-    so[b,r] = dmul(Gamma{5}, so[b,r])
+    so[b,r] = dmul(Gamma{5}, so[b,r])+ im*tm*si[b,r]
 
     return nothing
 end
 
-function krnl_g5Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+function krnl_g5Dw!(so, U, si, m0, tm, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     # The field si is assumed to be zero at t = 0
 
@@ -475,11 +513,17 @@ function krnl_g5Dw!(so, U, si, m0, th, ct, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D}
         end
     end
 
-    so[b,r] = dmul(Gamma{5}, so[b,r])
+    so[b,r] = dmul(Gamma{5}, so[b,r]) + im*tm*si[b,r]
 
     return nothing
 end
 
+"""
+    function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
+
+Applies the operator \`\` \\gamma_5 D_w \`\` twice to `si` and stores the result in `so`. This is equivalent to appling the operator \`\` D_w^\\dagger D_w \`\`
+The Dirac operator is the same as in the functions `Dw!` and `g5Dw!`
+"""
 function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     if abs(dpar.csw) > 1.0E-10
@@ -487,30 +531,32 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Sp
             
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(dws.st, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(dws.st, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
                 end
             end
-
+            SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, dpar.th, dpar.csw, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, -dpar.tm, dpar.th, dpar.csw, dpar.ct, lp)
                 end
             end
+            SF_bndfix!(so,lp)
         end
     else
         @timeit "DwdagDw" begin
             
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(dws.st, U, si, dpar.m0, dpar.th, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(dws.st, U, si, dpar.m0, dpar.tm, dpar.th, dpar.ct, lp)
                 end
             end
-
+            SF_bndfix!(dws.st,lp)
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, dpar.th, dpar.ct, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, -dpar.tm, dpar.th, dpar.ct, lp)
                 end
             end
+            SF_bndfix!(so,lp)
         end
     end
 
@@ -524,13 +570,13 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
             
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(dws.st, U, si, dws.csw, dpar.m0, dpar.th, dpar.csw, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(dws.st, U, si, dws.csw, dpar.m0, dpar.tm, dpar.th, dpar.csw, lp)
                 end
             end
 
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, dpar.th, dpar.csw, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dwimpr!(so, U, dws.st, dws.csw, dpar.m0, -dpar.tm, dpar.th, dpar.csw, lp)
                 end
             end
         end
@@ -539,13 +585,13 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
             
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(dws.st, U, si, dpar.m0, dpar.th, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(dws.st, U, si, dpar.m0, dpar.tm, dpar.th, lp)
                 end
             end
 
             @timeit "g5Dw" begin
                 CUDA.@sync begin
-                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, dpar.th, lp)
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dw!(so, U, dws.st, dpar.m0, -dpar.tm, dpar.th, lp)
                 end
             end
         end
@@ -554,12 +600,27 @@ function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpacePar
     return nothing
 end
 
+"""
+    function mtwmdpar(dpar::DiracParam)
 
+Returns `dpar` with oposite value of the twisted mass.
+"""
+function mtwmdpar(dpar::DiracParam{P,R}) where {P,R}
+    return DiracParam{P}(R,dpar.m0,dpar.csw,dpar.th,-dpar.tm,dpar.ct)
+end
+
+
+"""
+    SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}})
+
+Sets all the values of `sp` in the  first time slice to zero.
+"""
 function SF_bndfix!(sp, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
+    @timeit "SF boundary fix" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_sfbndfix!(sp, lp)
+        end
     end
-    
     return nothing
 end
 
@@ -643,7 +704,7 @@ function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
     return nothing
 end
 
-export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 
 
 include("DiracIO.jl")
