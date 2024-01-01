@@ -13,6 +13,7 @@ makedocs(sitename="LatticeGPU", modules=[LatticeGPU], doctest=true,
              "Yang-Mills" => "ym.md",
              "Gradient flow" => "flow.md",
              "Schrödinger Functional" => "sf.md",
+             "Spinors" => "spinors.md",
              "Dirac" => "dirac.md",
              "Solvers" => "solvers.md",
              "Input Output" => "io.md"
