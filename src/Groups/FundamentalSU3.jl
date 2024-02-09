@@ -38,7 +38,7 @@ norm2(a::SU3fund{T})               where T <: AbstractFloat = (abs2(a.t1) + abs2
 
 Returns the scalar product of two fundamental elements. The convention is for the product to the linear in the second argument, and anti-linear in the first argument. 
 """
-dot(g1::SU3fund{T},g2::SU3fund{T}) where T <: AbstractFloat = conj(g1.t1)*g2.t1+g1.t2*conj(g2.t2)+g1.t3*conj(g2.t3)
+dot(g1::SU3fund{T},g2::SU3fund{T}) where T <: AbstractFloat = conj(g1.t1)*g2.t1+conj(g1.t2)*g2.t2+conj(g1.t3)*g2.t3
 
 """
     *(g::SU3{T},b::SU3fund{T})
