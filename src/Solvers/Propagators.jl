@@ -5,7 +5,7 @@
     function propagator!(pro,U, dpar::DiracParam{T}, dws::DiracWorkspace,  lp::SpaceParm, maxiter::Int64, tol::Float64, y::NTuple{4,Int64}, c::Int64, s::Int64)
 
 Saves the fermionic progapator in pro for a source at point `y` with color `c` and spin `s`. If the last three arguments are replaced by `time::Int64`, the source is replaced
-by a random source in spin and color at t = `time`.
+by a random source in spin and color at t = `time`. Returns the number of iterations.
 
 """
 function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, y::NTuple{4,Int64}, c::Int64, s::Int64) where {T}
@@ -27,8 +27,8 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
        
     g5Dw!(pro,U,dws.sp,mtwmdpar(dpar),dws,lp)
       
-    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return nothing
+    niter = CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return niter
 end
 
 function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, time::Int64) where {T}
@@ -48,8 +48,8 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
        
     g5Dw!(pro,U,dws.sp,mtwmdpar(dpar),dws,lp)
       
-    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return nothing
+    niter = CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return niter
 end
 
 """
@@ -57,7 +57,7 @@ end
     function bndpropagator!(pro,U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
         
 Saves the propagator from the t=0 boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's' in 'pro'. The factor c_t is included while the factor 1/sqrt(V) is not.
-For the propagator from T to the bulk, use the function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+For the propagator from T to the bulk, use the function Tbndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64). Returns the number of iterations.
 
 """
 function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64) where {T,D}
@@ -94,8 +94,8 @@ function bndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Sp
        
     g5Dw!(pro,U,dpar.ct*dws.sp,mtwmdpar(dpar),dws,lp)
     
-    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return nothing
+    niter = CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return niter
 end
 
 """
@@ -103,7 +103,7 @@ end
     function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
         
 Returns the propagator from the t=T boundary to the bulk for the SF boundary conditions for a source with color 'c' and spin 's'. The factor c_t is included while the factor 1/sqrt(V) is not.
-For the propagator from t=0 to the bulk, use the function bndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64)
+For the propagator from t=0 to the bulk, use the function bndpropagator(U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64). Returns the number of iterations.
 
 """
 function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm{4,6,1,D}, maxiter::Int64, tol::Float64, c::Int64, s::Int64) where {T,D}
@@ -139,8 +139,8 @@ function Tbndpropagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::S
        
     g5Dw!(pro,U,dpar.ct*dws.sp,mtwmdpar(dpar),dws,lp)
     
-    CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
-    return nothing
+    niter = CG!(pro,U,DwdagDw!,dpar,lp,dws,maxiter,tol)
+    return niter
 end
 
 
