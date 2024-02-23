@@ -75,7 +75,7 @@ function read_cnfg(fname::String)
     end
 
     if ibc == BC_SF_AFWB || ibc == BC_SF_ORBI
-        BDIO_read(fb, V)
+        BDIO_read(fb, vec(V))
         Ubnd = ntuple(i->assign(i, V, 1), 3)
         BDIO_close!(fb)
 

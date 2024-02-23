@@ -76,7 +76,7 @@ Where $$P_\pm = (1 \pm \gamma_0)/2$$. The boundary-to-boundary
 propagator
 
 ```math
-    - \frac{c_t}{\sqrt{V}} \sum_\vec{x} U_0 ^\dagger (T-1,\vec{x}) P_+ S(T-1,\vec{x})
+\frac{-c_t}{\sqrt{V}} \sum_{\vec{x}} U_0 ^\dagger (T-1,\vec{x}) P_+ S(T-1,\vec{x})
 ```
 
 is computed by the function [`bndtobnd`](@ref)
