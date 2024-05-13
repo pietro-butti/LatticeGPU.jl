@@ -710,5 +710,8 @@ export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 include("DiracIO.jl")
 export read_prop, save_prop, read_dpar
 
+include("Diracflow.jl")
+export Dslash_sq!, flw, backflow
+
 
 end

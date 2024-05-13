@@ -204,19 +204,21 @@ Integrates the flow equations with the integration scheme defined by `int` using
 """
 function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}
 
-    eps = int.eps_ini
+    eps = epsini
     dt  = tend
     nstp = 0
+    eps_all = Vector{T}(undef,0)
     while true
         ns = convert(Int64, floor(dt/eps))
         if ns > 10
             flw(U, int, 9, eps, gp, lp, ymws)
             ymws.U1 .= U
-            flw(U, int, 2, eps/2, gp, lp, ymws)
-            flw(ymws.U1, int, 1, eps, gp, lp, ymws)
+            flw(U, int, 1, eps, gp, lp, ymws)
+            flw(ymws.U1, int, 2, eps/2, gp, lp, ymws)
             
             dt = dt - 10*eps
             nstp = nstp + 10
+            push!(eps_all,ntuple(i->eps,10)...)
 
             # adjust step size
             ymws.U1 .= ymws.U1 ./ U
@@ -226,6 +228,9 @@ function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp
         else
             flw(U, int, ns, eps, gp, lp, ymws)
             dt = dt - ns*eps
+
+            push!(eps_all,ntuple(i->eps,ns)...)
+            push!(eps_all,dt)
 
             flw(U, int, 1, dt, gp, lp, ymws)
             dt = zero(tend)
@@ -238,7 +243,7 @@ function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp
         end
     end
 
-    return nstp, eps
+    return nstp, eps_all
 end
 flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw_adapt(U, int, tend, int.eps_ini, gp, lp, ymws)
 
