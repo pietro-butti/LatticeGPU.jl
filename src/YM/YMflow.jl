@@ -309,7 +309,7 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
         I = point_coord((b,r), lp)
         
         id1, id2 = lp.plidx[ipl]
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == lp.iL[end]) 
+        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == N)
         TWP  = ((I[id1]==1)&&(I[id2]==1))
         
         bu1, ru1 = up((b, r), id1, lp)
