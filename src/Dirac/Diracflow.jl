@@ -154,83 +154,6 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
     return nothing
 end
 
-"""
-
-    function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
-
-Computes /`/` \\nabla^* \\nabla /`/` `si` and stores it in `si`.
-
-"""
-function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
-
-        @timeit "Laplacian" begin
-            CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
-            end
-        end
-
-    return nothing
-end
-
-
-
-function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,B,D}) where {B,D}
-
-    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
-
-    @inbounds begin
-
-        so[b,r] = -4*si[b,r]
-
-	        bu1, ru1 = up((b,r), 1, lp)
-            bd1, rd1 = dw((b,r), 1, lp)
-            bu2, ru2 = up((b,r), 2, lp)
-            bd2, rd2 = dw((b,r), 2, lp)
-            bu3, ru3 = up((b,r), 3, lp)
-            bd3, rd3 = dw((b,r), 3, lp)
-            bu4, ru4 = up((b,r), 4, lp)
-            bd4, rd4 = dw((b,r), 4, lp)
-
-        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
-                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
-                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
-                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
-    end
-
-    return nothing
-end
-
-
-function krnl_Nablanabla(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
-
-    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
-
-    @inbounds begin
-
-        if (point_time((b,r),lp) != 1)
-
-        so[b,r] = -4*si[b,r]
-
-	        bu1, ru1 = up((b,r), 1, lp)
-            bd1, rd1 = dw((b,r), 1, lp)
-            bu2, ru2 = up((b,r), 2, lp)
-            bd2, rd2 = dw((b,r), 2, lp)
-            bu3, ru3 = up((b,r), 3, lp)
-            bd3, rd3 = dw((b,r), 3, lp)
-            bu4, ru4 = up((b,r), 4, lp)
-            bd4, rd4 = dw((b,r), 4, lp)
-
-        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
-                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
-                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
-                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
-        end
-    end
-
-    return nothing
-end
-
-
 
 function flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) where {NI,T}
 
@@ -278,13 +201,123 @@ end
 flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) where {NI,T} = flw_adapt(U, psi, int, tend, int.eps_ini, gp, dpar, lp, ymws, dws)
 
 
+"""
+
+    function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
+
+Computes /`/` \\nabla^* \\nabla /`/` `si` and stores it in `si`.
+
+"""
+function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,BC_PERIODIC,D}) where {D}
+        @timeit "Laplacian" begin
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
+            end
+        end
+    return nothing
+end
+function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D},SpaceParm{4,6,BC_OPEN,D}}) where {D}
+    SF_bndfix!(si,lp)
+        @timeit "Laplacian" begin
+            CUDA.@sync begin
+                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
+            end
+        end
+    SF_bndfix!(so,lp)
+    return nothing
+end
+
+
+function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_OPEN,D}) where {D}
+
+    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
+
+    @inbounds begin
+
+        if ((point_time((b,r),lp) != 1) && (point_time((b,r),lp) != lp.iL[end])
+
+        so[b,r] = -4*si[b,r]
+
+	        bu1, ru1 = up((b,r), 1, lp)
+            bd1, rd1 = dw((b,r), 1, lp)
+            bu2, ru2 = up((b,r), 2, lp)
+            bd2, rd2 = dw((b,r), 2, lp)
+            bu3, ru3 = up((b,r), 3, lp)
+            bd3, rd3 = dw((b,r), 3, lp)
+            bu4, ru4 = up((b,r), 4, lp)
+            bd4, rd4 = dw((b,r), 4, lp)
+
+        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
+                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+        end
+    end
+
+    return nothing
+end
+
+function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_PERIODIC,D}) where {D}
+
+    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
+
+    @inbounds begin
+
+        so[b,r] = -4*si[b,r]
+
+	        bu1, ru1 = up((b,r), 1, lp)
+            bd1, rd1 = dw((b,r), 1, lp)
+            bu2, ru2 = up((b,r), 2, lp)
+            bd2, rd2 = dw((b,r), 2, lp)
+            bu3, ru3 = up((b,r), 3, lp)
+            bd3, rd3 = dw((b,r), 3, lp)
+            bu4, ru4 = up((b,r), 4, lp)
+            bd4, rd4 = dw((b,r), 4, lp)
+
+        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
+                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+    end
+
+    return nothing
+end
+
+function krnl_Nablanabla(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
+
+    b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
+
+    @inbounds begin
+
+        if (point_time((b,r),lp) != 1)
+
+        so[b,r] = -4*si[b,r]
+
+	        bu1, ru1 = up((b,r), 1, lp)
+            bd1, rd1 = dw((b,r), 1, lp)
+            bu2, ru2 = up((b,r), 2, lp)
+            bd2, rd2 = dw((b,r), 2, lp)
+            bu3, ru3 = up((b,r), 3, lp)
+            bd3, rd3 = dw((b,r), 3, lp)
+            bu4, ru4 = up((b,r), 4, lp)
+            bd4, rd4 = dw((b,r), 4, lp)
+
+        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
+                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+        end
+    end
+
+    return nothing
+end
+
 
 
 export Nablanabla!, flw, backflow, flw_adapt, bflw_step!
 
 
 """
-
     function Dslash_sq!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
 
 Computes /`/` //slashed{D}^2 si /`/` ans stores it in `si`.
