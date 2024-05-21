@@ -120,7 +120,7 @@ end
 
 Randomizes the SU2fund / SU3fund fermion field. If the argument t is present, it only randomizes that time-slice.
 """
-function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund{T}}}, lp::SpaceParm, t::Int64 = 0) where {T}
+function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund{T}}}, lp::SpaceParm{4,6,BC_PERIODIC,D}, t::Int64 = 0) where {T,D}
 
     @timeit "Randomize pseudofermion field" begin
         p = ntuple(i->CUDA.randn(T, lp.bsz, 3, lp.rsz,2),4) # complex generation not suported for Julia 1.5.4
@@ -128,6 +128,19 @@ function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund{T}}}, lp::SpaceParm, t:
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_pf_su3!(f,p,lp,t)
         end
     end
+
+    return nothing
+end
+
+function pfrandomize!(f::AbstractArray{Spinor{4, SU3fund{T}}}, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D},SpaceParm{4,6,BC_OPEN,D}}, t::Int64 = 0) where {T,D}
+
+    @timeit "Randomize pseudofermion field" begin
+        p = ntuple(i->CUDA.randn(T, lp.bsz, 3, lp.rsz,2),4) # complex generation not suported for Julia 1.5.4
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_assign_pf_su3!(f,p,lp,t)
+        end
+    end
+    SF_bndfix!(f,lp)
 
     return nothing
 end

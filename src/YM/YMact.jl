@@ -11,7 +11,7 @@
 
 
 ##
-## OPEN     DEBERIA ESTAR BIEN LAS ACCIONES, CHECKEAR. LAS FUERZAS FALTAN
+## OPEN
 ##
 function krnl_impr!(plx, U::AbstractArray{T}, c0, c1, Ubnd::NTuple{NB,T}, cG, ztw, lp::SpaceParm{N,M,BC_OPEN,D}) where {T,NB,N,M,D}
 
@@ -113,7 +113,7 @@ function krnl_plaq!(plx, U::AbstractArray{T}, Ubnd, cG, ztw, lp::SpaceParm{N,M,B
                 gt1 = U[bu1,id2,ru1]
 
                 if ( (it == lp.iL[end]) || (it == 1)) && !TOBC
-                    S += 0.5*cG*(c0*tr(g2*ga/U[bu2,id1,ru2]))
+                    S += 0.5*cG*(tr(U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2])))
                 elseif (it == lp.iL[end]) && TOBC
                     nothing
                 else

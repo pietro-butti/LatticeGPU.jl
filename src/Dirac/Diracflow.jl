@@ -30,7 +30,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
 
                 ymws.mom .= int.e0[k].*ymws.mom .+ int.e1[k].*ymws.frc1
                 U .= expm.(U, ymws.mom, 2*eps)
-           end
+            end
         end
     end
 
@@ -86,7 +86,7 @@ function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, 
         @timeit "CPU to GPU" copyto!(U,U0)
 
         for j in dsave:-1:1
-        @timeit "CPU to GPU" copyto!(U,U0)
+            @timeit "CPU to GPU" copyto!(U,U0)
             for k in 1:j-1
                 flw(U, int, 1, eps_all[k], gp, lp, ymws)
             end
@@ -209,20 +209,20 @@ Computes /`/` \\nabla^* \\nabla /`/` `si` and stores it in `si`.
 
 """
 function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,BC_PERIODIC,D}) where {D}
-        @timeit "Laplacian" begin
-            CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
-            end
+    @timeit "Laplacian" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
         end
+    end
     return nothing
 end
 function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D},SpaceParm{4,6,BC_OPEN,D}}) where {D}
     SF_bndfix!(si,lp)
-        @timeit "Laplacian" begin
-            CUDA.@sync begin
-                CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
-            end
+    @timeit "Laplacian" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_Nablanabla(so, U, si, dpar.th, lp)
         end
+    end
     SF_bndfix!(so,lp)
     return nothing
 end
@@ -234,9 +234,9 @@ function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_OPEN,D}) where {D}
 
     @inbounds begin
 
-        if ((point_time((b,r),lp) != 1) && (point_time((b,r),lp) != lp.iL[end])
+        if ((point_time((b,r),lp) != 1) && (point_time((b,r),lp) != lp.iL[end]))
 
-        so[b,r] = -4*si[b,r]
+            so[b,r] = -4*si[b,r]
 
 	        bu1, ru1 = up((b,r), 1, lp)
             bd1, rd1 = dw((b,r), 1, lp)
@@ -247,10 +247,10 @@ function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_OPEN,D}) where {D}
             bu4, ru4 = up((b,r), 4, lp)
             bd4, rd4 = dw((b,r), 4, lp)
 
-        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
-                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
-                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
-                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+            so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
+                th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+                th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+                th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
         end
     end
 
@@ -265,19 +265,19 @@ function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_PERIODIC,D}) where 
 
         so[b,r] = -4*si[b,r]
 
-	        bu1, ru1 = up((b,r), 1, lp)
-            bd1, rd1 = dw((b,r), 1, lp)
-            bu2, ru2 = up((b,r), 2, lp)
-            bd2, rd2 = dw((b,r), 2, lp)
-            bu3, ru3 = up((b,r), 3, lp)
-            bd3, rd3 = dw((b,r), 3, lp)
-            bu4, ru4 = up((b,r), 4, lp)
-            bd4, rd4 = dw((b,r), 4, lp)
+	    bu1, ru1 = up((b,r), 1, lp)
+        bd1, rd1 = dw((b,r), 1, lp)
+        bu2, ru2 = up((b,r), 2, lp)
+        bd2, rd2 = dw((b,r), 2, lp)
+        bu3, ru3 = up((b,r), 3, lp)
+        bd3, rd3 = dw((b,r), 3, lp)
+        bu4, ru4 = up((b,r), 4, lp)
+        bd4, rd4 = dw((b,r), 4, lp)
 
         so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
-                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
-                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
-                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+            th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+            th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+            th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
     end
 
     return nothing
@@ -291,9 +291,9 @@ function krnl_Nablanabla(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},Sp
 
         if (point_time((b,r),lp) != 1)
 
-        so[b,r] = -4*si[b,r]
+            so[b,r] = -4*si[b,r]
 
-	        bu1, ru1 = up((b,r), 1, lp)
+            bu1, ru1 = up((b,r), 1, lp)
             bd1, rd1 = dw((b,r), 1, lp)
             bu2, ru2 = up((b,r), 2, lp)
             bd2, rd2 = dw((b,r), 2, lp)
@@ -302,10 +302,10 @@ function krnl_Nablanabla(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},Sp
             bu4, ru4 = up((b,r), 4, lp)
             bd4, rd4 = dw((b,r), 4, lp)
 
-        so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
-                         th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
-                         th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
-                         th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
+            so[b,r] += 0.5*( th[1] * (U[b,1,r]*si[bu1,ru1]) +conj(th[1]) * (U[bd1,1,rd1]\si[bd1,rd1]) +
+                th[2] * (U[b,2,r]*si[bu2,ru2]) +conj(th[2]) * (U[bd2,2,rd2]\si[bd2,rd2]) +
+                th[3] * (U[b,3,r]*si[bu3,ru3]) +conj(th[3]) * (U[bd3,3,rd3]\si[bd3,rd3]) +
+                th[4] * (U[b,4,r]*si[bu4,ru4]) +conj(th[4]) * (U[bd4,4,rd4]\si[bd4,rd4])  )
         end
     end
 
@@ -325,39 +325,39 @@ Computes /`/` //slashed{D}^2 si /`/` ans stores it in `si`.
 """
 function Dslash_sq!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D}) where {B,D}
 
-        @timeit "DwdagDw" begin
+    @timeit "DwdagDw" begin
 
-            @timeit "g5Dslsh" begin
+        @timeit "g5Dslsh" begin
             CUDA.@sync begin
                 CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh!(dws.st, U, si, dpar.th, lp)
             end
-            end
+        end
 
-            if abs(dpar.csw) > 1.0E-10
-                @timeit "Dw_improvement" begin
-                        CUDA.@sync begin
-                            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh_impr!(dws.st, dws.csw, dpar.csw, si,  lp)
-                        end
+        if abs(dpar.csw) > 1.0E-10
+            @timeit "Dw_improvement" begin
+                CUDA.@sync begin
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh_impr!(dws.st, dws.csw, dpar.csw, si,  lp)
                 end
             end
+        end
 
 
-            @timeit "g5Dslsh" begin
+        @timeit "g5Dslsh" begin
             CUDA.@sync begin
                 CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh!(so, U, dws.st, dpar.th, lp)
             end
-            end
+        end
 
-            if abs(dpar.csw) > 1.0E-10
-                @timeit "Dw_improvement" begin
-                        CUDA.@sync begin
-                            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh_impr!(so, dws.csw, dpar.csw, dws.st,  lp)
-                        end
+        if abs(dpar.csw) > 1.0E-10
+            @timeit "Dw_improvement" begin
+                CUDA.@sync begin
+                    CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_g5Dslsh_impr!(so, dws.csw, dpar.csw, dws.st,  lp)
                 end
             end
-
-
         end
+
+
+    end
 
     return nothing
 end
@@ -382,12 +382,12 @@ function krnl_g5Dslsh!(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},Spac
             bu4, ru4 = up((b,r), 4, lp)
             bd4, rd4 = dw((b,r), 4, lp)
 
-       so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
-                        th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
-                        th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
-                        th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
+            so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
+                th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
+                th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
+                th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
 
-        so[b,r] = dmul(Gamma{5}, so[b,r])
+            so[b,r] = dmul(Gamma{5}, so[b,r])
         end
     end
     return nothing
@@ -402,19 +402,19 @@ function krnl_g5Dslsh!(so, U, si, th, lp::SpaceParm{4,6,B,D}) where {D,B}
 
         so[b,r] = 4*si[b,r]
 
-	        bu1, ru1 = up((b,r), 1, lp)
-            bd1, rd1 = dw((b,r), 1, lp)
-            bu2, ru2 = up((b,r), 2, lp)
-            bd2, rd2 = dw((b,r), 2, lp)
-            bu3, ru3 = up((b,r), 3, lp)
-            bd3, rd3 = dw((b,r), 3, lp)
-            bu4, ru4 = up((b,r), 4, lp)
-            bd4, rd4 = dw((b,r), 4, lp)
+	    bu1, ru1 = up((b,r), 1, lp)
+        bd1, rd1 = dw((b,r), 1, lp)
+        bu2, ru2 = up((b,r), 2, lp)
+        bd2, rd2 = dw((b,r), 2, lp)
+        bu3, ru3 = up((b,r), 3, lp)
+        bd3, rd3 = dw((b,r), 3, lp)
+        bu4, ru4 = up((b,r), 4, lp)
+        bd4, rd4 = dw((b,r), 4, lp)
 
-       so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
-                        th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
-                        th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
-                        th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
+        so[b,r] -= 0.5*(th[1]*gpmul(Pgamma{1,-1},U[b,1,r],si[bu1,ru1]) +conj(th[1])*gdagpmul(Pgamma{1,+1},U[bd1,1,rd1],si[bd1,rd1]) +
+            th[2]*gpmul(Pgamma{2,-1},U[b,2,r],si[bu2,ru2]) +conj(th[2])*gdagpmul(Pgamma{2,+1},U[bd2,2,rd2],si[bd2,rd2]) +
+            th[3]*gpmul(Pgamma{3,-1},U[b,3,r],si[bu3,ru3]) +conj(th[3])*gdagpmul(Pgamma{3,+1},U[bd3,3,rd3],si[bd3,rd3]) +
+            th[4]*gpmul(Pgamma{4,-1},U[b,4,r],si[bu4,ru4]) +conj(th[4])*gdagpmul(Pgamma{4,+1},U[bd4,4,rd4],si[bd4,rd4]) )
 
         so[b,r] = dmul(Gamma{5}, so[b,r])
     end
@@ -426,11 +426,11 @@ function krnl_g5Dslsh_impr!(so, Fcsw, csw, si, lp::SpaceParm{4,6,B,D}) where {B,
 
     @inbounds begin
 
-    b = Int64(CUDA.threadIdx().x);
-    r = Int64(CUDA.blockIdx().x)
+        b = Int64(CUDA.threadIdx().x);
+        r = Int64(CUDA.blockIdx().x)
 
         so[b,r] += 0.5*csw*im*dmul(Gamma{5},( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
-                                          -Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) - Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) - Fcsw[b,6,r]*dmul(Gamma{13},si[b,r])))
+                                              -Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) - Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) - Fcsw[b,6,r]*dmul(Gamma{13},si[b,r])))
     end
 
     return nothing
@@ -442,15 +442,15 @@ function krnl_g5Dslsh_impr!(so, Fcsw, csw, si, lp::Union{SpaceParm{4,6,BC_SF_ORB
 
     @inbounds begin
 
-    b = Int64(CUDA.threadIdx().x);
-    r = Int64(CUDA.blockIdx().x)
+        b = Int64(CUDA.threadIdx().x);
+        r = Int64(CUDA.blockIdx().x)
 
-    if (point_time((b,r),lp) != 1)
+        if (point_time((b,r),lp) != 1)
 
-        so[b,r] += 0.5*csw*im*dmul(Gamma{5},( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
-                                          -Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) - Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) - Fcsw[b,6,r]*dmul(Gamma{13},si[b,r])))
-    end
+            so[b,r] += 0.5*csw*im*dmul(Gamma{5},( Fcsw[b,1,r]*dmul(Gamma{10},si[b,r]) + Fcsw[b,2,r]*dmul(Gamma{11},si[b,r]) + Fcsw[b,3,r]*dmul(Gamma{12},si[b,r])
+                                                  -Fcsw[b,4,r]*dmul(Gamma{15},si[b,r]) - Fcsw[b,5,r]*dmul(Gamma{14},si[b,r]) - Fcsw[b,6,r]*dmul(Gamma{13},si[b,r])))
+        end
 
-    return nothing
+        return nothing
     end
 end
