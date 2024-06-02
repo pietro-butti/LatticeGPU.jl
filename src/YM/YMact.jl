@@ -231,11 +231,10 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
         g2 = U[b,id2,r]\U[b,id1,r]
 
         if !TOBC && ( (it == 1) || (it == lp.iL[end]) )
-            X = 0.5*cG*(c0*projalg(U[b,id1,r]*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2])) +
-                c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3)) + c1*projalg(h1*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*g1/h4))
+            X = 0.5*cG*(c0*projalg(U[b,id1,r]*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2])) + c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3))  )
 
-            frc1[b,id1,r] -= X
-            frc1[b,id2,r] += X
+            frc1[b,id1,r] -= X + 0.5*cG*c1*projalg(U[b,id1,r]*g1/h4)
+            frc1[b,id2,r] += X + 0.5*cG*c1*projalg(h1*g1/U[b,id2,r])
             frc2[bu1,id2,ru1] -= 0.5*cG*c0*projalg(g1*g2)
             frc2[bu2,id1,ru2] += 0.5*cG*c0*projalg(g2*g1)
             frc2[bu1,id2,ru1] -= 0.5*cG*c1*projalg((g1/U[b,id2,r])*h1)
@@ -246,12 +245,22 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
             frc2[bu2,id1,ru2] += 0.5*cG*c1*projalg(h4\U[b,id1,r]*g1)
         elseif TOBC && (it == lp.iL[end])
             nothing
-        elseif TOBC && (it == (lp.iL[end]-1) )
-            X = (c0*projalg(U[b,id1,r]*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2])) +
-                c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3)) + c1*projalg(h1*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*g1/h4))
+        elseif TOBC && (it == 1)
+            X = c0*projalg(U[b,id1,r]*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*h2/(U[b,id2,r]*U[bu2,id1,ru2])) + c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3))
 
             frc1[b,id1,r] -= X
-            frc1[b,id2,r] += X
+            frc1[b,id2,r] += X + c1*projalg(h1*g1/U[b,id2,r])
+            frc2[bu1,id2,ru1] -= c0*projalg(g1*g2)
+            frc2[bu2,id1,ru2] += c0*projalg(g2*g1)
+            frc2[bu1,id2,ru1] -= c1*projalg((g1/U[b,id2,r])*h1)
+            frc2[bu2,id1,ru2] += c1*projalg((U[b,id2,r]\h1)*g1)
+            frc2[bu2,id1,ru2] += c1*projalg(g2*h2/U[bu2,id1,ru2])
+            frc2[bu1,id2,ru1] -= c1*projalg((ga/h3)*g2)
+        elseif TOBC && (it == (lp.iL[end]-1) )
+            X = c0*projalg(U[b,id1,r]*g1/U[b,id2,r]) + c1*projalg(U[b,id1,r]*ga/(U[b,id2,r]*h3))
+
+            frc1[b,id1,r] -= X + c1*projalg(U[b,id1,r]*g1/h4)
+            frc1[b,id2,r] += X + c1*projalg(h1*g1/U[b,id2,r])
             frc2[bu1,id2,ru1] -= c0*projalg(g1*g2)
             frc2[bu2,id1,ru2] += c0*projalg(g2*g1)
             frc2[bu1,id2,ru1] -= c1*projalg((g1/U[b,id2,r])*h1)
@@ -259,7 +268,6 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
             frc2[bu1,id2,ru1] -= c1*projalg((ga/h3)*g2)
             frc2[bu1,id2,ru1] -= c1*projalg((g1/h4)*U[b,id1,r])
             frc2[bu2,id1,ru2] += c1*projalg(h4\U[b,id1,r]*g1)
-
         else
             if TWP
                 X = projalg(c0*ztw,U[b,id1,r]*g1/U[b,id2,r])
