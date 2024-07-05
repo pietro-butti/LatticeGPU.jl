@@ -347,7 +347,7 @@ end
 """
     Qtop([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the topological charge `Q` of the configuration `U` using the clover definition of the field strength tensor. If the argument `Qslc` is present the contribution for each Euclidean time slice are returned. Only wors in 4D.
+Measure the topological charge `Q` of the configuration `U` using the clover definition of the field strength tensor. If the argument `Qslc` is present the contributions for each Euclidean time slice are returned. Only works in 4D.
 """
 function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace) where {M,B,D}
 
@@ -386,7 +386,7 @@ Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D}
 """
     function Eoft_clover([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the action density `E(t)` using the clover discretization. If the argument `Eslc`
+Measure the action density `E(t)` using the clover discretization. If the argument `Eslc` is given
 the contribution for each Euclidean time slice and plane are returned.
 """
 function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace{T}) where {T,M,B,D}

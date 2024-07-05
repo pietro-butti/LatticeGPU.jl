@@ -31,7 +31,7 @@ scalar_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 2}(undef, lp.b
 """
         nscalar_field(::Type{T}, n::Integer, lp::SpaceParm)
 
-Returns `n` scalar fields of elemental type `T`
+Returns `n` scalar fields of elemental type `T`.
 """
 nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = CuArray{T, 3}(undef, lp.bsz, n, lp.rsz)
 
@@ -46,7 +46,7 @@ scalar_field_point(::Type{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D} = CuArray{T,
 """
         tensor_field(::Type{T}, lp::SpaceParm)
 
-Returns a tensor field of elemental type `T`.
+Returns a (symmetric) tensor field of elemental type `T`.
 """
 tensor_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.npls, lp.rsz)
 

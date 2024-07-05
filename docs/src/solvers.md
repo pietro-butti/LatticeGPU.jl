@@ -29,12 +29,14 @@ is given by $$|$$``dws.sr``$$|^2$$.
 
 ## Propagators.jl
 
-In this file, we define a couple of useful functions to obtain certain
+In this file, we define some useful functions to obtain certain
 propagators.
 
 ```@docs
 propagator!
 ```
+
+Note that the indexing in Julia starts at 1, so the first tiime slice is t=1.
 
 Internally, this function solves the equation 
 

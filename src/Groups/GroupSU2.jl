@@ -36,7 +36,7 @@ norm2(a::SU2{T})         where T <: AbstractFloat = abs2(a.t1) + abs2(a.t2)
 """
     tr(g::T) where T <: Group
 
-Returns the trace of the groups element `g`.
+Returns the trace of the group element `g`.
 """
 tr(g::SU2{T})            where T <: AbstractFloat = complex(2*real(g.t1), 0.0)
 

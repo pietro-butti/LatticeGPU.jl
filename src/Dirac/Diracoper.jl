@@ -453,6 +453,7 @@ function Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpacePa
             end
         end
     end
+    SF_bndfix!(so,lp)
 
     return nothing
 end
@@ -545,6 +546,7 @@ function g5Dw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{Space
             end
         end
     end
+    SF_bndfix!(so,lp)
 
     return nothing
 end
@@ -626,6 +628,7 @@ end
 
 function DwdagDw!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
+    SF_bndfix!(si,lp)
     if abs(dpar.csw) > 1.0E-10
         @timeit "DwdagDw" begin
 

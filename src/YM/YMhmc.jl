@@ -13,7 +13,7 @@
     
     function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
-Returns the value of the gauge action for the configuration U. The parameters `\beta` and `c0` are taken from the `gp` structure. 
+Returns the value of the gauge action for the configuration U. The parameters ``\\beta`` and `c0` are taken from the `gp` structure.
 """
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where T <: AbstractFloat
 
@@ -71,7 +71,7 @@ end
 """
         HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc=false)
 
-Performs a HMC step (molecular dynamics integration and accept/reject step). The configuration `U` is updated ans function returns the energy violation and if the configuration was accepted in a tuple.
+Performs a HMC step (molecular dynamics integration and accept/reject step). The configuration `U` is updated and function returns the energy violation and if the configuration was accepted in a tuple.
 """
 function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
 

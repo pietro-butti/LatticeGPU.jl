@@ -1,7 +1,7 @@
 
 # Dirac operator
 
-The module `Dirac` has the necessary stuctures and function 
+The module `Dirac` has the necessary structures and functions 
 to simulate non-dynamical 4-dimensional Wilson fermions.
 
 There are two main data structures in this module, the structure [`DiracParam`](@ref)
@@ -18,7 +18,7 @@ DiracWorkspace
 
 The workspace stores four fermion fields, namely `.sr`, `.sp`, `.sAp` and `.st`, used
 for different purposes. If the representation is either `SU2fund` of `SU3fund`, an extra
-field with values in `U2alg`/`U3alg` is created to store the clover, used for the improvent.
+field with values in `U2alg`/`U3alg` is created to store the clover, used for the improvement.
 
 ## Functions
 
@@ -38,7 +38,7 @@ where $$m_0$$ and $$\theta$$ are respectively the values `.m0` and `.th` of [`Di
 Note that $$|\theta(\mu)|=1$$ is not built into the code, so it should be imposed explicitly. 
 
 Additionally, if |`dpar.csw`| > 1.0E-10, the clover term is assumed to be stored in `ymws.csw`, which
-can be done via the [`Csw!`](@ref) function. In this case we have the Sheikholeslami–Wohlert (SW) term
+can be done via the [`Csw!`](@ref) function. In this case we have the Sheikholeslami-Wohlert (SW) term
 in `Dw!`:
 
 ```math
@@ -53,7 +53,7 @@ improvement term
 ```math
     \delta D_w^{SF} = (c_t -1) (\delta_{x_4,a} \psi(\vec{x}) + \delta_{x_4,T-a} \psi(\vec{x}))
 ```
-is added. Since the time-slice $$t=T$$ is not stored, this accounts to modifying the second
+is added. Since the time-slice $$t=T$$ is not stored, this accounts for modifying the second
 and last time-slice. 
 
 Note that the Dirac operator for SF boundary conditions assumes that the value of the field 
@@ -62,11 +62,6 @@ in the first time-slice is zero. To enforce this, we have the function
 ```@docs
 SF_bndfix!
 ```
-
-Note that this is not enforced in the Dirac operators, so if the field `so` does not satisfy SF
-boundary conditions, it will not (in general) satisfy them after applying [`Dw!`](@ref) 
-or [`g5Dw!`](@ref). This function is called for the function [`DwdagDw!`](@ref), so in this case
-`so` will always be a proper SF field after calling this function.
 
 The function [`Csw!`](@ref) is used to store the clover in `dws.csw`. It is computed 
 according to the expression
@@ -97,8 +92,8 @@ F[b,4,r] \to F_{31}(b,r) ,\quad F[b,5,r] \to F_{32}(b,r) ,\quad F[b,6,r] \to F_{
 ```
 where $$(b,r)$$ labels the lattice points as explained in the module `Space`
 
-The function [`pfrandomize!`](@ref), userfull for stochastic sources, is also present. It
-randomizes a  fermion field either in all the space or in a specifit time-slice.
+The function [`pfrandomize!`](@ref), userful for stochastic sources, is also present. It
+randomizes a fermion field, either in all the space or in a specific time-slice.
 
 The generic interface of these functions reads
 
