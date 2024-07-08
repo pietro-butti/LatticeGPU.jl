@@ -303,12 +303,12 @@ Returns ``\\gamma_n a``. Indexing for Dirac basis ``\\gamma_n``:
  7  ``\\gamma_2 \\gamma_5``;
  8  ``\\gamma_3 \\gamma_5``;
  9  ``\\gamma_0 \\gamma_5``;
-10  ``\sigma_{01}``;
-11  ``\sigma_{02}``;
-12  ``\sigma_{03}``;
-13  ``\sigma_{21}``;
-14  ``\sigma_{32}``;
-15  ``\sigma_{31}``;
+10  ``\\sigma_{01}``;
+11  ``\\sigma_{02}``;
+12  ``\\sigma_{03}``;
+13  ``\\sigma_{21}``;
+14  ``\\sigma_{32}``;
+15  ``\\sigma_{31}``;
 16  identity;
 
 """
