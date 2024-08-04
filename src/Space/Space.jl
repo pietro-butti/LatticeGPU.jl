@@ -26,19 +26,19 @@ This structure contains information about the lattice being simulated. The param
 - `N`: The number of dimensions
 - `M`: The number of planes (i.e. \`\` N(N-1)/2 \`\`)
 - `B`: The boundary conditions in Euclidean time. Acceptable values are
-    - `BC_PERIODIC`: Periodic boundary conditions
-    - `BC_SF_AFWB`: Schrödinger Funtional Aoki-Frezzoptti-Weisz Choice B.
-    - `BC_SF_ORBI`: Schrödinger Funtional orbifold constructions.
+    - `BC_PERIODIC`: Periodic boundary conditions.
+    - `BC_SF_AFWB`: Schrödinger Functional Aoki-Frezzotti-Weisz Choice B.
+    - `BC_SF_ORBI`: Schrödinger Functional orbifold constructions.
     - `BC_OPEN`: Open boundary conditions.
 
-The structure conatins the following components:
+The structure contains the following components:
 - `iL`: Tuple containing the lattice length in each dimension.
-- `plidx`: The directions of each plane
-- `blk`: The block size in each each dimension
-- `rbk`: The number of blocks in each dimension
-- `bsz`: The number of points in each block
-- `rsz`: The number of blocks in the lattice
-- `ntw`: The twist tensor in each plane
+- `plidx`: The directions of each plane.
+- `blk`: The block size in each each dimension.
+- `rbk`: The number of blocks in each dimension.
+- `bsz`: The number of points in each block.
+- `rsz`: The number of blocks in the lattice.
+- `ntw`: The twist tensor in each plane.
 """
 struct SpaceParm{N,M,B,D}
     ndim::Int64

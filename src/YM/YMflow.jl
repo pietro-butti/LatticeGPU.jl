@@ -134,7 +134,8 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
         r = Int64(CUDA.blockIdx().x)
         it = point_time((b, r), lp)
 
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
+        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) )
+        OBC = (B == BC_OPEN)
 
         @inbounds for id in 1:N
             bu, ru = up((b,r), id, lp)
@@ -152,13 +153,21 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
                     frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
                         projalg(U[b,id,r]*X/U[b,id,r]))
                 end
-            else 
+            end
+            if OBC
+                if (it > 1) && (it < lp.iL[end])
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                elseif ((it == lp.iL[end]) || (it == 1))  && (id < N)
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                end
+            else
                 frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
                     projalg(U[b,id,r]*X/U[b,id,r]))
             end
         end
     end
-    
     return nothing
 end
 
@@ -204,19 +213,21 @@ Integrates the flow equations with the integration scheme defined by `int` using
 """
 function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T}
 
-    eps = int.eps_ini
+    eps = epsini
     dt  = tend
     nstp = 0
+    eps_all = Vector{T}(undef,0)
     while true
         ns = convert(Int64, floor(dt/eps))
         if ns > 10
             flw(U, int, 9, eps, gp, lp, ymws)
             ymws.U1 .= U
-            flw(U, int, 2, eps/2, gp, lp, ymws)
-            flw(ymws.U1, int, 1, eps, gp, lp, ymws)
+            flw(U, int, 1, eps, gp, lp, ymws)
+            flw(ymws.U1, int, 2, eps/2, gp, lp, ymws)
             
             dt = dt - 10*eps
             nstp = nstp + 10
+            push!(eps_all,ntuple(i->eps,10)...)
 
             # adjust step size
             ymws.U1 .= ymws.U1 ./ U
@@ -226,6 +237,9 @@ function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp
         else
             flw(U, int, ns, eps, gp, lp, ymws)
             dt = dt - ns*eps
+
+            push!(eps_all,ntuple(i->eps,ns)...)
+            push!(eps_all,dt)
 
             flw(U, int, 1, dt, gp, lp, ymws)
             dt = zero(tend)
@@ -238,7 +252,7 @@ function flw_adapt(U, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, lp
         end
     end
 
-    return nstp, eps
+    return nstp, eps_all
 end
 flw_adapt(U, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw_adapt(U, int, tend, int.eps_ini, gp, lp, ymws)
 
@@ -259,7 +273,8 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws:
     @timeit "E(t) plaquette measurement" begin
 
         ztw = ztwist(gp, lp)
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) 
+        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) )
+        OBC = (B == BC_OPEN)
 
         tp = ntuple(i->i, N-1)
         V3 = prod(lp.iL[1:end-1])
@@ -279,6 +294,10 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws:
                 end
                 if !SFBC
                     Eslc[1,ipl] = Etmp[1] + Etmp[end]
+                end
+                if OBC ## Check normalization of timelike boundary plaquettes
+                    Eslc[end,ipl] = Etmp[end-1]
+                    Eslc[1,ipl] = Etmp[1]
                 end
             else
                 for it in 1:lp.iL[end]
@@ -304,7 +323,7 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
         I = point_coord((b,r), lp)
         
         id1, id2 = lp.plidx[ipl]
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == lp.iL[end]) 
+        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == N)
         TWP  = ((I[id1]==1)&&(I[id2]==1))
         
         bu1, ru1 = up((b, r), id1, lp)
@@ -322,14 +341,13 @@ function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{
             plx[I] = tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
         end            
     end
-        
     return nothing
 end
 
 """
     Qtop([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the topological charge `Q` of the configuration `U` using the clover definition of the field strength tensor. If the argument `Qslc` is present the contribution for each Euclidean time slice are returned. Only wors in 4D.
+Measure the topological charge `Q` of the configuration `U` using the clover definition of the field strength tensor. If the argument `Qslc` is present the contributions for each Euclidean time slice are returned. Only works in 4D.
 """
 function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace) where {M,B,D}
 
@@ -345,21 +363,18 @@ function Qtop(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace)
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
         end
-    
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, lp)
         end
-    
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
         end
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
         end
-        
         Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
     end    
 
@@ -371,7 +386,7 @@ Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D}
 """
     function Eoft_clover([Eslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-Measure the action density `E(t)` using the clover discretization. If the argument `Eslc`
+Measure the action density `E(t)` using the clover discretization. If the argument `Eslc` is given
 the contribution for each Euclidean time slice and plane are returned.
 """
 function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworkspace{T}) where {T,M,B,D}
@@ -440,7 +455,7 @@ function krnl_add_et!(rm, frc1, lp::SpaceParm{4,M,B,D}) where {M,B,D}
         I = point_coord((b,r), lp)
         rm[I] = dot(X1,X1)
     end
-        
+
     return nothing
 end
 
@@ -469,6 +484,7 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         #First plane
         id1, id2 = lp.plidx[ipl1]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        OBC = ((B == BC_OPEN) && (id1 == 4))
         TWP  = ((I[id1]==1)&&(I[id2]==1))
         
         bu1, ru1 = up((b, r), id1, lp)
@@ -484,6 +500,11 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         l2 = U[b,id2,r]\U[b,id1,r]
 
         if SFBC && (it == lp.iL[end])
+            frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+            frc1[bu1,2,ru1] = zero(TA)
+            frc1[bd,3,rd]   = zero(TA)
+            frc1[bu2,4,ru2] = projalg(l2*l1)
+        elseif OBC && (it == lp.iL[end])
             frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
             frc1[bu1,2,ru1] = zero(TA)
             frc1[bd,3,rd]   = zero(TA)
@@ -505,6 +526,7 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
         # Second plane
         id1, id2 = lp.plidx[ipl2]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        OBC = ((B == BC_OPEN) && (id1 == 4))
         TWP  = ((I[id1]==1)&&(I[id2]==1))
 
         bu1, ru1 = up((b, r), id1, lp)
@@ -524,6 +546,11 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
             frc2[bu1,2,ru1] = zero(TA)
             frc2[bd,3,rd]   = zero(TA)
             frc2[bu2,4,ru2] = projalg(l2*l1)
+        elseif OBC && (it == lp.iL[end])
+            frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+            frc1[bu1,2,ru1] = zero(TA)
+            frc1[bd,3,rd]   = zero(TA)
+            frc1[bu2,4,ru2] = projalg(l2*l1)
         else
             if TWP
                 frc2[b,1,r]     = projalg(ztw2, U[b,id1,r]*l1/U[b,id2,r])
@@ -538,7 +565,5 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
             end
         end
     end
-        
     return nothing
 end
-    

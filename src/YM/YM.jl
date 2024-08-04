@@ -23,15 +23,15 @@ import Base.show
 """
         struct GaugeParm{T,G,N}
 
-Structure containning the parameters of a pure gauge simulation. These are:
-- beta: Type `T`. The bare coupling of the simulation
+Structure containing the parameters of a pure gauge simulation. These are:
+- beta: Type `T`. The bare coupling of the simulation.
 - c0: Type `T`. LatticeGPU supports the simulation of gauge actions made of 1x1 Wilson Loops and 2x1 Wilson loops. The parameter c0 defines the coefficient on the simulation of the 1x1 loops. Some common choices are:
-  - c0=1: Wilson plaquette action
+  - c0=1: Wilson plaquette action.
   - c0=5/3: Tree-level improved Lüscher-Weisz action.
-  - c0=3.648: Iwasaki gauge action
+  - c0=3.648: Iwasaki gauge action.
 - cG: Tuple (`T`, `T`). Boundary improvement parameters.
 - ng: `Int64`. Rank of the gauge group.
-- Ubnd: Boundary field for SF boundary conditions
+- Ubnd: Boundary field for SF boundary conditions.
 """
 struct GaugeParm{T,G,N}
     beta::T
@@ -79,11 +79,11 @@ end
 """
         struct YMworkspace{T}
 
-Structure containing memory workspace that is resused by different routines in order to avoid allocating/deallocating time.
+Structure containing memory workspace that is reused by different routines in order to avoid allocating/deallocating time.
 The parameter `T` represents the precision of the simulation (i.e. single/double). The structure contains the following components
-- GRP: Group being simulated
-- ALG: Corresponding Algebra 
-- PRC: Precision (i.e. `T`)
+- GRP: Group being simulated.
+- ALG: Corresponding Algebra.
+- PRC: Precision (i.e. `T`).
 - frc1: Algebra field with natural indexing.
 - frc2: Algebra field with natural indexing.
 - mom:  Algebra field with natural indexing.
@@ -141,7 +141,7 @@ end
 """
         function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}[, ipl])
 
-Returns the twist factor. If a plane index is passed, returns the twist factor as a complex{T}. If this is not provided, returns a tuple, containing the factor of each plane.
+Returns the twist factor. If a plane index is passed, returns the twist factor as a Complex{T}. If this is not provided, returns a tuple, containing the factor of each plane.
 """
 function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}) where {T,G,N,M,B,D}
 

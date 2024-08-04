@@ -6,7 +6,7 @@ which is a NS-tuple with values in G.
 The functions `norm`, `norm2`, `dot`, `*`, `/`, `/`, `+`, `-`, `imm` and `mimm`, 
 if defined for G, are extended to Spinor{NS,G} for general NS.
 
-For the 4d case where NS = 4 there are some specific functions to implement different
+For the 4D case, where NS = 4, there are some specific functions to implement different
 operations with the gamma matrices. The convention for these matrices is
 
 
@@ -79,7 +79,6 @@ using LatticeGPU # hide
 ```
 ```@repl exs
 spin = Spinor{4,Complex{Float64}}((1.0,im*0.5,2.3,0.0))
-println(spin)
 println(dmul(Gamma{4},spin))
 println(pmul(Pgamma{2,-1},spin))
 
