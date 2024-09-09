@@ -93,7 +93,7 @@ function Base.show(io::IO, int::FlowIntr{N,T}) where {N,T}
     if N == 0
         println(io, " * Euler schem3")
     elseif N == 1
-        println(io, " * One stage scheme. Coefficients3")
+        println(io, " * One stage scheme. Coefficients")
         println(io, "    stg 1: ", int.e0[1], " ", int.e1[1])
     elseif N == 2
         println(io, " * Two stage scheme. Coefficients:")
