@@ -318,6 +318,27 @@ end
 
 export Nablanabla!, flw, backflow, flw_adapt, bflw_step!
 
+"""
+    function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+
+Estimates the error of the backflow integration of psi_t into psi_0 with a random noise source.
+"""
+function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+
+    pfrandomize!(dws.sr,lp)
+    @timeit "GPU to CPU" V = Array(U)
+
+    R0 =  sum(dot.(psi_0,dws.sr))
+
+    flw_adapt(U, dws.sr, int, tend, int.eps_ini/2, gp, dpar, lp, ymws, dws)
+
+    R1 = sum(dot.(psi_t,dws.sr))
+    @timeit "CPU to GPU" copyto!(U,V)
+
+    return abs(R0-R1)
+end
+
+export bfl_error
 
 """
     function Dslash_sq!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})

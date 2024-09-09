@@ -60,7 +60,7 @@ using .Dirac
 export DiracWorkspace, DiracParam
 export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 export read_prop, save_prop, read_dpar
-export Nablanabla!, flw, backflow
+export Nablanabla!, flw, backflow, bfl_error
 
 include("Solvers/Solvers.jl")
 using .Solvers
