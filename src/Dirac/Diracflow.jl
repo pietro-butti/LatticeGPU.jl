@@ -41,13 +41,13 @@ flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, dpar::DiracParam, lp:
 """
     function backflow(psi, U, Dt, nsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
-Performs one step back in flow time for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice
+Performs the integration of the adjoint flow for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice
 nsave is the total number of gauge fields saved in the process
 
 """
-function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm,int::FlowIntr, ymws::YMworkspace, dws::DiracWorkspace)
 
-    int = wfl_rk3(Float64,0.01,1.0) # Default integrator, it has to be order 3 rk but in can be zfl
+     # Default integrator is  wfl_rk3(Float64,0.01,1.0), it has to be order 3 rk but in can be zfl
 
     @timeit "Backflow integration" begin
         @timeit "GPU to CPU" U0 = Array(U)
@@ -98,6 +98,7 @@ function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, 
 
     return nothing
 end
+backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) = backflow(psi, U, Dt, maxnsave, gp, dpar, lp, wfl_rk3(Float64,0.01,1.0), ymws, dws)
 
 """
 function bflw_step!(U, psi, eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
@@ -321,7 +322,7 @@ export Nablanabla!, flw, backflow, flw_adapt, bflw_step!
 """
     function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
-Estimates the error of the backflow integration of psi_t into psi_0 with a random noise source.
+Estimates the error of the backflow integration of `\\psi\\_t` into `\\psi\\_0` with a random noise source.
 """
 function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
