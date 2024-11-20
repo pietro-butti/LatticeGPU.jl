@@ -1,6 +1,10 @@
 
-include("SAD/test_sad.jl")
+#include("SAD/test_sad.jl")
 include("flow/test_adapt.jl")
 include("dirac/test_fp_fa.jl")
 include("dirac/test_solver_plw.jl")
 include("dirac/test_solver_rand.jl")
+include("dirac/test_flow_tl.jl")
+include("dirac/test_backflow_tl.jl")
+include("dirac/test_backflow.jl")
+

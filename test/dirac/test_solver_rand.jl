@@ -2,6 +2,9 @@ using CUDA, LatticeGPU, TimerOutputs
 
 #Check that Dw ( (DwdagDw)^{-1} g5 Dw g5 ) psi = psi for random fields
 
+println(" # Test for the consistency of the solver")
+
+
 @timeit "Rand solver test" begin
 
 @timeit "Generate random fields" begin
@@ -46,7 +49,7 @@ res = sum(norm2.(rpsi-dws.sp))
 
 
 if res < 1.0e-6 
-    print("Drand test passed with ",res,"% error!\n")
+    print("Drand test passed with ",res,"% error\n")
     
 else
     error("Drand test failed with difference: ",res,"\n")

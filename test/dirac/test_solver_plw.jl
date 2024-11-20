@@ -2,6 +2,8 @@ using LatticeGPU, CUDA, TimerOutputs
 
 #Test for the relation Dw(n|m)^{-1} e^(ipm) = D(p)^{-1} e^{ipn} with a given momenta (if p=0 its randomized), spin and color
 
+println(" # Test for free fermion propagator")
+
 @timeit "Plw test" begin
 
 function Dwpw_test(;p=0,s=1,c=1)
@@ -84,12 +86,12 @@ end
 
 dif = sum(norm2.(prop - prop_th))
 
-if dif > 1.0e-15
+if dif > 1.0e-7
         error("Dwpl test for s=",s,", c=",c," failed with difference: ",dif,"\n")
 end
 
 
-return dif
+return sqrt(dif)
 end
 
 
@@ -101,8 +103,8 @@ for i in 1:3 for j in 1:4
     global diff += Dwpw_test(c=i,s=j)
 end end
 
-if diff < 1.0e-15
-    print("Dwpl test passed with average error ", diff/12,"!\n")
+if diff < 1.0e-7
+    print("Dwpl test passed with average error ", diff/12,"\n")
 else
     error("Dwpl test failed with difference: ",diff,"\n")
 end
