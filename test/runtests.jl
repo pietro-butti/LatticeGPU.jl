@@ -7,4 +7,4 @@ include("dirac/test_solver_rand.jl")
 include("dirac/test_flow_tl.jl")
 include("dirac/test_backflow_tl.jl")
 include("dirac/test_backflow.jl")
-
+include("dirac/test_adapt_ferm.jl")
