@@ -316,30 +316,30 @@ Eoft_plaq(U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws::YMworkspace) w
 
 
 function krnl_plaq_pln!(plx, U::AbstractArray{T}, Ubnd, ztw, ipl, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
-    
+
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
         I = point_coord((b,r), lp)
-        
+
         id1, id2 = lp.plidx[ipl]
         SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI)) && (id1 == N)
         TWP  = ((I[id1]==1)&&(I[id2]==1))
-        
+
         bu1, ru1 = up((b, r), id1, lp)
         bu2, ru2 = up((b, r), id2, lp)
-        
-        if SFBC && (ru1 != r)
+
+        if SFBC && (point_time((b,r),lp) == lp.iL[end])
             gt = Ubnd[id2]
         else
             gt = U[bu1,id2,ru1]
         end
-        
+
         if TWP
             plx[I] = ztw*tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
         else
             plx[I] = tr(U[b,id1,r]*gt / (U[b,id2,r]*U[bu2,id1,ru2]))
-        end            
+        end
     end
     return nothing
 end
