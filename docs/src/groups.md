@@ -1,7 +1,7 @@
 
 # Groups and Algebras
 
-The module `Groups` contain generic data types to deal with group and
+The module `Groups` contains generic data types to deal with group and
 algebra elements. Group elements $$g\in SU(N)$$ are represented in
 some compact notation. For the case $$N=2$$ we use two complex numbers
 (Caley-Dickson representation, i.e. $$g=(z_1,z_2)$$ with
@@ -79,7 +79,7 @@ elements. The objective is to get an idea on how group operations
 We can generate some random group elements.
 ```@repl exs
 # Generate random groups elements, 
-# check they are actually from the grup
+# check they are actually from the group
 g = rand(SU2{Float64})
 println("Are we in a group?: ", isgroup(g))
 g = rand(SU3{Float64})
@@ -153,6 +153,10 @@ projalg
 ## Generic `Algebra` methods
 
 ```@docs
+dot
+norm
+norm2
+normalize
 exp
 expm
 alg2mat

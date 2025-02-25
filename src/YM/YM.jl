@@ -20,6 +20,19 @@ using ..MD
 
 import Base.show
 
+"""
+        struct GaugeParm{T,G,N}
+
+Structure containing the parameters of a pure gauge simulation. These are:
+- beta: Type `T`. The bare coupling of the simulation.
+- c0: Type `T`. LatticeGPU supports the simulation of gauge actions made of 1x1 Wilson Loops and 2x1 Wilson loops. The parameter c0 defines the coefficient on the simulation of the 1x1 loops. Some common choices are:
+  - c0=1: Wilson plaquette action.
+  - c0=5/3: Tree-level improved Lüscher-Weisz action.
+  - c0=3.648: Iwasaki gauge action.
+- cG: Tuple (`T`, `T`). Boundary improvement parameters.
+- ng: `Int64`. Rank of the gauge group.
+- Ubnd: Boundary field for SF boundary conditions.
+"""
 struct GaugeParm{T,G,N}
     beta::T
     c0::T
@@ -63,6 +76,21 @@ function Base.show(io::IO, gp::GaugeParm{T, G, N}) where {T,G,N}
     return nothing
 end
 
+"""
+        struct YMworkspace{T}
+
+Structure containing memory workspace that is reused by different routines in order to avoid allocating/deallocating time.
+The parameter `T` represents the precision of the simulation (i.e. single/double). The structure contains the following components
+- GRP: Group being simulated.
+- ALG: Corresponding Algebra.
+- PRC: Precision (i.e. `T`).
+- frc1: Algebra field with natural indexing.
+- frc2: Algebra field with natural indexing.
+- mom:  Algebra field with natural indexing.
+- U1:   Group field with natural indexing.
+- cm:   Complex field with lexicographic indexing.
+- rm:   Real field with lexicographic indexing.
+"""
 struct YMworkspace{T}
     GRP
     ALG
@@ -110,7 +138,11 @@ function Base.show(io::IO, ymws::YMworkspace)
     return nothing
 end
 
+"""
+        function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}[, ipl])
 
+Returns the twist factor. If a plane index is passed, returns the twist factor as a Complex{T}. If this is not provided, returns a tuple, containing the factor of each plane.
+"""
 function ztwist(gp::GaugeParm{T,G}, lp::SpaceParm{N,M,B,D}) where {T,G,N,M,B,D}
 
     function plnf(ipl)
@@ -133,10 +165,10 @@ include("YMfields.jl")
 export randomize!, zero!, norm2
 
 include("YMact.jl")
-export krnl_plaq!, force0_wilson!
+export krnl_plaq!, force_gauge, force_wilson
 
 include("YMhmc.jl")
-export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
+export gauge_action, hamiltonian, plaquette, HMC!, MD!
 
 include("YMflow.jl")
 export FlowIntr, flw, flw_adapt
@@ -147,6 +179,6 @@ include("YMsf.jl")
 export sfcoupling, bndfield, setbndfield
 
 include("YMio.jl")
-export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg
+export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 end

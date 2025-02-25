@@ -14,6 +14,7 @@ module Spinors
 using ..Groups
 import ..Groups.imm, ..Groups.mimm, ..Groups.norm, ..Groups.norm2, ..Groups.dot
 
+
 struct Spinor{NS,G}
     s::NTuple{NS,G}
 end
@@ -169,7 +170,7 @@ end
 
 
 """
-    gpmul(pgamma{N,S}, g::G, a::Spinor) G <: Group
+    gpmul(Pgamma{N,S}, g::G, a::Spinor) G <: Group
 
 Returns ``g(1+s\\gamma_N)a``
 """
@@ -226,7 +227,7 @@ end
 end
 
 """
-    gdagpmul(pgamma{N,S}, g::G, a::Spinor) G <: Group
+    gdagpmul(Pgamma{N,S}, g::G, a::Spinor) G <: Group
 
 Returns ``g^+ (1+s\\gamma_N)a``
 """
@@ -284,33 +285,31 @@ end
 
 
 # dummy structs for dispatch:
-# Basis of \\Gamma_n
+# Basis of \\gamma_n
 struct Gamma{N}
 end
 
 """
-    dmul(n::Int64, a::Spinor)
+    dmul(Gamma{n}, a::Spinor)
 
-Returns ``\\Gamma_n a``
+Returns ``\\gamma_n a``. Indexing for Dirac basis ``\\gamma_n``:
 
-indexing for Dirac basis ``\\Gamma_n``:
-
- 1  gamma1
- 2  gamma2
- 3  gamma3
- 4  gamma0
- 5  gamma5
- 6  gamma1 gamma5
- 7  gamma2 gamma5
- 8  gamma3 gamma5
- 9  gamma0 gamma5
-10  sigma01
-11  sigma02
-12  sigma03
-13  sigma21
-14  sigma32
-15  sigma31
-16  identity
+ 1  ``\\gamma_1``;
+ 2  ``\\gamma_2``;
+ 3  ``\\gamma_3``;
+ 4  ``\\gamma_0``;
+ 5  ``\\gamma_5``;
+ 6  ``\\gamma_1 \\gamma_5``;
+ 7  ``\\gamma_2 \\gamma_5``;
+ 8  ``\\gamma_3 \\gamma_5``;
+ 9  ``\\gamma_0 \\gamma_5``;
+10  ``\\sigma_{01}``;
+11  ``\\sigma_{02}``;
+12  ``\\sigma_{03}``;
+13  ``\\sigma_{21}``;
+14  ``\\sigma_{32}``;
+15  ``\\sigma_{31}``;
+16  identity;
 
 """
 @inline dmul(::Type{Gamma{1}}, a::Spinor{NS,G}) where {NS,G} = Spinor{NS,G}((mimm(a.s[4]), mimm(a.s[3]), imm(a.s[2]), imm(a.s[1])))

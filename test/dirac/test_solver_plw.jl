@@ -7,7 +7,7 @@ using LatticeGPU, CUDA, TimerOutputs
 function Dwpw_test(;p=0,s=1,c=1)
 lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), 0, (0,0,0,0,0,0))
 gp = GaugeParm{Float64}(SU3{Float64}, 6.0, 1.0)
-dpar = DiracParam{Float64}(SU3fund,1.3,0.0,(1.0,1.0,1.0,1.0),0.0)
+dpar = DiracParam{Float64}(SU3fund,1.3,0.0,(1.0,1.0,1.0,1.0),0.0,0.0)
 dws = DiracWorkspace(SU3fund,Float64,lp);
 
 p==0 ? p = Int.(round.(lp.iL.*rand(4),RoundUp)) : nothing
@@ -96,15 +96,15 @@ end
 
 
 begin
-dif = 0.0
+diff = 0.0
 for i in 1:3 for j in 1:4
-    dif += Dwpw_test(c=i,s=j)
+    global diff += Dwpw_test(c=i,s=j)
 end end
 
-if dif < 1.0e-15
-    print("Dwpl test passed with average error ", dif/12,"!\n")    
+if diff < 1.0e-15
+    print("Dwpl test passed with average error ", diff/12,"!\n")
 else
-    error("Dwpl test failed with difference: ",dif,"\n")
+    error("Dwpl test failed with difference: ",diff,"\n")
 end
 
 

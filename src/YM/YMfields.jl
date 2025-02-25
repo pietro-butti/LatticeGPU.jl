@@ -9,8 +9,14 @@
 ### created: Thu Jul 15 15:16:47 2021
 ###                               
 
-function randomize!(f, lp::SpaceParm, ymws::YMworkspace; curng=CUDA.default_rng()) 
         
+"""
+        function randomize!(f, lp::SpaceParm, ymws::YMworkspace; curng=CUDA.default_rng())
+
+Given an algebra field with natural indexing, this routine sets the components to random Gaussian distributed values. If SF boundary conditions are used, the force at the boundaries is set to zero.
+"""
+function randomize!(f, lp::SpaceParm, ymws::YMworkspace; curng=CUDA.default_rng())
+
     if ymws.ALG == SU2alg
         @timeit "Randomize SU(2) algebra field" begin
             m = Random.randn(curng, ymws.PRC, lp.bsz,lp.ndim,3,lp.rsz)
@@ -49,31 +55,44 @@ function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::SpaceParm{N,M,BC_PERIODI
     return nothing
 end
 
-function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::SpaceParm{N,M,B,D}) where {T,N,M,B,D}
+function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::SpaceParm{N,M,BC_OPEN,D}) where {T,N,M,D}
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        for id in 1:lp.ndim
+            frc[b,id,r] = SU3alg(m[b,id,1,r], m[b,id,2,r], m[b,id,3,r],
+                                 m[b,id,4,r], m[b,id,5,r], m[b,id,6,r],
+                                 m[b,id,7,r], m[b,id,8,r])
+        end
+    end
+
+    return nothing
+end
+
+function krnl_assign_SU3!(frc::AbstractArray{T}, m, lp::Union{SpaceParm{N,M,BC_SF_ORBI,D},SpaceParm{N,M,BC_SF_AFWB,D}}) where {T,N,M,D}
 
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
         it = point_time((b,r), lp)
 
-        if ((B==BC_SF_AFWB)||(B==BC_SF_ORBI))
-            if it == 1
-                for id in 1:lp.ndim-1
-                    frc[b,id,r] = zero(T)
-                end
-                frc[b,N,r] = SU3alg(m[b,N,1,r], m[b,N,2,r], m[b,N,3,r],
-                                    m[b,N,4,r], m[b,N,5,r], m[b,N,6,r],
-                                    m[b,N,7,r], m[b,N,8,r])
-            else
-                for id in 1:lp.ndim
-                    frc[b,id,r] = SU3alg(m[b,id,1,r], m[b,id,2,r], m[b,id,3,r],
-                                         m[b,id,4,r], m[b,id,5,r], m[b,id,6,r],
-                                         m[b,id,7,r], m[b,id,8,r])
-                end
+        if it == 1
+            for id in 1:lp.ndim-1
+                frc[b,id,r] = zero(T)
+            end
+            frc[b,N,r] = SU3alg(m[b,N,1,r], m[b,N,2,r], m[b,N,3,r],
+                                m[b,N,4,r], m[b,N,5,r], m[b,N,6,r],
+                                m[b,N,7,r], m[b,N,8,r])
+        else
+            for id in 1:lp.ndim
+                frc[b,id,r] = SU3alg(m[b,id,1,r], m[b,id,2,r], m[b,id,3,r],
+                                     m[b,id,4,r], m[b,id,5,r], m[b,id,6,r],
+                                     m[b,id,7,r], m[b,id,8,r])
             end
         end
     end
-        
+
     return nothing
 end
 

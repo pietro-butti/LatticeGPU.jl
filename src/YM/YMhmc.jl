@@ -13,7 +13,7 @@
     
     function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
 
-Returns the value of the gauge plaquette action for the configuration U. The parameters `\beta` and `c0` are taken from the `gp` structure. 
+Returns the value of the gauge action for the configuration U. The parameters ``\\beta`` and `c0` are taken from the `gp` structure.
 """
 function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where T <: AbstractFloat
 
@@ -37,6 +37,11 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) whe
     return S
 end
 
+"""
+        function plaquette(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
+
+Computes the average plaquette for the configuration `U`.
+"""
 function plaquette(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) where {N,M,B,D}
 
     ztw = ztwist(gp, lp)
@@ -48,7 +53,12 @@ function plaquette(U, lp::SpaceParm{N,M,B,D}, gp::GaugeParm, ymws::YMworkspace) 
 
     return CUDA.mapreduce(real, +, ymws.cm)/(prod(lp.iL)*lp.npls)
 end
-    
+
+"""
+        function hamiltonian(mom, U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
+
+Returns the Energy ``H = \\frac{p^2}{2}+S[U]``, where the momenta field is given by `mom` and the configuration by `U`.
+"""
 function hamiltonian(mom, U, lp, gp, ymws)
     @timeit "Computing Hamiltonian" begin
         K = CUDA.mapreduce(norm2, +, mom)/2 
@@ -58,6 +68,12 @@ function hamiltonian(mom, U, lp, gp, ymws)
     return K+V
 end
 
+
+"""
+        HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng())
+
+Performs a HMC step (molecular dynamics integration and accept/reject step). The configuration `U` is updated and function returns the energy violation and if the configuration was accepted in a tuple.
+"""
 function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng()) where T
 
     @timeit "HMC trayectory" begin
@@ -92,6 +108,11 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
 end
 HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng()) where T = HMC!(U, omf4(T, eps, ns), lp, gp, ymws; noacc=noacc, rng, curng)
 
+"""
+        function MD!(mom, U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
+
+Performs the integration of a molecular dynamics trajectory starting from the momentum field `mom` and the configuration `U` according to the integrator described by `int`.
+"""
 function MD!(mom, U, int::IntrScheme{NI, T}, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where {NI, T <: AbstractFloat}
     
     @timeit "MD evolution" begin

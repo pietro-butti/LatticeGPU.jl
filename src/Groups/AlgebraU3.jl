@@ -1,6 +1,10 @@
 
 
+"""
+    struct U3alg{T} <: Algebra
 
+Elements of the `U(3)` Algebra. The type `T <: AbstractFloat` can be used to define single or double precision elements.
+"""
 struct U3alg{T} <: Algebra
     u11::T
     u22::T
@@ -10,6 +14,11 @@ struct U3alg{T} <: Algebra
     u23::Complex{T}
 end
 
+"""
+    antsym(a::SU3{T}) where T <: AbstractFloat
+
+Returns the antisymmetrization of the SU3 element `a`, that is `\`\` `a - a^{\\dagger}` `\`. This method returns al element of `U3alg{T}`.
+"""
 function antsym(a::SU3{T}) where T <: AbstractFloat
     t1 = 2.0*imag(a.u11)
     t2 = 2.0*imag(a.u22)

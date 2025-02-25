@@ -41,7 +41,7 @@ function read_prop(fname::String)
     footh = Vector{Float64}(undef, 4)
 
     lp = SpaceParm{ndim}(iL, (4,4,4,4), ibc, ntw)
-    dpar = DiracParam{Float64}(SU3fund,foopars[1],foopars[2],ntuple(i -> footh[i], 4),foopars[3])
+    dpar = DiracParam{Float64}(SU3fund,foopars[1],foopars[2],ntuple(i -> footh[i], 4),foopars[3],foopars[4])
 
 
     dtr = (2,3,4,1)
@@ -100,7 +100,7 @@ function save_prop(fname::String, psi, lp::SpaceParm{4,M,B,D}, dpar::DiracParam;
         BDIO_write!(fb, [convert(Int32, B)])
         BDIO_write!(fb, [convert(Int32, lp.iL[i]) for i in 1:4])
         BDIO_write!(fb, [convert(Int32, lp.ntw[i]) for i in 1:M])
-        BDIO_write!(fb, [dpar.m0, dpar.csw, dpar.ct])
+        BDIO_write!(fb, [dpar.m0, dpar.csw, dpar.tm, dpar.ct])
         BDIO_write!(fb, [dpar.th[i] for i in 1:4])
     end
     BDIO_write_hash!(fb)
@@ -175,7 +175,7 @@ function read_dpar(fname::String)
     footh = Vector{Float64}(undef, 4)
 
     lp = SpaceParm{ndim}(iL, (4,4,4,4), ibc, ntw)
-    dpar = DiracParam{Float64}(SU3fund,foopars[1],foopars[2],ntuple(i -> footh[i], 4),foopars[3])
+    dpar = DiracParam{Float64}(SU3fund,foopars[1],foopars[2],ntuple(i -> footh[i], 4),foopars[3],foopars[4])
 
     
     BDIO_close!(fb)

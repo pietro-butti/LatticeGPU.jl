@@ -40,25 +40,27 @@ include("YM/YM.jl")
 using .YM
 export ztwist
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
+export force_gauge, MD!
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield
-export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg
+export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 include("Spinors/Spinors.jl")
 
 using .Spinors    
-export Spinor, Pgamma
+export Spinor, Pgamma, Gamma
 export imm, mimm
 export pmul, gpmul, gdagpmul, dmul
 
 include("Dirac/Dirac.jl")
 using .Dirac
 export DiracWorkspace, DiracParam
-export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!
+export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 export read_prop, save_prop, read_dpar
+export Nablanabla!, flw, backflow
 
 include("Solvers/Solvers.jl")
 using .Solvers
