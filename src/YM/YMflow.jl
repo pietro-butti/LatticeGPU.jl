@@ -303,6 +303,10 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws:
                 for it in 1:lp.iL[end]
                     Eslc[it,ipl] = 2*Etmp[it]
                 end
+                if OBC  ## Spatial plaquettes at time boundary count half (Luescher)
+                    Eslc[1,ipl] = Etmp[1]
+                    Eslc[end,ipl] = Etmp[end]
+                end
             end
         end
         
@@ -403,6 +407,12 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         for it in 1:lp.iL[end]
             Eslc[it,ipl1] = Etmp[it]/8
         end
+
+        ## tentative (weight 1/2 on spatial planes on boundary)
+        #if (B == BC_OPEN) && (ipl1 >= 4)
+        #    Eslc[end,ipl1] = Etmp[end]/16
+        #    Eslc[1,ipl1] = Etmp[1]/16
+        #end
         
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, ymws.frc2, lp)
@@ -411,6 +421,12 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         for it in 1:lp.iL[end]
             Eslc[it,ipl2] = Etmp[it]/8
         end
+
+        ## tentative (weight 1/2 on spatial planes on boundary)
+        #if (B == BC_OPEN) && (ipl2 >= 4)
+        #    Eslc[end,ipl2] = Etmp[end]/16
+        #    Eslc[1,ipl2] = Etmp[1]/16
+        #end
 
         return nothing
     end
