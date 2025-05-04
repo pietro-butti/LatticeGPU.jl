@@ -567,3 +567,60 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
     end
     return nothing
 end
+
+
+
+function krnl_qtop_plaq!(plx, plane1, plane2, U::AbstractArray{T}, ztw, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        I = point_coord((b,r), lp)
+
+        Q = zero(eltype(plx))
+
+        (id1,id2),(id3,id4) = plane1, plane2
+
+            bu1, ru1 = up((b, r), id1, lp)
+            bu2, ru2 = up((b, r), id2, lp)
+            gt1 = U[bu1,id2,ru1]
+
+            bu3, ru3 = up((b, r), id3, lp)
+            bu4, ru4 = up((b, r), id4, lp)
+            gt3 = U[bu3,id4,ru3]
+
+            Q += tr(
+                U[b,id1,r]*gt1 / (U[b,id2,r]*U[bu2,id1,ru2]) *
+                (U[b,id3,r]*gt3 / (U[b,id4,r]*U[bu4,id3,ru4]))
+            )
+
+        plx[I] = Q
+    end
+    
+    return nothing
+end
+
+"""
+    Qtop(U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Measure the topological charge `Q` of the configuration `U` using the plaquette definition of the field strength tensor. Only works in 4D *and* Periodic BC *and* no twist.
+"""
+function Qtop_plaq(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where T <: AbstractFloat
+    @timeit "Wilson gauge action" begin
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,2) , (3,4) , U, ztw, lp)
+        end
+        Q = CUDA.mapreduce(real, +, ymws.cm)
+
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,3) , (2,4) , U, ztw, lp)
+        end
+        Q -= CUDA.mapreduce(real, +, ymws.cm)
+
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,4) , (2,3) , U, ztw, lp)
+        end
+        Q += CUDA.mapreduce(real, +, ymws.cm)
+    end
+
+    return Q/(32*pi^2)
+end

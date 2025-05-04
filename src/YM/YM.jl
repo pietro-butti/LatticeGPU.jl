@@ -174,6 +174,7 @@ include("YMflow.jl")
 export FlowIntr, flw, flw_adapt
 export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
+export Qtop_plaq
 
 include("YMsf.jl")
 export sfcoupling, bndfield, setbndfield
