@@ -320,6 +320,22 @@ function krnl_force_impr_pln!(frc1, frc2, U::AbstractArray{T}, c0, c1, Ubnd, cG,
     return nothing
 end
 
+function bnd_rescale_flw!(frc1, lp::SpaceParm{N,M,BC_OPEN,D}) where {N,M,D}
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        I = point_coord((b,r), lp)
+        it = I[N]
+
+        for id in 1:N-1
+            if (((it == 1) || (it == lp.iL[4])))
+                frc1[b,id,r] = 2*frc1[b,id,r]
+            end
+        end
+    end
+    return nothing
+end
 
 ##
 ## SF
@@ -917,6 +933,38 @@ function force_gauge(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm)
 end
 force_gauge(ymws::YMworkspace, U, c0, gp, lp) = force_gauge(ymws, U, c0, gp.cG[1], gp, lp)
 force_gauge(ymws::YMworkspace, U, gp, lp) = force_gauge(ymws, U, gp.c0, gp.cG[1], gp, lp)
+
+"""
+    function force_gauge_flw(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D})
+
+Computes the force for the gauge flow with Open Boundaries. An aditional factor two in the boundaries
+is included, see
+
+M. Luescher, S. Schaefer: "Lattice QCD with open boundary conditions and twisted-mass reweighting", Comput.Phys.Commun. 184 (2013) 519,
+
+for more details.
+
+"""
+function force_gauge_flw(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}) where {NI,N,M,D}
+
+    ztw = ztwist(gp, lp)
+    if abs(c0-1) < 1.0E-10
+        @timeit "Wilson gauge force" begin
+            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, ztw, lp::SpaceParm)
+        end
+    else
+        @timeit "Improved gauge force" begin
+            force_pln!(ymws.frc1, ymws.frc2, U, gp.Ubnd, cG, ztw, lp::SpaceParm, c0)
+        end
+    end
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz bnd_rescale_flw!(ymws.frc1,lp::SpaceParm)
+    end
+
+    return nothing
+end
+
 
 """ 
     function force_wilson(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm)
