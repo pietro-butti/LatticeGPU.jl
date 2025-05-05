@@ -162,7 +162,6 @@ function krnl_assign_pf_su3!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
         else
             f[b,r] = 0.0*f[b,r]
         end
-
     end
 
     return nothing
@@ -208,7 +207,6 @@ function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
         else
             f[b,r] = 0.0*f[b,r]
         end
-
     end
 
     return nothing

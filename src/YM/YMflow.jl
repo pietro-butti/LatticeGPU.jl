@@ -201,6 +201,31 @@ function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpacePar
 end
 flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw(U, int, ns, int.eps, gp, lp, ymws)
 
+function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D}
+    @timeit "Integrating flow equations" begin
+        for i in 1:ns
+            force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
+            if int.add_zth
+                add_zth_term(ymws::YMworkspace, U, lp)
+            end
+            ymws.mom .= ymws.frc1
+            U .= expm.(U, ymws.mom, 2*eps*int.r)
+
+            for k in 1:NI
+                force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
+                if int.add_zth
+                    add_zth_term(ymws::YMworkspace, U, lp)
+                end
+                ymws.mom .= int.e0[k].*ymws.mom .+ int.e1[k].*ymws.frc1
+                U .= expm.(U, ymws.mom, 2*eps)
+            end
+        end
+    end
+
+    return nothing
+end
+flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D} = flw(U, int, ns, int.eps, gp, lp, ymws)
+
 
 ##
 # Adaptive step size integrators
