@@ -151,16 +151,17 @@ function krnl_assign_pf_su3!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
 
-            if t == 0
+        if t == 0
             f[b,r] = Spinor(map(x->SU3fund(x[b,1,r,1] + im* x[b,1,r,2],
-                                        x[b,2,r,1] + im* x[b,2,r,2],
-                                        x[b,3,r,1] + im* x[b,3,r,2]),p))
-            elseif point_time((b,r),lp) == t
+                                           x[b,2,r,1] + im* x[b,2,r,2],
+                                           x[b,3,r,1] + im* x[b,3,r,2]),p))
+        elseif point_time((b,r),lp) == t
             f[b,r] = Spinor(map(x->SU3fund(x[b,1,r,1] + im* x[b,1,r,2],
-                                        x[b,2,r,1] + im* x[b,2,r,2],
-                                        x[b,3,r,1] + im* x[b,3,r,2]),p))
-            end
-
+                                           x[b,2,r,1] + im* x[b,2,r,2],
+                                           x[b,3,r,1] + im* x[b,3,r,2]),p))
+        else
+            f[b,r] = 0.0*f[b,r]
+        end
     end
 
     return nothing
@@ -197,14 +198,15 @@ function krnl_assign_pf_su2!(f::AbstractArray, p , lp::SpaceParm, t::Int64)
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
 
-            if t == 0
+        if t == 0
             f[b,r] = Spinor(map(x->SU2fund(x[b,1,r,1] + im* x[b,1,r,2],
-                                        x[b,2,r,1] + im* x[b,2,r,2]),p))
-            elseif point_time((b,r),lp) == t
+                                           x[b,2,r,1] + im* x[b,2,r,2]),p))
+        elseif point_time((b,r),lp) == t
             f[b,r] = Spinor(map(x->SU2fund(x[b,1,r,1] + im* x[b,1,r,2],
-                                        x[b,2,r,1] + im* x[b,2,r,2]),p))
-            end
-
+                                           x[b,2,r,1] + im* x[b,2,r,2]),p))
+        else
+            f[b,r] = 0.0*f[b,r]
+        end
     end
 
     return nothing

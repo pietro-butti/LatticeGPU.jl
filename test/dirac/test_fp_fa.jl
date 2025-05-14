@@ -2,6 +2,8 @@ using LatticeGPU
 using CUDA
 using TimerOutputs
 
+println(" # Free solution for SF correlation functions")
+
 @timeit "fA_fP test" begin
 
 
@@ -115,7 +117,7 @@ using TimerOutputs
         elseif difP > 1.0e-15
             error("fP test failed with error ", difP)
         else
-            print("fA & fP tests passed with errors: ", difA," and ",difP,"!\n")
+            print("fA & fP tests passed with errors: ", difA," and ",difP,"\n")
         end
 
 end
