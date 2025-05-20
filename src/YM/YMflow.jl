@@ -430,28 +430,24 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
-            Eslc[it,ipl1] = Etmp[it]/8
+	    if (B == BC_OPEN) && (it ==	1 || it	== lp.iL[end])
+	        Eslc[it,ipl1] = 0.0
+	    else
+		Eslc[it,ipl1] = Etmp[it]/8
+	    end
         end
 
-        ## tentative (weight 1/2 on spatial planes on boundary)
-        #if (B == BC_OPEN) && (ipl1 >= 4)
-        #    Eslc[end,ipl1] = Etmp[end]/16
-        #    Eslc[1,ipl1] = Etmp[1]/16
-        #end
-        
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, ymws.frc2, lp)
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
-            Eslc[it,ipl2] = Etmp[it]/8
+	    if (B == BC_OPEN) && (it == 1 || it == lp.iL[end])
+		Eslc[it,ipl2] = 0.0
+	    else
+                Eslc[it,ipl2] = Etmp[it]/8
+	    end
         end
-
-        ## tentative (weight 1/2 on spatial planes on boundary)
-        #if (B == BC_OPEN) && (ipl2 >= 4)
-        #    Eslc[end,ipl2] = Etmp[end]/16
-        #    Eslc[1,ipl2] = Etmp[1]/16
-        #end
 
         return nothing
     end
