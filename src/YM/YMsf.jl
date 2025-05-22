@@ -92,7 +92,7 @@ end
 """
         function setbndfield(U, phi, lp::SpaceParm)
 
-Sets abelian boundary fields with phases `phi[1]` and `phi[2]` to the configuration `U` at time salice ``x_0=0``.
+Sets abelian boundary fields with phases `phi[1]` and `phi[2]` to the configuration `U` at time slice ``x_0=0``.
 """
 function setbndfield(U, phi, lp::SpaceParm{N,M,B,D}) where {N,M,B,D}
 

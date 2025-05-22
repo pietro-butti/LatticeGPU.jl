@@ -1,15 +1,16 @@
 using LatticeGPU, CUDA, TimerOutputs
 
 #Test for the relation K(t,y;0,n) Dw(n|m)^{-1} e^(ipm) = D(p)^{-1} exp(-4t sin^2(p/2)) e^{ipn} with a given momenta (if p=0 its randomized), spin and color
-#Kernel en 1207.2096
+#Kernel from 1207.2096
 
+println(" # Free fermion propagator for frontflow")
 
 @timeit "Plw flow test" begin
 
     function Dwpw_test(;p=0,s=1,c=1)
         lp = SpaceParm{4}((16,16,16,16), (4,4,4,4), 0, (0,0,0,0,0,0))
         gp = GaugeParm{Float64}(SU3{Float64}, 6.0, 1.0)
-        dpar = DiracParam{Float64}(SU3fund,1.3,0.0,(1.0,1.0,1.0,1.0),0.0)
+        dpar = DiracParam{Float64}(SU3fund,1.3,0.0,(1.0,1.0,1.0,1.0),0.0,0.0)
         dws = DiracWorkspace(SU3fund,Float64,lp);
         ymws = YMworkspace(SU3,Float64,lp);
 
@@ -103,15 +104,15 @@ using LatticeGPU, CUDA, TimerOutputs
 
 
     begin
-        dif = 0.0
+        global diff = 0.0
         for i in 1:3 for j in 1:4
-            dif += Dwpw_test(c=i,s=j)
+            global diff += Dwpw_test(c=i,s=j)
         end end
 
-        if dif < 1.0e-4
-            print("Flow_tl test passed with average error ", dif/12,"!\n")
+        if diff < 1.0e-4
+            print("Flow_tl test passed with average error ", diff/12,"\n")
         else
-            error("Flow_tl test failed with difference: ",dif,"\n")
+            error("Flow_tl test failed with difference: ",diff,"\n")
         end
 
 

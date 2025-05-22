@@ -40,7 +40,7 @@ include("YM/YM.jl")
 using .YM
 export ztwist
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
-export force_gauge, MD!
+export force_gauge, force_gauge_flw, MD!
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 export Eoft_clover, Eoft_plaq, Qtop
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
@@ -60,7 +60,7 @@ using .Dirac
 export DiracWorkspace, DiracParam
 export Dw!, g5Dw!, DwdagDw!, SF_bndfix!, Csw!, pfrandomize!, mtwmdpar
 export read_prop, save_prop, read_dpar
-export Nablanabla!, flw, backflow
+export Nablanabla!, flw, backflow, bfl_error
 
 include("Solvers/Solvers.jl")
 using .Solvers

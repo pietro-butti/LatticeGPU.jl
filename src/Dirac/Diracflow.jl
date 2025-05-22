@@ -41,13 +41,13 @@ flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, dpar::DiracParam, lp:
 """
     function backflow(psi, U, Dt, nsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
-Performs one step back in flow time for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice
+Performs the integration of the adjoint flow for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice
 nsave is the total number of gauge fields saved in the process
 
 """
-function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm,int::FlowIntr, ymws::YMworkspace, dws::DiracWorkspace)
 
-    int = wfl_rk3(Float64,0.01,1.0) # Default integrator, it has to be order 3 rk but in can be zfl
+     # Default integrator is  wfl_rk3(Float64,0.01,1.0), it has to be order 3 rk but in can be zfl
 
     @timeit "Backflow integration" begin
         @timeit "GPU to CPU" U0 = Array(U)
@@ -98,6 +98,7 @@ function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, 
 
     return nothing
 end
+backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) = backflow(psi, U, Dt, maxnsave, gp, dpar, lp, wfl_rk3(Float64,0.01,1.0), ymws, dws)
 
 """
 function bflw_step!(U, psi, eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
@@ -108,8 +109,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
     @timeit "Backflow step" begin
 
-        V = copy(U)
-        V .= U
+        @timeit "GPU to CPU" V = Array(U)
 
         force_gauge(ymws, U, int.c0, 1, gp, lp)
 
@@ -131,7 +131,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         Nablanabla!(dws.sp, U, 0.75*2*eps*psi, dpar, dws, lp)
 
-        U .= V
+        @timeit "CPU to GPU" copyto!(U,V)
 
         force_gauge(ymws, U, int.c0, 1, gp, lp)
 
@@ -144,7 +144,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
         Nablanabla!(dws.sAp, U, 2*eps*dws.sp, dpar, dws, lp)
         dws.sAp .= psi + (8/9)*dws.sAp
 
-        U .= V
+        @timeit "CPU to GPU" copyto!(U,V)
 
         Nablanabla!(psi, U, 2*eps*(dws.sAp - (8/9)*dws.sp), dpar, dws, lp)
         psi .= (1/4)*psi + dws.sp + dws.sAp
@@ -166,8 +166,9 @@ function flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugePar
         if ns > 10
             flw(U, psi, int, 9, eps, gp, dpar, lp, ymws, dws)
             ymws.U1 .= U
+            dws.sr .= psi
             flw(U, psi, int, 1, eps, gp, dpar, lp, ymws, dws)
-            flw(ymws.U1, int, 2, eps/2, gp, lp, ymws)
+            flw(ymws.U1,dws.sr, int, 2, eps/2, gp, dpar,lp, ymws,dws)
 
             dt = dt - 10*eps
             nstp = nstp + 10
@@ -175,8 +176,10 @@ function flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugePar
 
             # adjust step size
             ymws.U1 .= ymws.U1 ./ U
+            dws.sr .= dws.sr .- psi
             maxd = CUDA.mapreduce(dev_one, max, ymws.U1, init=zero(tend))
-            eps  = min(int.max_eps, 2*eps, int.sft_fac*eps*(int.tol/maxd)^(one(tend)/3))
+            pfdist = sqrt(CUDA.mapreduce(norm2, max, dws.sr, init=zero(tend)))
+            eps  = min(int.max_eps, 2*eps, int.sft_fac*eps*(int.tol/maxd)^(one(tend)/3),int.sft_fac*eps*(int.tol/pfdist)^(one(tend)/3))
 
         else
             flw(U, psi, int, ns, eps, gp, dpar, lp, ymws, dws)
@@ -205,7 +208,7 @@ flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, gp::GaugeParm, dpar::DiracParam,
 
     function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
 
-Computes /`/` \\nabla^* \\nabla /`/` `si` and stores it in `si`.
+Computes /`/` \\nabla^* \\nabla /`/` `si` and stores it in `so`.
 
 """
 function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,BC_PERIODIC,D}) where {D}
@@ -216,6 +219,7 @@ function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Space
     end
     return nothing
 end
+
 function Nablanabla!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D},SpaceParm{4,6,BC_OPEN,D}}) where {D}
     SF_bndfix!(si,lp)
     @timeit "Laplacian" begin
@@ -238,7 +242,7 @@ function krnl_Nablanabla(so, U, si, th, lp::SpaceParm{4,6,BC_OPEN,D}) where {D}
 
             so[b,r] = -4*si[b,r]
 
-	        bu1, ru1 = up((b,r), 1, lp)
+            bu1, ru1 = up((b,r), 1, lp)
             bd1, rd1 = dw((b,r), 1, lp)
             bu2, ru2 = up((b,r), 2, lp)
             bd2, rd2 = dw((b,r), 2, lp)
@@ -313,9 +317,29 @@ function krnl_Nablanabla(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},Sp
 end
 
 
-
 export Nablanabla!, flw, backflow, flw_adapt, bflw_step!
 
+"""
+    function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+
+Estimates the error of the backflow integration of `\\psi\\_t` into `\\psi\\_0` with a random noise source.
+"""
+function bfl_error(psi_t, psi_0, U, tend, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+
+    pfrandomize!(dws.sr,lp)
+    @timeit "GPU to CPU" V = Array(U)
+
+    R0 =  sum(dot.(psi_0,dws.sr))
+
+    flw_adapt(U, dws.sr, int, tend, int.eps_ini/2, gp, dpar, lp, ymws, dws)
+
+    R1 = sum(dot.(psi_t,dws.sr))
+    @timeit "CPU to GPU" copyto!(U,V)
+
+    return abs(R0-R1)
+end
+
+export bfl_error
 
 """
     function Dslash_sq!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceParm{4,6,B,D})
@@ -362,7 +386,6 @@ function Dslash_sq!(so, U, si, dpar::DiracParam, dws::DiracWorkspace, lp::SpaceP
     return nothing
 end
 
-
 function krnl_g5Dslsh!(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 
     b = Int64(CUDA.threadIdx().x);  r = Int64(CUDA.blockIdx().x)
@@ -392,7 +415,6 @@ function krnl_g5Dslsh!(so, U, si, th, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},Spac
     end
     return nothing
 end
-
 
 function krnl_g5Dslsh!(so, U, si, th, lp::SpaceParm{4,6,B,D}) where {D,B}
 
@@ -435,8 +457,6 @@ function krnl_g5Dslsh_impr!(so, Fcsw, csw, si, lp::SpaceParm{4,6,B,D}) where {B,
 
     return nothing
 end
-
-
 
 function krnl_g5Dslsh_impr!(so, Fcsw, csw, si, lp::Union{SpaceParm{4,6,BC_SF_ORBI,D},SpaceParm{4,6,BC_SF_AFWB,D}}) where {D}
 

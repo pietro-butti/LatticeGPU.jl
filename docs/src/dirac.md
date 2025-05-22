@@ -20,6 +20,16 @@ The workspace stores four fermion fields, namely `.sr`, `.sp`, `.sAp` and `.st`,
 for different purposes. If the representation is either `SU2fund` of `SU3fund`, an extra
 field with values in `U2alg`/`U3alg` is created to store the clover, used for the improvement.
 
+The functions using the fields allocated in [`DiracWorkspace`](@ref) are the following:
+
+- `dws.sr` : [`CG!`](@ref), [`flw_adapt`](@ref) (fermion case), [`bfl_error`](@ref)
+- `dws.st` : [`DwdagDw!`](@ref), [`bflw_step_vec!`](@ref)
+- `dws.sp` : [`CG!`](@ref), [`flw`](@ref) (fermion case), [`bflw_step!`](@ref), [`bflw_step_vec!`](@ref), [`propagator!`](@ref), [`bndpropagator!`](@ref), [`Tbndpropagator!`](@ref)
+- `dws.sAp` : [`CG!`](@ref), [`flw`](@ref) (fermion case), [`bflw_step!`](@ref), [`bflw_step_vec!`](@ref) 
+
+Note that other functions may call some of these functions, like [`flw_adapt`](@ref) depending on [`flw`](@ref), [`bflw!`](@ref) depending on [`bflw_step!`](@ref) or [`propagator!`](@ref) depending on [`CG!`](@ref). The fields used in the innermost function will also be modified by the outermost methods.
+
+
 ## Functions
 
 The functions [`Dw!`](@ref), [`g5Dw!`](@ref) and [`DwdagDw!`](@ref) are all related to the 
