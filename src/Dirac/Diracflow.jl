@@ -1,11 +1,24 @@
+###
+### "THE BEER-WARE LICENSE":
+### Fernando Panadero wrote this file based on Alberto Ramos' work.
+### As long as you retain this notice you can do whatever you want with this stuff. If we meet some
+### day, and you think this stuff is worth it, you can buy us a beer in
+### return. <alberto.ramos@cern.ch> <fernando.p@csic.es>
+###
+### file:    Diracflow.jl
+###
 
 import ..YM.flw, ..YM.force_gauge, ..YM.flw_adapt
 
+"""
+        flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
+Integrates the flow equations with the integration scheme defined by `int` performing `ns` steps with fixed step size. The configuration `U` is overwritten.
+"""
 function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) where {NI,T}
     @timeit "Integrating flow equations" begin
         for i in 1:ns
-            force_gauge(ymws, U, int.c0, 1, gp, lp)
+            force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
 
             if int.add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
@@ -18,7 +31,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
             U .= expm.(U, ymws.mom, 2*eps*int.r)
 
             for k in 1:NI
-                force_gauge(ymws, U, int.c0, 1, gp, lp)
+                force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
 
                 if int.add_zth
                     add_zth_term(ymws::YMworkspace, U, lp)
@@ -41,13 +54,11 @@ flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, dpar::DiracParam, lp:
 """
     function backflow(psi, U, Dt, nsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
-Performs the integration of the adjoint flow for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice
-nsave is the total number of gauge fields saved in the process
+Performs the integration of the adjoint flow for the fermion field, according to 1302.5246. The fermion field must me that of the time-slice Dt and is flowed back to the first time-slice.
+nsave is the total number of gauge fields saved in the process. The default integrator is wfl_rk3(Float64,0.01,1.0) with adaptive steps, it has to be order 3 rk but in can be zfl.
 
 """
 function backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm,int::FlowIntr, ymws::YMworkspace, dws::DiracWorkspace)
-
-     # Default integrator is  wfl_rk3(Float64,0.01,1.0), it has to be order 3 rk but in can be zfl
 
     @timeit "Backflow integration" begin
         @timeit "GPU to CPU" U0 = Array(U)
@@ -103,7 +114,7 @@ backflow(psi, U, Dt, maxnsave::Int64, gp::GaugeParm, dpar::DiracParam, lp::Space
 """
 function bflw_step!(U, psi, eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
-Performs ONE backstep in psi, from t to t-\eps. U is supposed to be the one in t-\eps and is left unchanged. So far, int has to be rk4
+Performs ONE backstep in psi, from t to t-\eps. U is supposed to be the one in t-\eps and is left unchanged. So far, int has to be rk3
 """
 function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
 
@@ -111,7 +122,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         @timeit "GPU to CPU" V = Array(U)
 
-        force_gauge(ymws, U, int.c0, 1, gp, lp)
+        force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
@@ -120,7 +131,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
         ymws.mom .= ymws.frc1
         U .= expm.(U, ymws.mom, 2*eps*int.r)
 
-        force_gauge(ymws, U, int.c0, 1, gp, lp)
+        force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
@@ -133,7 +144,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         @timeit "CPU to GPU" copyto!(U,V)
 
-        force_gauge(ymws, U, int.c0, 1, gp, lp)
+        force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
             add_zth_term(ymws::YMworkspace, U, lp)
@@ -155,6 +166,11 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 end
 
 
+"""
+        flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace)
+
+Integrates the flow equations with the integration scheme defined by `int` using the adaptive step size integrator up to `tend` with the tolerance defined in `int`. The configuration `U` is overwritten.
+"""
 function flw_adapt(U, psi, int::FlowIntr{NI,T}, tend::T, epsini::T, gp::GaugeParm, dpar::DiracParam, lp::SpaceParm, ymws::YMworkspace, dws::DiracWorkspace) where {NI,T}
 
     eps = epsini
