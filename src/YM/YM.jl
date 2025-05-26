@@ -165,7 +165,7 @@ include("YMfields.jl")
 export randomize!, zero!, norm2
 
 include("YMact.jl")
-export krnl_plaq!, force_gauge, force_gauge_flw, force_wilson
+export krnl_plaq!, force_gauge, force_gauge_flw, force_wilson, bnd_rescale_flw!
 
 include("YMhmc.jl")
 export gauge_action, hamiltonian, plaquette, HMC!, MD!

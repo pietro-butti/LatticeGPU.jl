@@ -127,6 +127,22 @@ function add_zth_term(ymws::YMworkspace, U, lp)
     return nothing
 end
 
+
+"""
+    function rescale_bnd(ymws::YMworkspace, lp)
+
+Rescales the time-boundary of ymws.frc1 by a factor of 2.0 (needed for open BC)
+"""
+function rescale_bnd(ymws::YMworkspace, lp)
+
+    CUDA.@sync begin
+        CUDA.@cuda threads=lp.bsz blocks=lp.rsz bnd_rescale_flw!(ymws.frc1,lp::SpaceParm)
+    end
+
+    return nothing
+end
+
+
 function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
     @inbounds begin 
@@ -155,12 +171,14 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
                 end
             end
             if OBC
-                if (it > 1) && (it < lp.iL[end])
+		if (id < N)
                     frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
                         projalg(U[b,id,r]*X/U[b,id,r]))
-                elseif ((it == lp.iL[end]) || (it == 1))  && (id < N)
+                elseif (it > 1) && (it < (lp.iL[end]-1))
                     frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
                         projalg(U[b,id,r]*X/U[b,id,r]))
+		elseif (it == 1) || (it == (lp.iL[end]-1))
+		    frc2[b,id,r] = frc[b,id,r]
                 end
             else
                 frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
@@ -170,6 +188,8 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
     end
     return nothing
 end
+
+
 
 """
         function flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
@@ -204,18 +224,20 @@ flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMwor
 function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D}
     @timeit "Integrating flow equations" begin
         for i in 1:ns
-            force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
+            force_gauge(ymws, U, int.c0, 1, gp, lp)
             if int.add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
+            rescale_bnd(ymws, lp)
             ymws.mom .= ymws.frc1
             U .= expm.(U, ymws.mom, 2*eps*int.r)
 
             for k in 1:NI
-                force_gauge_flw(ymws, U, int.c0, 1, gp, lp)
+                force_gauge(ymws, U, int.c0, 1, gp, lp)
                 if int.add_zth
                     add_zth_term(ymws::YMworkspace, U, lp)
                 end
+                rescale_bnd(ymws, lp)
                 ymws.mom .= int.e0[k].*ymws.mom .+ int.e1[k].*ymws.frc1
                 U .= expm.(U, ymws.mom, 2*eps)
             end
