@@ -142,16 +142,69 @@ function rescale_bnd(ymws::YMworkspace, lp)
     return nothing
 end
 
+function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,BC_OPEN,D}) where {TA,TG,N,M,D}
 
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        it = point_time((b, r), lp)
+
+        @inbounds for id in 1:N
+            bu, ru = up((b,r), id, lp)
+            bd, rd = dw((b,r), id, lp)
+
+            X = frc[bu,id,ru]
+            Y  = frc[bd,id,rd]
+            Ud = U[bd,id,rd]
+
+            if (id < N)
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
+            elseif (it > 1) && (it < (lp.iL[end]-1))
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
+            elseif (it == 1) || (it == (lp.iL[end]-1))
+                frc2[b,id,r] = frc[b,id,r]
+            end
+        end
+    end
+    return nothing
+end
+
+function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::Union{SpaceParm{N,M,BC_SF_ORBI,D},SpaceParm{N,M,BC_SF_AFWB,D}}) where {TA,TG,N,M,D}
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        it = point_time((b, r), lp)
+
+        @inbounds for id in 1:N
+            bu, ru = up((b,r), id, lp)
+            bd, rd = dw((b,r), id, lp)
+
+            X = frc[bu,id,ru]
+            Y  = frc[bd,id,rd]
+            Ud = U[bd,id,rd]
+
+            if (it > 1) && (it < lp.iL[end])
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
+            elseif (it == lp.iL[end]) && (id < N)
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
+            else
+                frc2[b,id,r] = frc[b,id,r]
+            end
+        end
+    end
+    return nothing
+end
 function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
     @inbounds begin 
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
         it = point_time((b, r), lp)
-
-        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) )
-        OBC = (B == BC_OPEN)
 
         @inbounds for id in 1:N
             bu, ru = up((b,r), id, lp)
@@ -161,29 +214,8 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
             Y  = frc[bd,id,rd]
             Ud = U[bd,id,rd]
 
-            if SFBC
-                if (it > 1) && (it < lp.iL[end])
-                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(U[b,id,r]*X/U[b,id,r]))
-                elseif (it == lp.iL[end]) && (id < N)
-                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(U[b,id,r]*X/U[b,id,r]))
-                end
-            end
-            if OBC
-		if (id < N)
-                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(U[b,id,r]*X/U[b,id,r]))
-                elseif (it > 1) && (it < (lp.iL[end]-1))
-                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                        projalg(U[b,id,r]*X/U[b,id,r]))
-		elseif (it == 1) || (it == (lp.iL[end]-1))
-		    frc2[b,id,r] = frc[b,id,r]
-                end
-            else
-                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(U[b,id,r]*X/U[b,id,r]))
-            end
+            frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                projalg(U[b,id,r]*X/U[b,id,r]))
         end
     end
     return nothing
@@ -224,11 +256,13 @@ flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMwor
 function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D}
     @timeit "Integrating flow equations" begin
         for i in 1:ns
+
             force_gauge(ymws, U, int.c0, 1, gp, lp)
             if int.add_zth
                 add_zth_term(ymws::YMworkspace, U, lp)
             end
             rescale_bnd(ymws, lp)
+
             ymws.mom .= ymws.frc1
             U .= expm.(U, ymws.mom, 2*eps*int.r)
 
