@@ -1189,7 +1189,6 @@ function force_gauge_flw(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceP
     return nothing
 end
 
-
 """ 
     function force_wilson(ymws::YMworkspace, U, gp::GaugeParm, lp::SpaceParm)
 

@@ -1,9 +1,9 @@
 ###
 ### "THE BEER-WARE LICENSE":
-### Alberto Ramos wrote this file. As long as you retain this 
+### Alberto Ramos and Fernando Panadero wrote this file. As long as you retain this
 ### notice you can do whatever you want with this stuff. If we meet some 
-### day, and you think this stuff is worth it, you can buy me a beer in 
-### return. <alberto.ramos@cern.ch>
+### day, and you think this stuff is worth it, you can buy us a beer in
+### return. <alberto.ramos@cern.ch> <fernando.p@csic.es>
 ###
 ### file:    CG.jl
 ### created: Tue Nov 30 11:10:57 2021

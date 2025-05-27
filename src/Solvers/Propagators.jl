@@ -1,4 +1,12 @@
-
+###
+### "THE BEER-WARE LICENSE":
+### Fernando Panadero wrote this file based on Alberto Ramos' work.
+### As long as you retain this notice you can do whatever you want with this stuff. If we meet some
+### day, and you think this stuff is worth it, you can buy us a beer in
+### return. <alberto.ramos@cern.ch> <fernando.p@csic.es>
+###
+### file:    Propagators.jl
+###
 
 
 """

@@ -68,18 +68,19 @@ function hamiltonian(mom, U, lp, gp, ymws)
     return K+V
 end
 
+
 """
-        HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc=false)
+        HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng())
 
 Performs a HMC step (molecular dynamics integration and accept/reject step). The configuration `U` is updated and function returns the energy violation and if the configuration was accepted in a tuple.
 """
-function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T
+function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng()) where T
 
     @timeit "HMC trayectory" begin
         
         ymws.U1 .= U
         
-        randomize!(ymws.mom, lp, ymws)
+        randomize!(ymws.mom, lp, ymws; curng)
         hini = hamiltonian(ymws.mom, U, lp, gp, ymws)
         
         MD!(ymws.mom, U, int, lp, gp, ymws)
@@ -93,7 +94,7 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
         end
         
         if (pacc < 1.0)
-            r = rand()
+            r = rand(rng)
             if (pacc < r) 
                 U .= ymws.U1
                 acc = false
@@ -105,7 +106,7 @@ function HMC!(U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspac
     end
     return dh, acc
 end
-HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false) where T = HMC!(U, omf4(T, eps, ns), lp, gp, ymws; noacc=noacc)
+HMC!(U, eps, ns, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}; noacc=false, rng=Random.default_rng(), curng=CUDA.default_rng()) where T = HMC!(U, omf4(T, eps, ns), lp, gp, ymws; noacc=noacc, rng, curng)
 
 """
         function MD!(mom, U, int::IntrScheme, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace)
