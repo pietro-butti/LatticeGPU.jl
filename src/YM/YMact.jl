@@ -1165,11 +1165,12 @@ Computes the force for the gauge flow with Open Boundaries. An aditional factor 
 is included, see
 
 M. Luescher, S. Schaefer: "Lattice QCD with open boundary conditions and twisted-mass reweighting", Comput.Phys.Commun. 184 (2013) 519,
-
 for more details.
 
+This function is not called inside the code, instead the function rescale_bnd() is called after computing the forces.
+
 """
-function force_gauge_flw(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}) where {NI,N,M,D}
+function force_gauge_flw(ymws::YMworkspace, U, c0, cG, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}) where {N,M,D}
 
     ztw = ztwist(gp, lp)
     if abs(c0-1) < 1.0E-10
