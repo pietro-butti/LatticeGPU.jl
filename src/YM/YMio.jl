@@ -14,7 +14,7 @@
 
 Reads configuration from file `fname` using the native (BDIO) format.
 """
-function read_cnfg(fname::String, blk::Tuple{N,Int64}=(4,4,4,4))
+function read_cnfg(fname::String, blk::Tuple{4,Int64}=(4,4,4,4))
 
     UID_HDR = 14
     fb = BDIO_open(fname, "r")
