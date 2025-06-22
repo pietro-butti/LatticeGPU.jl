@@ -31,7 +31,7 @@ function gauge_action(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) whe
             end
         end
     end
-    S = gp.beta*( prod(lp.iL)*lp.npls*(gp.c0 + (1-gp.c0)/8) -
+    S = gp.beta*( prod(lp.iL)*lp.npls*(gp.c0 + (1-gp.c0)/4) -
                   CUDA.mapreduce(real, +, ymws.cm)/gp.ng )
 
     return S
