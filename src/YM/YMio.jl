@@ -14,7 +14,7 @@
 
 Reads configuration from file `fname` using the native (BDIO) format.
 """
-function read_cnfg(fname::String)
+function read_cnfg(fname::String, blk::Tuple{N,Int64}=(4,4,4,4))
 
     UID_HDR = 14
     fb = BDIO_open(fname, "r")
@@ -48,7 +48,7 @@ function read_cnfg(fname::String)
     dfoo = Vector{Float64}(undef, 4)
     BDIO_read(fb, dfoo)
 
-    lp = SpaceParm{ndim}(iL, (4,4,4,4), ibc, ntw)
+    lp = SpaceParm{ndim}(iL, blk, ibc, ntw)
     gp = GaugeParm{Float64}(SU3{Float64}, dfoo[1], dfoo[2])
     
     dtr = (2,3,4,1)
