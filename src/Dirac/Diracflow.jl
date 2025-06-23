@@ -21,7 +21,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
             force_gauge(ymws, U, int.c0, 1, gp, lp)
 
             if int.add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
+                YM.add_zth_term(ymws::YMworkspace, U, lp)
             end
 
             Nablanabla!(dws.sAp, U, psi, dpar, dws, lp)
@@ -34,7 +34,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
                 force_gauge(ymws, U, int.c0, 1, gp, lp)
 
                 if int.add_zth
-                    add_zth_term(ymws::YMworkspace, U, lp)
+                    YM.add_zth_term(ymws::YMworkspace, U, lp)
                 end
 
                 Nablanabla!(dws.sp, U, psi, dpar, dws, lp)
@@ -57,7 +57,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
             force_gauge(ymws, U, int.c0, 1, gp, lp)
 
             if int.add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
+                YM.add_zth_term(ymws::YMworkspace, U, lp)
             end
             rescale_bnd(ymws, lp)
 
@@ -71,7 +71,7 @@ function flw(U, psi, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, dpar::D
                 force_gauge(ymws, U, int.c0, 1, gp, lp)
 
                 if int.add_zth
-                    add_zth_term(ymws::YMworkspace, U, lp)
+                    YM.add_zth_term(ymws::YMworkspace, U, lp)
                 end
                 rescale_bnd(ymws, lp)
 
@@ -162,7 +162,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
         force_gauge(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
 
         ymws.mom .= ymws.frc1
@@ -171,7 +171,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
         force_gauge(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
 
         ymws.mom .= int.e0[1].*ymws.mom .+ int.e1[1].*ymws.frc1
@@ -184,7 +184,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
         force_gauge(ymws, U, int.c0, 1, gp, lp)
 
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
 
         U .= expm.(U, ymws.frc1, 2*eps*int.r)
@@ -210,7 +210,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         force_gauge(ymws, U, int.c0, 1, gp, lp)
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
         rescale_bnd(ymws, lp)
 
@@ -219,7 +219,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         force_gaugew(ymws, U, int.c0, 1, gp, lp)
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
         rescale_bnd(ymws, lp)
 
@@ -232,7 +232,7 @@ function bflw_step!(psi, U,  eps, int::FlowIntr, gp::GaugeParm, dpar::DiracParam
 
         force_gauge(ymws, U, int.c0, 1, gp, lp)
         if int.add_zth
-            add_zth_term(ymws::YMworkspace, U, lp)
+            YM.add_zth_term(ymws::YMworkspace, U, lp)
         end
         rescale_bnd(ymws, lp)
 
