@@ -43,7 +43,7 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
     return niter
 end
 
-function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, time::Int64) where {T}
+function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::SpaceParm, maxiter::Int64, tol::Float64, time::Int64, psi0 = nothing) where {T}
 
     function krnlg5!(src)
         b=Int64(CUDA.threadIdx().x)
@@ -56,6 +56,10 @@ function propagator!(pro, U, dpar::DiracParam{T}, dws::DiracWorkspace, lp::Space
         fill!(dws.sp,zero(eltype(scalar_field(Spinor{4,SU3fund{Float64}},lp))))
 
         pfrandomize!(dws.sp,lp,time)
+
+        if !isnothing(psi0)
+            psi0 .= Array(dws.sp)
+        end
 
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnlg5!(dws.sp)
