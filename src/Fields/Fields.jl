@@ -11,7 +11,8 @@
 
 module Fields
 
-using CUDA
+# using CUDA
+using ..BackendInterface: BACKEND, allocate_array
 using ..Space
 
 """
@@ -19,21 +20,25 @@ using ..Space
 
 Returns a vector field of elemental type `T`. 
 """
-vector_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
+# vector_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.ndim, lp.rsz)
+vector_field(::Type{T}, lp::SpaceParm) where {T} = allocate_array(BACKEND[],T,(lp.bsz, lp.ndim, lp.rsz))
+        
 
 """
         scalar_field(::Type{T}, lp::SpaceParm)
 
 Returns a scalar field of elemental type `T`.
 """
-scalar_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 2}(undef, lp.bsz, lp.rsz)
+# scalar_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 2}(undef, lp.bsz, lp.rsz)
+scalar_field(::Type{T}, lp::SpaceParm) where {T} = allocate_array(BACKEND[],T,(lp.bsz, lp.rsz))
 
 """
         nscalar_field(::Type{T}, n::Integer, lp::SpaceParm)
 
 Returns `n` scalar fields of elemental type `T`.
 """
-nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = CuArray{T, 3}(undef, lp.bsz, n, lp.rsz)
+# nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = CuArray{T, 3}(undef, lp.bsz, n, lp.rsz)
+nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = allocate_array(BACKEND[],T,(lp.bsz, n, lp.rsz))
 
 
 """
@@ -41,14 +46,16 @@ nscalar_field(::Type{T}, n, lp::SpaceParm) where {T} = CuArray{T, 3}(undef, lp.b
 
 Returns a scalar field of elemental type `T`, with lexicografic memory layout.
 """
-scalar_field_point(::Type{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D} = CuArray{T, N}(undef, lp.iL...)
+# scalar_field_point(::Type{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D} = CuArray{T, N}(undef, lp.iL...)
+scalar_field_point(::Type{T}, lp::SpaceParm{N,M,D}) where {T,N,M,D} = allocate_array(BACKEND[],T,lp.npls) 
 
 """
         tensor_field(::Type{T}, lp::SpaceParm)
 
 Returns a (symmetric) tensor field of elemental type `T`.
 """
-tensor_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.npls, lp.rsz)
+# tensor_field(::Type{T}, lp::SpaceParm)     where {T} = CuArray{T, 3}(undef, lp.bsz, lp.npls, lp.rsz)
+tensor_field(::Type{T}, lp::SpaceParm)     where {T} = allocate_array(BACKEND[],(lp.bsz, lp.npls, lp.rsz))
 
 
 export vector_field, scalar_field, nscalar_field, scalar_field_point, tensor_field

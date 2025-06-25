@@ -9,7 +9,7 @@
 ### created: Tue Sep 21 09:33:44 2021
 ###                               
 
-using CUDA, Random
+using Random
 
 import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp,Base.zero,Base.one
 import Random.rand
@@ -26,7 +26,7 @@ tr(g::U1{T})      where T <: AbstractFloat = complex(a.t1)
 Base.one(::Type{U1{T}}) where T <: AbstractFloat = U1{T}(one(T), zero(T))
 function Random.rand(rng::AbstractRNG, ::Random.SamplerType{U1{T}}) where T <: AbstractFloat
     r = randn(rng,T)
-    return U1{T}(CUDA.cos(r),CUDA.sin(r))
+    return U1{T}(backend_cos(r),backend_sin(r))
 end
 
 """
@@ -64,10 +64,10 @@ Base.:/(a::U1alg{T},b::Number)   where T <: AbstractFloat = U1alg{T}(a.t/b)
 
 isgroup(a::U1{T}) where T <: AbstractFloat = (abs(a.t) -1.0) < 1.0E-10
 
-Base.exp(a::U1alg{T}) where T <: AbstractFloat = U1{T}(CUDA.cos(a.t), CUDA.sin(a.t))
-Base.exp(a::U1alg{T}, t::T) where T <: AbstractFloat  = U1{T}(CUDA.cos(t*a.t), CUDA.sin(t*a.t))
+Base.exp(a::U1alg{T}) where T <: AbstractFloat = U1{T}(backend_cos(a.t), backend_sin(a.t))
+Base.exp(a::U1alg{T}, t::T) where T <: AbstractFloat  = U1{T}(backend_cos(t*a.t), backend_sin(t*a.t))
 
-expm(g::U1{T}, a::U1alg{T}) where T <: AbstractFloat = U1{T}(CUDA.cos(a.t), CUDA.sin(a.t))*g
-expm(g::U1{T}, a::U1alg{T}, t::T) where T <: AbstractFloat = U1{T}(CUDA.cos(t*a.t), CUDA.sin(t*a.t))*g
+expm(g::U1{T}, a::U1alg{T}) where T <: AbstractFloat = U1{T}(backend_cos(a.t), backend_sin(a.t))*g
+expm(g::U1{T}, a::U1alg{T}, t::T) where T <: AbstractFloat = U1{T}(backend_cos(t*a.t), backend_sin(t*a.t))*g
 
 export U1, U1alg, inverse, dag, tr, projalg, expm, exp, norm, norm2, isgroup

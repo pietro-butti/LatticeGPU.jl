@@ -13,7 +13,7 @@
 # SU(2) group elements represented trough Cayley-Dickson
 #       construction
 # https://en.wikipedia.org/wiki/Cayley%E2%80%93Dickson_construction
-using CUDA, Random
+using Random
 
 SU2(a::T, b::T)          where T <: AbstractFloat = SU2{T}(complex(a), complex(b))
 

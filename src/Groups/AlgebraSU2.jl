@@ -69,8 +69,8 @@ function Base.exp(a::SU2alg{T}) where T <: AbstractFloat
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = 0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0))
     else
-        ca = CUDA.cos(rm)
-	sa = CUDA.sin(rm)/(2.0*rm)
+        ca = backend_cos(rm)
+	sa = backend_sin(rm)/(2.0*rm)
     end
 
     t1 = complex(ca,sa*a.t3)
@@ -86,8 +86,8 @@ function Base.exp(a::SU2alg{T}, t::T) where T <: AbstractFloat
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = t*(0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0)))
     else
-        ca = CUDA.cos(rm)
-	sa = t*CUDA.sin(rm)/(2.0*rm)
+        ca = backend_cos(rm)
+	sa = t*backend_sin(rm)/(2.0*rm)
     end
 
     t1 = complex(ca,sa*a.t3)
@@ -110,8 +110,8 @@ function expm(g::SU2{T}, a::SU2alg{T}) where T <: AbstractFloat
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = 0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0))
     else
-        ca = CUDA.cos(rm)
-	sa = CUDA.sin(rm)/(2.0*rm)
+        ca = backend_cos(rm)
+	sa = backend_sin(rm)/(2.0*rm)
     end
 
     t1 = complex(ca,sa*a.t3)*g.t1-complex(sa*a.t2,sa*a.t1)*conj(g.t2)
@@ -127,8 +127,8 @@ function expm(g::SU2{T}, a::SU2alg{T}, t::T) where T <: AbstractFloat
         ca = 1.0 - rms    *(1.0 - (rms/6.0 )*(1.0 - rms/15.0))
         sa = t*(0.5 - rms/6.0*(1.0 - (rms/10.0)*(1.0 - rms/21.0)))
     else
-        ca = CUDA.cos(rm)
-	sa = t*CUDA.sin(rm)/(2.0*rm)
+        ca = backend_cos(rm)
+	sa = t*backend_sin(rm)/(2.0*rm)
     end
 
     t1 = complex(ca,sa*a.t3)*g.t1-complex(sa*a.t2,sa*a.t1)*conj(g.t2)

@@ -4,7 +4,12 @@ authors = ["Alberto Ramos <alberto.ramos@ific.uv.es>"]
 version = "0.2.0"
 
 [deps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 BDIO = "375f315e-f2c4-11e9-2ef9-134f02f79e27"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+
+[compat]
+AMDGPU = "1.0.1"
+CUDA = "5.4.3"

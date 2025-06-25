@@ -12,7 +12,9 @@
 
 module Groups
 
-using CUDA, Random
+using Random
+using ..BackendInterface
+
 import Base.:*, Base.:+, Base.:-,Base.:/,Base.:\,Base.exp,Base.one,Base.zero
 import Random.rand
 
