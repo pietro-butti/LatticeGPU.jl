@@ -12,7 +12,9 @@
 
 module YM
 
-using CUDA, Random, TimerOutputs, BDIO
+# using CUDA, 
+using Random, TimerOutputs, BDIO
+using ..BackendInterface
 using ..Space
 using ..Groups
 using ..Fields
@@ -164,21 +166,21 @@ export ztwist
 include("YMfields.jl")
 export randomize!, zero!, norm2
 
-include("YMact.jl")
-export krnl_plaq!, force_gauge, force_wilson
+# include("YMact.jl")
+# export krnl_plaq!, force_gauge, force_wilson
 
-include("YMhmc.jl")
-export gauge_action, hamiltonian, plaquette, HMC!, MD!
+# include("YMhmc.jl")
+# export gauge_action, hamiltonian, plaquette, HMC!, MD!
 
-include("YMflow.jl")
-export FlowIntr, flw, flw_adapt
-export Eoft_clover, Eoft_plaq, Qtop
-export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
+# include("YMflow.jl")
+# export FlowIntr, flw, flw_adapt
+# export Eoft_clover, Eoft_plaq, Qtop
+# export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 
-include("YMsf.jl")
-export sfcoupling, bndfield, setbndfield
+# include("YMsf.jl")
+# export sfcoupling, bndfield, setbndfield
 
-include("YMio.jl")
-export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
+# include("YMio.jl")
+# export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 end

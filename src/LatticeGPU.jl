@@ -17,10 +17,10 @@ include("BackendInterface/BackendInterface.jl")
 
 using .BackendInterface
 export ciao
-export AbstractBackend, CUDABackend, AMDGPUBackend, CPUBackend
-export BACKEND, set_backend!
+export AbstractBackend, CUDABackend, AMDGPUBackend, CPUBackend, BACKEND, set_backend!
 export backend_sin, backend_cos
-export allocate_array
+export backend_array, backend_randn
+export beckend_kernel
 
 include("Groups/Groups.jl")
 
@@ -45,11 +45,11 @@ using .MD
 export IntrScheme
 export omf4, leapfrog, omf2
 
-# include("YM/YM.jl")
+include("YM/YM.jl")
 
-# using .YM
-# export ztwist
-# export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
+using .YM
+export ztwist
+export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
 # export force_gauge, MD!
 # export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
 # export Eoft_clover, Eoft_plaq, Qtop
