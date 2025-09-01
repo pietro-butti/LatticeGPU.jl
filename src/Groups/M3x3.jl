@@ -105,9 +105,83 @@ Base.:+(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11+b.u11, a
                                                                   a.u21+b.u21, a.u22+b.u22, a.u23+b.u23,
                                                                   a.u31+b.u31, a.u32+b.u32, a.u33+b.u33)
 
+function Base.:+(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
+    
+    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
+    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
+    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
+
+    return M3x3{T}(a.u11+b.u11, a.u12+b.u12, a.u13+b.u13,
+                   a.u21+b.u21, a.u22+b.u22, a.u23+b.u23,
+                   au31+b.u31,  au32+b.u32,  au33+b.u33)
+end
+
+function Base.:+(a::M3x3{T},b::SU3{T}) where T <: AbstractFloat
+
+    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
+    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
+    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+
+    return M3x3{T}(a.u11+b.u11, a.u12+b.u12, a.u13+b.u13,
+                   a.u21+b.u21, a.u22+b.u22, a.u23+b.u23,
+                   a.u31+bu31,  a.u32+bu32,  a.u33+bu33)
+end
+
+function Base.:+(a::SU3{T},b::SU3{T}) where T <: AbstractFloat
+
+    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
+    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
+    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
+
+    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
+    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
+    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+
+    return M3x3{T}(a.u11+b.u11, a.u12+b.u12, a.u13+b.u13,
+                   a.u21+b.u21, a.u22+b.u22, a.u23+b.u23,
+                   au31+bu31,   au32+bu32,   au33+bu33)
+end
+
 Base.:-(a::M3x3{T},b::M3x3{T}) where T <: AbstractFloat = M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-b-u13,
                                                                   a.u21-b.u21, a.u22-b.u22, a.u23-b-u23,
                                                                   a.u31-b.u31, a.u32-b.u32, a.u33-b-u33)
+
+function Base.:-(a::SU3{T},b::M3x3{T}) where T <: AbstractFloat
+    
+    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
+    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
+    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
+
+    return M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-b.u13,
+                   a.u21-b.u21, a.u22-b.u22, a.u23-b.u23,
+                   au31-b.u31,  au32-b.u32,  au33-b.u33)
+end
+
+function Base.:-(a::M3x3{T},b::SU3{T}) where T <: AbstractFloat
+
+    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
+    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
+    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+
+    return M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-b.u13,
+                   a.u21-b.u21, a.u22-b.u22, a.u23-b.u23,
+                   a.u31-bu31,  a.u32-bu32,  a.u33-bu33)
+end
+
+function Base.:-(a::SU3{T},b::SU3{T}) where T <: AbstractFloat
+
+    au31 = conj(a.u12*a.u23 - a.u13*a.u22)
+    au32 = conj(a.u13*a.u21 - a.u11*a.u23)
+    au33 = conj(a.u11*a.u22 - a.u12*a.u21)
+
+    bu31 = conj(b.u12*b.u23 - b.u13*b.u22)
+    bu32 = conj(b.u13*b.u21 - b.u11*b.u23)
+    bu33 = conj(b.u11*b.u22 - b.u12*b.u21)
+
+    return M3x3{T}(a.u11-b.u11, a.u12-b.u12, a.u13-b.u13,
+                   a.u21-b.u21, a.u22-b.u22, a.u23-b.u23,
+                   au31-bu31,   au32-bu32,   au33-bu33)
+end
 
 Base.:-(b::M3x3{T}) where T <: AbstractFloat            = M3x3{T}(-b.u11, -b.u12, -b.u13,
                                                                   -b.u21, -b.u22, -b.u23,
