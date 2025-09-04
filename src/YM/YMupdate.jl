@@ -13,7 +13,6 @@ function updt_or_wilson!(U, gp::GaugeParm, lp::SpaceParm{N,M,B,D}) where {N,M,B,
 
     @timeit "OR update (Wilson action)" begin
         ztw = ztwist(gp, lp)
-        println(ztw)
         for id in 1:N
             CUDA.@sync begin
                 CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_or_wilson!(U, id, 0, ztw, lp)
