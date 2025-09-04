@@ -37,9 +37,7 @@ function krnl_or_wilson!(U::AbstractArray{SU3{T}}, id, icl, ztw, lp::SpaceParm) 
     clr = point_color((b, r), lp)
     if clr % 2 == icl
         stp = sum_staples(U, id, (b, r), ztw, lp)
-        M = convert(M3x3{T},U[b,id,r])
-        M = do_or(M, stp)
-        U[b,id,r] = SU3{T}(M.u11, M.u12, M.u13, M.u21, M.u22, M.u23)
+        U[b,id,r] = do_or(U[b,id,r], stp)
     end
 
     return nothing
@@ -96,35 +94,36 @@ end
     return stp
 end
 
-@inline function do_or(M::M3x3{T}, stp) where {T}
+@inline function do_or(U::SU3{T}, stp) where {T}
 
-    M = do_or12(M, stp)
+    M = do_or12(U, stp)
     M = do_or13(M, stp)
-    M = do_or23(M, stp)
-
-    return M
+    U = do_or23(M, stp)
+    U = unitarize(U)
+    
+    return U
 end
 
-@inline function do_or12(M::M3x3{T}, stp) where {T} 
+@inline function do_or12(U::SU3{T}, stp) where {T} 
     
-    w11 = M.u11*stp.u11 + M.u12*stp.u21 + M.u13*stp.u31
-    w12 = M.u11*stp.u12 + M.u12*stp.u22 + M.u13*stp.u32
-    w22 = M.u21*stp.u12 + M.u22*stp.u22 + M.u23*stp.u32
-    w21 = M.u21*stp.u11 + M.u22*stp.u21 + M.u23*stp.u31
+    w11 = U.u11*stp.u11 + U.u12*stp.u21 + U.u13*stp.u31
+    w12 = U.u11*stp.u12 + U.u12*stp.u22 + U.u13*stp.u32
+    w22 = U.u21*stp.u12 + U.u22*stp.u22 + U.u23*stp.u32
+    w21 = U.u21*stp.u11 + U.u22*stp.u21 + U.u23*stp.u31
     w = tuple(complex(real(w11+w22)/2, imag(w11-w22)/2), complex(real(w12-w21)/2,imag(w12+w21)/2))
     h = overrelax_cd(w)
 
-    u11 = h[1]*M.u11 + h[2]*M.u21
-    u12 = h[1]*M.u12 + h[2]*M.u22
-    u13 = h[1]*M.u13 + h[2]*M.u23
+    u11 = h[1]*U.u11 + h[2]*U.u21
+    u12 = h[1]*U.u12 + h[2]*U.u22
+    u13 = h[1]*U.u13 + h[2]*U.u23
 
-    u21 = -conj(h[2])*M.u11 + conj(h[1])*M.u21
-    u22 = -conj(h[2])*M.u12 + conj(h[1])*M.u22
-    u23 = -conj(h[2])*M.u13 + conj(h[1])*M.u23
+    u21 = -conj(h[2])*U.u11 + conj(h[1])*U.u21
+    u22 = -conj(h[2])*U.u12 + conj(h[1])*U.u22
+    u23 = -conj(h[2])*U.u13 + conj(h[1])*U.u23
 
-    u31 = M.u31
-    u32 = M.u32
-    u33 = M.u33
+    u31 = conj(U.u12*U.u23 - U.u13*U.u22)
+    u32 = conj(U.u13*U.u21 - U.u11*U.u23)
+    u33 = conj(U.u11*U.u22 - U.u12*U.u21)
 
     return M3x3{T}(u11, u12, u13, u21, u22, u23, u31, u32, u33)
 end
@@ -170,11 +169,7 @@ end
     u22 = h[1]*M.u22 + h[2]*M.u32
     u23 = h[1]*M.u23 + h[2]*M.u33
 
-    u31 = -conj(h[2])*M.u21 + conj(h[1])*M.u31
-    u32 = -conj(h[2])*M.u22 + conj(h[1])*M.u32
-    u33 = -conj(h[2])*M.u23 + conj(h[1])*M.u33
-
-    return M3x3{T}(u11, u12, u13, u21, u22, u23, u31, u32, u33)
+    return SU3{T}(u11, u12, u13, u21, u22, u23)
 end
 
 
