@@ -182,6 +182,6 @@ include("YMio.jl")
 export import_lex64, import_cern64, import_bsfqcd, save_cnfg, read_cnfg, read_gp
 
 include("YMupdate.jl")
-export updt_or_wilson!
+export evenodd, updt_or_wilson!
 
 end
