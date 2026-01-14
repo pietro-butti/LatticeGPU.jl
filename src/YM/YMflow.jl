@@ -570,7 +570,7 @@ end
 
 
 
-function krnl_qtop_plaq!(plx, plane1, plane2, U::AbstractArray{T}, ztw, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
+function krnl_qtop_plaq!(plx, plane1, plane2, U::AbstractArray{T}, lp::SpaceParm{N,M,BC_PERIODIC,D}) where {T,N,M,D}
     @inbounds begin
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
@@ -607,17 +607,17 @@ Measure the topological charge `Q` of the configuration `U` using the plaquette 
 function Qtop_plaq(U, lp::SpaceParm, gp::GaugeParm, ymws::YMworkspace{T}) where T <: AbstractFloat
     @timeit "Wilson gauge action" begin
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,2) , (3,4) , U, ztw, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,2) , (3,4) , U, lp)
         end
         Q = CUDA.mapreduce(real, +, ymws.cm)
 
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,3) , (2,4) , U, ztw, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,3) , (2,4) , U, lp)
         end
         Q -= CUDA.mapreduce(real, +, ymws.cm)
 
         CUDA.@sync begin
-            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,4) , (2,3) , U, ztw, lp)
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_qtop_plaq!(ymws.cm, (1,4) , (2,3) , U, lp)
         end
         Q += CUDA.mapreduce(real, +, ymws.cm)
     end
