@@ -127,84 +127,15 @@ function add_zth_term(ymws::YMworkspace, U, lp)
     return nothing
 end
 
-
-"""
-    function rescale_bnd(ymws::YMworkspace, lp)
-
-Rescales the time-boundary of ymws.frc1 by a factor of 2.0 (needed for open BC)
-"""
-function rescale_bnd(ymws::YMworkspace, lp)
-
-    CUDA.@sync begin
-        CUDA.@cuda threads=lp.bsz blocks=lp.rsz bnd_rescale_flw!(ymws.frc1,lp::SpaceParm)
-    end
-
-    return nothing
-end
-
-function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,BC_OPEN,D}) where {TA,TG,N,M,D}
-
-    @inbounds begin
-        b = Int64(CUDA.threadIdx().x)
-        r = Int64(CUDA.blockIdx().x)
-        it = point_time((b, r), lp)
-
-        @inbounds for id in 1:N
-            bu, ru = up((b,r), id, lp)
-            bd, rd = dw((b,r), id, lp)
-
-            X = frc[bu,id,ru]
-            Y  = frc[bd,id,rd]
-            Ud = U[bd,id,rd]
-
-            if (id < N)
-                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(U[b,id,r]*X/U[b,id,r]))
-            elseif (it > 1) && (it < (lp.iL[end]-1))
-                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(U[b,id,r]*X/U[b,id,r]))
-            elseif (it == 1) || (it == (lp.iL[end]-1))
-                frc2[b,id,r] = frc[b,id,r]
-            end
-        end
-    end
-    return nothing
-end
-
-function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::Union{SpaceParm{N,M,BC_SF_ORBI,D},SpaceParm{N,M,BC_SF_AFWB,D}}) where {TA,TG,N,M,D}
-
-    @inbounds begin
-        b = Int64(CUDA.threadIdx().x)
-        r = Int64(CUDA.blockIdx().x)
-        it = point_time((b, r), lp)
-
-        @inbounds for id in 1:N
-            bu, ru = up((b,r), id, lp)
-            bd, rd = dw((b,r), id, lp)
-
-            X = frc[bu,id,ru]
-            Y  = frc[bd,id,rd]
-            Ud = U[bd,id,rd]
-
-            if (it > 1) && (it < lp.iL[end])
-                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(U[b,id,r]*X/U[b,id,r]))
-            elseif (it == lp.iL[end]) && (id < N)
-                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                    projalg(U[b,id,r]*X/U[b,id,r]))
-            else
-                frc2[b,id,r] = frc[b,id,r]
-            end
-        end
-    end
-    return nothing
-end
 function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::SpaceParm{N,M,B,D}) where {TA,TG,N,M,B,D}
 
     @inbounds begin 
         b = Int64(CUDA.threadIdx().x)
         r = Int64(CUDA.blockIdx().x)
         it = point_time((b, r), lp)
+
+        SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) )
+        OBC = (B == BC_OPEN)
 
         @inbounds for id in 1:N
             bu, ru = up((b,r), id, lp)
@@ -214,14 +145,31 @@ function krnl_add_zth!(frc, frc2::AbstractArray{TA}, U::AbstractArray{TG}, lp::S
             Y  = frc[bd,id,rd]
             Ud = U[bd,id,rd]
 
-            frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
-                projalg(U[b,id,r]*X/U[b,id,r]))
+            if SFBC
+                if (it > 1) && (it < lp.iL[end])
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                elseif (it == lp.iL[end]) && (id < N)
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                end
+            end
+            if OBC
+                if (it > 1) && (it < lp.iL[end])
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                elseif ((it == lp.iL[end]) || (it == 1))  && (id < N)
+                    frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                        projalg(U[b,id,r]*X/U[b,id,r]))
+                end
+            else
+                frc2[b,id,r] = (5/6)*frc[b,id,r] + (1/6)*(projalg(Ud\Y*Ud) +
+                    projalg(U[b,id,r]*X/U[b,id,r]))
+            end
         end
     end
     return nothing
 end
-
-
 
 """
         function flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
@@ -252,35 +200,6 @@ function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpacePar
     return nothing
 end
 flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace) where {NI,T} = flw(U, int, ns, int.eps, gp, lp, ymws)
-
-function flw(U, int::FlowIntr{NI,T}, ns::Int64, eps, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D}
-    @timeit "Integrating flow equations" begin
-        for i in 1:ns
-
-            force_gauge(ymws, U, int.c0, 1, gp, lp)
-            if int.add_zth
-                add_zth_term(ymws::YMworkspace, U, lp)
-            end
-            rescale_bnd(ymws, lp)
-
-            ymws.mom .= ymws.frc1
-            U .= expm.(U, ymws.mom, 2*eps*int.r)
-
-            for k in 1:NI
-                force_gauge(ymws, U, int.c0, 1, gp, lp)
-                if int.add_zth
-                    add_zth_term(ymws::YMworkspace, U, lp)
-                end
-                rescale_bnd(ymws, lp)
-                ymws.mom .= int.e0[k].*ymws.mom .+ int.e1[k].*ymws.frc1
-                U .= expm.(U, ymws.mom, 2*eps)
-            end
-        end
-    end
-
-    return nothing
-end
-flw(U, int::FlowIntr{NI,T}, ns::Int64, gp::GaugeParm, lp::SpaceParm{N,M,BC_OPEN,D}, ymws::YMworkspace) where {NI,T,N,M,D} = flw(U, int, ns, int.eps, gp, lp, ymws)
 
 
 ##
@@ -384,10 +303,6 @@ function Eoft_plaq(Eslc, U, gp::GaugeParm{T,G,NN}, lp::SpaceParm{N,M,B,D}, ymws:
                 for it in 1:lp.iL[end]
                     Eslc[it,ipl] = 2*Etmp[it]
                 end
-                if OBC  ## Spatial plaquettes at time boundary count half (Luescher)
-                    Eslc[1,ipl] = Etmp[1]
-                    Eslc[end,ipl] = Etmp[end]
-                end
             end
         end
         
@@ -486,23 +401,15 @@ function Eoft_clover(Eslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMwor
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
-	    if (B == BC_OPEN) && (it ==	1 || it	== lp.iL[end])
-	        Eslc[it,ipl1] = 0.0
-	    else
-		Eslc[it,ipl1] = Etmp[it]/8
-	    end
+            Eslc[it,ipl1] = Etmp[it]/8
         end
-
+        
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_et!(ymws.rm, ymws.frc2, lp)
         end
         Etmp .=  reshape(Array(CUDA.reduce(+, ymws.rm;dims=tp)),lp.iL[end])/V3 
         for it in 1:lp.iL[end]
-	    if (B == BC_OPEN) && (it == 1 || it == lp.iL[end])
-		Eslc[it,ipl2] = 0.0
-	    else
-                Eslc[it,ipl2] = Etmp[it]/8
-	    end
+            Eslc[it,ipl2] = Etmp[it]/8
         end
 
         return nothing
@@ -657,6 +564,224 @@ function krnl_field_tensor!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, 
                 frc2[bu2,4,ru2] = projalg(l2*l1)
             end
         end
+    end
+    return nothing
+end
+
+
+"""
+    Qtop_rect([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+
+Measure the topological charge `Q` of the configuration `U` using the rectangle definition of the field strength tensor. If the argument `Qslc` is present the contributions for each Euclidean time slice are returned. Only works in 4D.
+NOTE: So far, it is only valid for Periodic BC. For general BC, a consensus on boundary rectangles should be taken into account
+"""
+function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace) where {M,D}#B,D}
+
+    @timeit "Qtop measurement" begin
+
+        ztw = ztwist(gp, lp)
+        tp = (1,2,3)
+
+        fill!(ymws.rm, zero(eltype(ymws.rm)))
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
+        end
+        Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
+    end
+
+    return sum(Qslc)
+end
+Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERDIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end]), U, gp, lp, ymws)
+
+function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
+
+        # CODE COMENTED SECTIONS ARE TO BE UNCOMMENTED AND ADAPTED TO INCLUDE OTHER BCS
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        I = point_coord((b,r), lp)
+        it = I[4]
+
+        #First plane
+        id1, id2 = lp.plidx[ipl1]
+        # SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        # OBC = ((B == BC_OPEN) && (id1 == 4))
+        # TWP  = ((I[id1]==1)&&(I[id2]==1))
+
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+        bu11, ru11 = up(up((b, r), id1, lp),id1,lp)
+        bu12, ru12 = up(up((b, r), id1, lp),id2,lp)
+        bu22, ru22 = up(up((b, r), id2, lp),id2,lp)
+        bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
+        bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
+        # if SFBC && (it == lp.iL[end])
+        #     gt1 = Ubnd[id2]
+        # else
+            # gt1 = U[bu1,id2,ru1]
+        # end
+
+        # l1 = gt1/U[bu2,id1,ru2]
+        # l2 = U[b,id2,r]\U[b,id1,r]
+
+        # if SFBC && (it == lp.iL[end])
+        #     frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+        #     frc1[bu1,2,ru1] = zero(TA)
+        #     frc1[bd,3,rd]   = zero(TA)
+        #     frc1[bu2,4,ru2] = projalg(l2*l1)
+        # elseif OBC && (it == lp.iL[end])
+        #     frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+        #     frc1[bu1,2,ru1] = zero(TA)
+        #     frc1[bd,3,rd]   = zero(TA)
+        #     frc1[bu2,4,ru2] = projalg(l2*l1)
+        # else
+        #     if TWP
+        #         frc1[b,1,r]     = projalg(ztw1, U[b,id1,r]*l1/U[b,id2,r])
+        #         frc1[bu1,2,ru1] = projalg(ztw1, l1*l2)
+        #         frc1[bd,3,rd]   = projalg(ztw1, U[bu2,id1,ru2]\(l2*gt1))
+        #         frc1[bu2,4,ru2] = projalg(ztw1, l2*l1)
+        #     else
+        l1 = U[b,id1,r]*U[bu1,id1,ru1]
+        l2 = U[bu2,id1,ru2]*U[bu12,id1,ru12]
+
+        frc1[b,1,r] = projalg(l1*U[bu11,id2,ru11]/(U[b,id2,r]*l2))
+        frc1[bu2,2,ru2] = projalg(U[b,id2,r]\(l1*U[bu11,id2,ru11]/l2))
+        # frc1[bu112,3,ru112] = projalg((l1*U[bu11,id2,ru11])\(U[b,id2,r]*l2))
+        # frc1[bu11,4,ru11] = projalg(l1\(U[b,id2,r]*l2)/U[u11,id2,ru11])
+        frc1[bu112,3,ru112] = projalg((U[b,id2,r]*l2)\(l1*U[bu11,id2,ru11]))
+        frc1[bu11,4,ru11] = projalg((U[bu11,id2,ru11]\(U[b,id1,r]*l2))*l1)
+        #     end
+        # end
+
+        # Second plane
+        id1, id2 = lp.plidx[ipl2]
+        # SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        # OBC = ((B == BC_OPEN) && (id1 == 4))
+        # TWP  = ((I[id1]==1)&&(I[id2]==1))
+
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+        bu11, ru11 = up(up((b, r), id1, lp),id1,lp)
+        bu12, ru12 = up(up((b, r), id1, lp),id2,lp)
+        bu22, ru22 = up(up((b, r), id2, lp),id2,lp)
+        bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
+        bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
+        # if SFBC && (it == lp.iL[end])
+        #     gt1 = Ubnd[id2]
+        # else
+            # gt1 = U[bu1,id2,ru1]
+        # end
+
+        # l1 = gt1/U[bu2,id1,ru2]
+        # l2 = U[b,id2,r]\U[b,id1,r]
+
+        # if SFBC && (it == lp.iL[end])
+        #     frc2[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+        #     frc2[bu1,2,ru1] = zero(TA)
+        #     frc2[bd,3,rd]   = zero(TA)
+        #     frc2[bu2,4,ru2] = projalg(l2*l1)
+        # elseif OBC && (it == lp.iL[end])
+        #     frc1[b,1,r]     = projalg(U[b,id1,r]*l1/U[b,id2,r])
+        #     frc1[bu1,2,ru1] = zero(TA)
+        #     frc1[bd,3,rd]   = zero(TA)
+        #     frc1[bu2,4,ru2] = projalg(l2*l1)
+        # else
+        #     if TWP
+        #         frc2[b,1,r]     = projalg(ztw2, U[b,id1,r]*l1/U[b,id2,r])
+        #         frc2[bu1,2,ru1] = projalg(ztw2, l1*l2)
+        #         frc2[bd,3,rd]   = projalg(ztw2, U[bu2,id1,ru2]\(l2*gt1))
+        #         frc2[bu2,4,ru2] = projalg(ztw2, l2*l1)
+        #     else
+        l1 = U[b,id1,r]*U[bu1,id1,ru1]
+        l2 = U[bu2,id1,ru2]*U[bu12,id1,ru12]
+        frc2[b,1,r] = projalg(l1*U[bu11,id2,ru11]/(U[b,id2,r]*l2))
+        frc2[bu2,2,ru2] = projalg(U[b,id2,r]\(l1*U[bu11,id2,ru11]/l2))
+        # frc2[bu112,3,ru112] = projalg((l1*U[bu11,id2,ru11])\(U[b,id2,r]*l2))
+        # frc2[bu11,4,ru11] = projalg(l1\(U[b,id2,r]*l2)/U[u11,id2,ru11])
+        frc2[bu112,3,ru112] = projalg((U[b,id2,r]*l2)\(l1*U[bu11,id2,ru11]))
+        frc2[bu11,4,ru11] = projalg((U[bu11,id2,ru11]\(U[b,id1,r]*l2))*l1)
+        #     end
+        # end
+    end
+    return nothing
+end
+
+function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
+
+        # CODE COMENTED SECTIONS ARE TO BE UNCOMMENTED AND ADAPTED TO INCLUDE OTHER BCS
+
+    @inbounds begin
+        b = Int64(CUDA.threadIdx().x)
+        r = Int64(CUDA.blockIdx().x)
+        I = point_coord((b,r), lp)
+        it = I[4]
+
+        #First plane
+        id1, id2 = lp.plidx[ipl1]
+        # SFBC = ((B == BC_SF_AFWB) || (B == BC_SF_ORBI) ) && (id1 == 4)
+        # OBC = ((B == BC_OPEN) && (id1 == 4))
+        # TWP  = ((I[id1]==1)&&(I[id2]==1))
+
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+        bu11, ru11 = up(up((b, r), id1, lp),id1,lp)
+        bu12, ru12 = up(up((b, r), id1, lp),id2,lp)
+        bu22, ru22 = up(up((b, r), id2, lp),id2,lp)
+        bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
+        bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
+
+        l1 = U[bu1,id2,ru1]*U[bu12,id2,ru12]
+        l2 = U[b,id2,r]*U[bu2,id2,ru2]
+
+        frc1[b,1,r] += projalg(U[b,id1,r]*l1/(l2*U[bu22,id1,ru22]))
+        frc1[bu22,2,ru22] += projalg(l2\((U[b,id1,r]*l1)/U[bu22,id1,ru22]))
+        frc1[bu221,3,ru221] += projalg((l2*U[bu22,id1,ru22])\(U[b,id1,r]*l1))
+        frc1[bu1,4,ru1] += projalg(l2*((l1*U[bu11,id1,ru11])*U[b,id1,r]))
+
+        # Second plane
+        id1, id2 = lp.plidx[ipl2]
+
+        bu1, ru1 = up((b, r), id1, lp)
+        bu2, ru2 = up((b, r), id2, lp)
+        bu11, ru11 = up(up((b, r), id1, lp),id1,lp)
+        bu12, ru12 = up(up((b, r), id1, lp),id2,lp)
+        bu22, ru22 = up(up((b, r), id2, lp),id2,lp)
+        bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
+        bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
+
+        l1 = U[b,id1,r]*U[bu1,id1,ru1]
+        l2 = U[bu2,id1,ru2]*U[bu12,id1,ru12]
+
+        frc2[b,1,r] += projalg(U[b,id1,r]*l1/(l2*U[bu22,id1,ru22]))
+        frc2[bu22,2,ru22] += projalg(l2\((U[b,id1,r]*l1)/U[bu22,id1,ru22]))
+        frc2[bu221,3,ru221] += projalg((l2*U[bu22,id1,ru22])\(U[b,id1,r]*l1))
+        frc2[bu1,4,ru1] += projalg(l2*((l1*U[bu11,id1,ru11])*U[b,id1,r]))
+
     end
     return nothing
 end
