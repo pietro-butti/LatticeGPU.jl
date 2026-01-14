@@ -615,7 +615,7 @@ function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymw
 
     return sum(Qslc)
 end
-Qtop(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERDIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end]), U, gp, lp, ymws)
+Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERDIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect(zeros(T,lp.iL[end]), U, gp, lp, ymws)
 
 function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
 
