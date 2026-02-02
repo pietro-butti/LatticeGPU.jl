@@ -42,7 +42,7 @@ export ztwist
 export YMworkspace, GaugeParm, force0_wilson!, field, field_pln, randomize!, zero!, norm2
 export force_gauge, force_gauge_flw, MD!
 export gauge_action, hamiltonian, plaquette, HMC!, OMF4!
-export Eoft_clover, Eoft_plaq, Qtop
+export Eoft_clover, Eoft_plaq, Qtop, Qtop_rect
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 export flw, flw_adapt
 export sfcoupling, bndfield, setbndfield

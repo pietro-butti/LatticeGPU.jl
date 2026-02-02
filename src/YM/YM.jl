@@ -172,7 +172,7 @@ export gauge_action, hamiltonian, plaquette, HMC!, MD!
 
 include("YMflow.jl")
 export FlowIntr, flw, flw_adapt
-export Eoft_clover, Eoft_plaq, Qtop
+export Eoft_clover, Eoft_plaq, Qtop, Qtop_rect
 export FlowIntr, wfl_euler, zfl_euler, wfl_rk2, zfl_rk2, wfl_rk3, zfl_rk3
 
 include("YMsf.jl")
