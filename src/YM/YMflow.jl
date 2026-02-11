@@ -774,8 +774,8 @@ function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArr
         bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
         bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
 
-        l1 = U[b,id1,r]*U[bu1,id1,ru1]
-        l2 = U[bu2,id1,ru2]*U[bu12,id1,ru12]
+        l1 = U[bu1,id2,ru1]*U[bu12,id2,ru12]    # ✓ Two steps in ν direction
+        l2 = U[b,id2,r]*U[bu2,id2,ru2]          # ✓ Two steps in ν direction
 
         frc2[b,1,r] += projalg(U[b,id1,r]*l1/(l2*U[bu22,id1,ru22]))
         frc2[bu22,2,ru22] += projalg(l2\((U[b,id1,r]*l1)/U[bu22,id1,ru22]))
