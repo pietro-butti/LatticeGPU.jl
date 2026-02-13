@@ -615,7 +615,7 @@ function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymw
 
     return sum(Qslc)
 end
-Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect(zeros(T,lp.iL[end]), U, gp, lp, ymws)
+Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERDIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect(zeros(T,lp.iL[end]), U, gp, lp, ymws)
 
 function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, ztw1, ztw2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
 
@@ -671,11 +671,8 @@ function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArr
 
         frc1[b,1,r] = projalg(l1*U[bu11,id2,ru11]/(U[b,id2,r]*l2))
         frc1[bu2,2,ru2] = projalg(U[b,id2,r]\(l1*U[bu11,id2,ru11]/l2))
-        # frc1[bu112,3,ru112] = projalg((l1*U[bu11,id2,ru11])\(U[b,id2,r]*l2))
-        # frc1[bu11,4,ru11] = projalg(l1\(U[b,id2,r]*l2)/U[u11,id2,ru11])
         frc1[bu112,3,ru112] = projalg((U[b,id2,r]*l2)\(l1*U[bu11,id2,ru11]))
         frc1[bu11,4,ru11] = projalg((U[bu11,id2,ru11]/(U[b,id2,r]*l2))*l1)
-
         #     end
         # end
 
@@ -720,12 +717,12 @@ function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArr
         #     else
         l1 = U[b,id1,r]*U[bu1,id1,ru1]
         l2 = U[bu2,id1,ru2]*U[bu12,id1,ru12]
+
         frc2[b,1,r] = projalg(l1*U[bu11,id2,ru11]/(U[b,id2,r]*l2))
         frc2[bu2,2,ru2] = projalg(U[b,id2,r]\(l1*U[bu11,id2,ru11]/l2))
-        # frc2[bu112,3,ru112] = projalg((l1*U[bu11,id2,ru11])\(U[b,id2,r]*l2))
-        # frc2[bu11,4,ru11] = projalg(l1\(U[b,id2,r]*l2)/U[u11,id2,ru11])
         frc2[bu112,3,ru112] = projalg((U[b,id2,r]*l2)\(l1*U[bu11,id2,ru11]))
         frc2[bu11,4,ru11] = projalg((U[bu11,id2,ru11]/(U[b,id2,r]*l2))*l1)
+
         #     end
         # end
     end
@@ -762,7 +759,7 @@ function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArr
         frc1[b,1,r] += projalg(U[b,id1,r]*l1/(l2*U[bu22,id1,ru22]))
         frc1[bu22,2,ru22] += projalg(l2\((U[b,id1,r]*l1)/U[bu22,id1,ru22]))
         frc1[bu221,3,ru221] += projalg((l2*U[bu22,id1,ru22])\(U[b,id1,r]*l1))
-        frc1[bu1,4,ru1] += projalg((l1/(l2*U[bu11,id1,ru11]))*U[b,id1,r])
+        frc1[bu1,4,ru1] += projalg((l1/(l2*U[bu22,id1,ru22]))*U[b,id1,r])
 
         # Second plane
         id1, id2 = lp.plidx[ipl2]
@@ -775,13 +772,13 @@ function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArr
         bu112, ru112 = up(up(up((b, r), id1, lp),id1,lp),id2,lp)
         bu221, ru221 = up(up(up((b, r), id2, lp),id2,lp),id1,lp)
 
-        l1 = U[bu1,id2,ru1]*U[bu12,id2,ru12] 
-        l2 = U[b,id2,r]*U[bu2,id2,ru2]       
+        l1 = U[bu1,id2,ru1]*U[bu12,id2,ru12]
+        l2 = U[b,id2,r]*U[bu2,id2,ru2]
 
         frc2[b,1,r] += projalg(U[b,id1,r]*l1/(l2*U[bu22,id1,ru22]))
         frc2[bu22,2,ru22] += projalg(l2\((U[b,id1,r]*l1)/U[bu22,id1,ru22]))
         frc2[bu221,3,ru221] += projalg((l2*U[bu22,id1,ru22])\(U[b,id1,r]*l1))
-        frc2[bu1,4,ru1] += projalg((l1/(l2*U[bu11,id1,ru11]))*U[b,id1,r])
+        frc2[bu1,4,ru1] += projalg((l1/(l2*U[bu22,id1,ru22]))*U[b,id1,r])
 
     end
     return nothing
