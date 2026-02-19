@@ -605,7 +605,7 @@ function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,B,D}, ymws::YMworks
 
     return sum(Qslc)
 end
-Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop(zeros(T,lp.iL[end]), U, gp, lp, ymws)
+Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect(zeros(T,lp.iL[end]), U, gp, lp, ymws)
 
 
 
