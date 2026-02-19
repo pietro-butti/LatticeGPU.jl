@@ -685,6 +685,7 @@ function krnl_field_tensor_rect!(frc1::AbstractArray{TA}, frc2, U::AbstractArray
         frc2[bH,4,rH] += projalg(l2 * l1)
     end
 
+    return nothing
 end
 
 
