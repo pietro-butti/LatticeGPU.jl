@@ -730,189 +730,189 @@ end
 
 
 
-# """
-#     Qtop_rect([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
+"""
+    Qtop_rect([Qslc,] U, gp::GaugeParm, lp::SpaceParm, ymws::YMworkspace)
 
-# Measure the topological charge `Q` of the configuration `U` using the rectangle definition of the field strength tensor. If the argument `Qslc` is present the contributions for each Euclidean time slice are returned. Only works in 4D.
-# NOTE: So far, it is only valid for Periodic BC. For general BC, a consensus on boundary rectangles should be taken into account
-# """
-# function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace) where {M,D}#B,D}
+Measure the topological charge `Q` of the configuration `U` using the rectangle definition of the field strength tensor. If the argument `Qslc` is present the contributions for each Euclidean time slice are returned. Only works in 4D.
+NOTE: So far, it is only valid for Periodic BC. For general BC, a consensus on boundary rectangles should be taken into account
+"""
+function Qtop_rect_alt(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace) where {M,D}#B,D}
 
-#     @timeit "Qtop_rect measurement" begin
+    @timeit "Qtop_rect measurement" begin
 
-#         ztw = ztwist(gp, lp)
-#         tp = (1,2,3)
+        ztw = ztwist(gp, lp)
+        tp = (1,2,3)
 
-#         fill!(ymws.rm, zero(eltype(ymws.rm)))
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
-#         end
-#         CUDA.@sync begin
-#             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
-#         end
-#         Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
-#     end
+        fill!(ymws.rm, zero(eltype(ymws.rm)))
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 1,5, ztw[1], ztw[5], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 2,4, ztw[2], ztw[4], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, +, ymws.frc1, ymws.frc2, lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_h!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_field_tensor_rect_v!(ymws.frc1, ymws.frc2, U, gp.Ubnd, 3,6, ztw[3], ztw[6], lp)
+        end
+        CUDA.@sync begin
+            CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
+        end
+        Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
+    end
 
-#     return sum(Qslc)
-# end
-# Qtop_rect(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect(zeros(T,lp.iL[end]), U, gp, lp, ymws)
+    return sum(Qslc)
+end
+Qtop_rect_alt(U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymws::YMworkspace{T}) where {T,M,D} = Qtop_rect_alt(zeros(T,lp.iL[end]), U, gp, lp, ymws)
 
 
-# """
-#     krnl_field_tensor_rect_h!(frc1, frc2, U, Ubnd, ipl1, ipl2, lp)
+"""
+    krnl_field_tensor_rect_h!(frc1, frc2, U, Ubnd, ipl1, ipl2, lp)
 
-# GPU kernel computing rectangles. Periodic BC only (no SFBC/OBC/TWP branches, `Ubnd` is not used).
+GPU kernel computing rectangles. Periodic BC only (no SFBC/OBC/TWP branches, `Ubnd` is not used).
 
-# For each lattice site `(b,r)``, computes the four cyclic  rotations of the horizontal 2×1 rectangle (long side along `id1`) in the planes `ipl1` and `ipl2`, and distributes them to the slots `[b,1,r]`, `[bu11,2,ru11]`, `[bu112,3,ru112]`,  `[bu2,4,ru2]` of `frc1` and `frc2`, respectively. Represented graphically, for each plane  `ipl1` and `ipl2`:
-# ```
-#     F --- E --- D
-#     |     |     |
-#     A --- B --- C
+For each lattice site `(b,r)``, computes the four cyclic  rotations of the horizontal 2×1 rectangle (long side along `id1`) in the planes `ipl1` and `ipl2`, and distributes them to the slots `[b,1,r]`, `[bu11,2,ru11]`, `[bu112,3,ru112]`,  `[bu2,4,ru2]` of `frc1` and `frc2`, respectively. Represented graphically, for each plane  `ipl1` and `ipl2`:
+```
+    F --- E --- D
+    |     |     |
+    A --- B --- C
     
-#     A[1] = A → B → C → D → E → F → A
-#     C[2] = C → D → E → F → A → B → C
-#     D[3] = D → E → F → A → B → C → D
-#     F[4] = F → A → B → C → D → E → F
-# ```
-# """
-# function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
+    A[1] = A → B → C → D → E → F → A
+    C[2] = C → D → E → F → A → B → C
+    D[3] = D → E → F → A → B → C → D
+    F[4] = F → A → B → C → D → E → F
+```
+"""
+function krnl_field_tensor_rect_h!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
 
-#     # Convention adopted for point:
-#     #    F --- E --- D
-#     #    |     |     |
-#     #    A --- B --- C
+    # Convention adopted for point:
+    #    F --- E --- D
+    #    |     |     |
+    #    A --- B --- C
 
-#     @inbounds begin
-#         bA = Int64(CUDA.threadIdx().x)
-#         rA = Int64(CUDA.blockIdx().x)
+    @inbounds begin
+        bA = Int64(CUDA.threadIdx().x)
+        rA = Int64(CUDA.blockIdx().x)
 
-#         # --------------------------- First plane ---------------------------
-#         id1, id2 = lp.plidx[ipl1]
+        # --------------------------- First plane ---------------------------
+        id1, id2 = lp.plidx[ipl1]
 
-#         bB,rB = up((bA,rA), id1, lp)
-#         bC,rC = up((bB,rB), id1, lp)
-#         bD,rD = up((bC,rC), id2, lp)
-#         bE,rE = up((bB,rB), id2, lp)
-#         bF,rF = up((bA,rA), id2, lp)
+        bB,rB = up((bA,rA), id1, lp)
+        bC,rC = up((bB,rB), id1, lp)
+        bD,rD = up((bC,rC), id2, lp)
+        bE,rE = up((bB,rB), id2, lp)
+        bF,rF = up((bA,rA), id2, lp)
 
-#         l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
-#         l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
+        l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
+        l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
 
-#         frc1[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[b,id2,r])
-#         frc1[bC,2,rC] = projalg(l1 * l2)
-#         frc1[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
-#         frc1[bF,4,rF] = projalg(l2 * l1)
-
-
-#         # --------------------------- Second plane ---------------------------
-#         id1, id2 = lp.plidx[ipl2]
-
-#         bB,rB = up((bA,rA), id1, lp)
-#         bC,rC = up((bB,rB), id1, lp)
-#         bD,rD = up((bC,rC), id2, lp)
-#         bE,rE = up((bB,rB), id2, lp)
-#         bF,rF = up((bA,rA), id2, lp)
-
-#         l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
-#         l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
-
-#         frc2[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[b,id2,r])
-#         frc2[bC,2,rC] = projalg(l1 * l2)
-#         frc2[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
-#         frc2[bF,4,rF] = projalg(l2 * l1)
-#     end
-
-#     return nothing
-# end
+        frc1[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[bA,id2,rA])
+        frc1[bC,2,rC] = projalg(l1 * l2)
+        frc1[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
+        frc1[bF,4,rF] = projalg(l2 * l1)
 
 
+        # --------------------------- Second plane ---------------------------
+        id1, id2 = lp.plidx[ipl2]
 
-# """
-#     krnl_field_tensor_rect_v!(frc1, frc2, U, ipl1, ipl2, lp)
+        bB,rB = up((bA,rA), id1, lp)
+        bC,rC = up((bB,rB), id1, lp)
+        bD,rD = up((bC,rC), id2, lp)
+        bE,rE = up((bB,rB), id2, lp)
+        bF,rF = up((bA,rA), id2, lp)
 
-# GPU kernel computing rectangles. Periodic BC only (no SFBC/OBC/TWP branches, `Ubnd` is not used).
+        l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
+        l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
 
-# For each lattice site `(b,r)`, computes the four cyclic rotations of the vertical 1×2 rectangle (long side along `id2`) in the planes `ipl1` and `ipl2`, and distributes them to the slots `[b,1,r]`, `[bu1,2,ru1]`, `[bu112,3,ru112]`,  `[bu2_u2,4,ru2_u2]` of `frc1` and `frc2`, respectively.  Periodic BC only (no SFBC/OBC/TWP branches). Represented graphically, for each plane `ipl1` and `ipl2`:
-# ```
-#     E -- D
-#     |    |
-#     F -- C
-#     |    |
-#     A -- B
-# ```
-# """
-# function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
+        frc1[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[bA,id2,rA])
+        frc1[bC,2,rC] = projalg(l1 * l2)
+        frc1[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
+        frc1[bF,4,rF] = projalg(l2 * l1)
+    end
 
-#     # Convention adopted for point:
-#     #    E -- D
-#     #    |    |
-#     #    F -- C
-#     #    |    |
-#     #    A -- B
-
-#     @inbounds begin
-#         bA = Int64(CUDA.threadIdx().x)
-#         rA = Int64(CUDA.blockIdx().x)
-
-#         # --------------------------- First plane ---------------------------
-#         id1, id2 = lp.plidx[ipl1]
-
-#         bB,rB = up((bA,rA), id1, lp)
-#         bC,rC = up((bB,rB), id2, lp)
-#         bD,rD = up((bC,rC), id2, lp)
-#         bF,rF = up((bA,rA), id2, lp)
-#         bE,rE = up((bF,rF), id2, lp)
-
-#         l1 = U[bB,id2,rB] * U[bC,id2,rC] / U[bE,id1,rE]    # BCDE
-#         l2 = (U[bA,id2,rA] * U[bF,id2,rF]) \ U[bA,id1,rA]  # EFAB
-
-#         frc1[bA,1,rA] += projalg(U[bA,id1,rA] * l1 / U[bE,id1,rE])
-#         frc1[bB,2,rB] += projalg(l1 * l2)
-#         frc1[bD,3,rD] += projalg(U[bE,id1,rE] \ l2 * U[bB,id2,rB] * U[bC,id2,rC])
-#         frc1[bE,4,rE] += projalg(l2 * l1)
+    return nothing
+end
 
 
-#         # --------------------------- Second plane ---------------------------
-#         id1, id2 = lp.plidx[ipl2]
 
-#         bB,rB = up((bA,rA), id1, lp)
-#         bC,rC = up((bB,rB), id1, lp)
-#         bD,rD = up((bC,rC), id2, lp)
-#         bE,rE = up((bB,rB), id2, lp)
-#         bF,rF = up((bA,rA), id2, lp)
+"""
+    krnl_field_tensor_rect_v!(frc1, frc2, U, ipl1, ipl2, lp)
 
-#         l1 = U[bB,id2,rB] * U[bC,id2,rC] / U[bE,id1,rE]    # BCDE
-#         l2 = (U[bA,id2,rA] * U[bF,id2,rF]) \ U[bA,id1,rA]  # EFAB
+GPU kernel computing rectangles. Periodic BC only (no SFBC/OBC/TWP branches, `Ubnd` is not used).
 
-#         frc2[bA,1,rA] += projalg(U[bA,id1,rA] * l1 / U[bE,id1,rE])
-#         frc2[bB,2,rB] += projalg(l1 * l2)
-#         frc2[bD,3,rD] += projalg(U[bE,id1,rE] \ l2 * U[bB,id2,rB] * U[bC,id2,rC])
-#         frc2[bE,4,rE] += projalg(l2 * l1)
+For each lattice site `(b,r)`, computes the four cyclic rotations of the vertical 1×2 rectangle (long side along `id2`) in the planes `ipl1` and `ipl2`, and distributes them to the slots `[b,1,r]`, `[bu1,2,ru1]`, `[bu112,3,ru112]`,  `[bu2_u2,4,ru2_u2]` of `frc1` and `frc2`, respectively.  Periodic BC only (no SFBC/OBC/TWP branches). Represented graphically, for each plane `ipl1` and `ipl2`:
+```
+    E -- D
+    |    |
+    F -- C
+    |    |
+    A -- B
+```
+"""
+function krnl_field_tensor_rect_v!(frc1::AbstractArray{TA}, frc2, U::AbstractArray{T}, Ubnd, ipl1, ipl2, lp::SpaceParm{4,M,B,D}) where {TA,T,M,B,D}
 
-#     end
-#     return nothing
-# end
+    # Convention adopted for point:
+    #    E -- D
+    #    |    |
+    #    F -- C
+    #    |    |
+    #    A -- B
+
+    @inbounds begin
+        bA = Int64(CUDA.threadIdx().x)
+        rA = Int64(CUDA.blockIdx().x)
+
+        # --------------------------- First plane ---------------------------
+        id1, id2 = lp.plidx[ipl1]
+
+        bB,rB = up((bA,rA), id1, lp)
+        bC,rC = up((bB,rB), id2, lp)
+        bD,rD = up((bC,rC), id2, lp)
+        bF,rF = up((bA,rA), id2, lp)
+        bE,rE = up((bF,rF), id2, lp)
+
+        l1 = U[bB,id2,rB] * U[bC,id2,rC] / U[bE,id1,rE]    # BCDE
+        l2 = (U[bA,id2,rA] * U[bF,id2,rF]) \ U[bA,id1,rA]  # EFAB
+
+        frc1[bA,1,rA] += projalg(U[bA,id1,rA] * l1 / U[bE,id1,rE])
+        frc1[bB,2,rB] += projalg(l1 * l2)
+        frc1[bD,3,rD] += projalg(U[bE,id1,rE] \ l2 * U[bB,id2,rB] * U[bC,id2,rC])
+        frc1[bE,4,rE] += projalg(l2 * l1)
+
+
+        # --------------------------- Second plane ---------------------------
+        id1, id2 = lp.plidx[ipl2]
+
+        bB,rB = up((bA,rA), id1, lp)
+        bC,rC = up((bB,rB), id1, lp)
+        bD,rD = up((bC,rC), id2, lp)
+        bE,rE = up((bB,rB), id2, lp)
+        bF,rF = up((bA,rA), id2, lp)
+
+        l1 = U[bB,id2,rB] * U[bC,id2,rC] / U[bE,id1,rE]    # BCDE
+        l2 = (U[bA,id2,rA] * U[bF,id2,rF]) \ U[bA,id1,rA]  # EFAB
+
+        frc2[bA,1,rA] += projalg(U[bA,id1,rA] * l1 / U[bE,id1,rE])
+        frc2[bB,2,rB] += projalg(l1 * l2)
+        frc2[bD,3,rD] += projalg(U[bE,id1,rE] \ l2 * U[bB,id2,rB] * U[bC,id2,rC])
+        frc2[bE,4,rE] += projalg(l2 * l1)
+
+    end
+    return nothing
+end
 
 
 
