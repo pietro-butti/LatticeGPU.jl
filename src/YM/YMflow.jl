@@ -636,7 +636,7 @@ function krnl_field_tensor_rect!(frc1::AbstractArray{TA}, frc2, U::AbstractArray
         l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
         l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
 
-        frc1[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[b,id2,r])
+        frc1[bA,1,rA] = projalg((U[bA,id1,rA] * U[bB,id1,rB]) * l1 / U[bA,id2,rA])
         frc1[bC,2,rC] = projalg(l1 * l2)
         frc1[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
         frc1[bF,4,rF] = projalg(l2 * l1)
@@ -669,7 +669,7 @@ function krnl_field_tensor_rect!(frc1::AbstractArray{TA}, frc2, U::AbstractArray
         l1 = U[bC,id2,rC] / (U[bF,id1,rF] * U[bE,id1,rE]) # CDEF
         l2 = U[bA,id2,rA] \ U[bA,id1,rA] * U[bB,id1,rB]   # FABC
 
-        frc2[bA,1,rA] = projalg(U[bA,id1,rA] * U[bB,id1,rB] * l1 / U[b,id2,r])
+        frc2[bA,1,rA] = projalg((U[bA,id1,rA] * U[bB,id1,rB]) * l1 / U[bA,id2,rA])
         frc2[bC,2,rC] = projalg(l1 * l2)
         frc2[bD,3,rD] = projalg((U[bF,id1,rF] * U[bE,id1,rE]) \ l2 * U[bC,id2,rC])
         frc2[bF,4,rF] = projalg(l2 * l1)
