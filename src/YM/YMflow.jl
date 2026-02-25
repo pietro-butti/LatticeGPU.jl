@@ -610,7 +610,7 @@ function Qtop_rect(Qslc, U, gp::GaugeParm, lp::SpaceParm{4,M,BC_PERIODIC,D}, ymw
         CUDA.@sync begin
             CUDA.@cuda threads=lp.bsz blocks=lp.rsz krnl_add_qd!(ymws.rm, -, ymws.frc1, ymws.frc2, lp)
         end
-        Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(32*pi^2)
+        Qslc .= reshape(Array(CUDA.reduce(+, ymws.rm; dims=tp)),lp.iL[end])./(2*32*pi^2)
     end
 
     return sum(Qslc)
